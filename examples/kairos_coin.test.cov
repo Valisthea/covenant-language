@@ -1,0 +1,147 @@
+-- TEST VARIANT — do NOT deploy this file.
+--
+-- Identical to kairos_coin.cov plus the test actions. Run:
+--     covenant test examples/kairos_coin.test.cov
+--
+-- Kept separate because Covenant V0.9 compiles `action test_X()` into the
+-- deployed contract as a public function — deploying this would put five
+-- test entrypoints on chain. See DEBT.md.
+--
+-- KairosCoin.cov · an ERC-20 with burn, a configurable transfer fee, and
+-- on-chain accounting — written in Covenant, deployed on Robinhood Chain testnet.
+--
+-- DESIGN NOTE (deliberate, not a limitation):
+-- The standard `transfer` / `approve` / `transfer_from` are left untouched, so
+-- they stay 100% ERC-20 conformant — DEXes, wallets and indexers behave normally.
+-- Fee-on-transfer tokens are notoriously incompatible with routers; instead the
+-- fee lives in an explicit, opt-in `transfer_with_fee` action. You choose to pay.
+--
+-- The fields below are declared explicitly (not duplicated): the ERC-20
+-- synthesizer reuses any field that already exists, which is what lets the
+-- custom actions read and write the real balance/supply state.
+
+token KairosCoin {
+    symbol:   "KRC"
+    name:     "Kairos Coin"
+    decimals: 18
+    -- 1,000,000 whole tokens. `supply:` mints RAW base units (verified by
+    -- test below), so with decimals: 18 the literal must be pre-scaled by
+    -- 10^18 — writing `1_000_000` here would mint 0.000000000001 KRC.
+    supply:   1_000_000_000_000_000_000_000_000 to deployer
+
+    -- Standard ERC-20 state, declared so custom actions can reference it.
+    field total_supply: amount
+    field balances: map<address, amount>
+
+    -- Fee configuration. Basis points; set_fee hard-caps it at 500 (5%).
+    --
+    -- ⚠ No `= 100` default here on purpose. VERIFIED ON-CHAIN (anvil, V0.9.3):
+    -- a source-level non-zero field default is silently DROPPED — the literal
+    -- is emitted into the deploy bytecode but never SSTOREd, so the field
+    -- reads 0 after deploy. Writing `= 100` would be a lie in the source.
+    -- Consequence: fee_bps is 0 until set_fee runs, so the fee is 0% (safe
+    -- default) and the deploy script calls set_fee immediately.
+    field fee_bps: amount
+    field fee_recipient: address
+    field fee_collected: amount
+
+    -- Burn accounting.
+    field total_burned: amount
+
+    -- Declared with the exact shape the synthesizer injects (two indexed
+    -- addresses + a non-indexed amount) so the custom actions can emit real
+    -- ERC-20 Transfer events and keep explorers and indexers in sync.
+    -- NOTE: `from` / `to` are reserved keywords in Covenant, so the params are
+    -- named sender/recipient. This is cosmetic only — an event's ABI signature
+    -- is `Transfer(address,address,uint256)` either way, so topic0 and the
+    -- indexed layout are byte-identical to canonical ERC-20.
+    event Transfer(sender: address indexed, recipient: address indexed, value: amount)
+
+    event Burned(who: address indexed, value: amount, remaining_supply: amount)
+    event FeePaid(payer: address indexed, recipient: address indexed, fee: amount)
+    event FeeConfigured(recipient: address indexed, bps: amount)
+
+    -- Permanently destroy the caller's tokens, shrinking total supply.
+    -- Emits a Transfer to the zero address, per ERC-20 burn convention.
+    action burn(value: amount) when balances[caller] >= value {
+        balances[caller] -= value
+        total_supply -= value
+        total_burned += value
+        emit Transfer(caller, 0x0000000000000000000000000000000000000000, value)
+        emit Burned(caller, value, total_supply)
+    }
+
+    -- Opt-in fee transfer: recipient receives value minus fee, fee_recipient
+    -- receives the fee. Both legs emit a Transfer so accounting stays exact.
+    action transfer_with_fee(recipient: address, value: amount)
+            when balances[caller] >= value {
+        balances[caller] -= value
+        balances[recipient] += value - (value * fee_bps / 10000)
+        balances[fee_recipient] += value * fee_bps / 10000
+        fee_collected += value * fee_bps / 10000
+        emit Transfer(caller, recipient, value - (value * fee_bps / 10000))
+        emit Transfer(caller, fee_recipient, value * fee_bps / 10000)
+        emit FeePaid(caller, fee_recipient, value * fee_bps / 10000)
+    }
+
+    -- Only the deployer can configure the fee, and never above 5% (500 bps).
+    -- The `when` guard is the enforcement — a caller asking for 501 reverts.
+    action set_fee(recipient: address, bps: amount)
+            only deployer,
+            given bps <= 500 {
+        fee_recipient = recipient
+        fee_bps = bps
+        emit FeeConfigured(recipient, bps)
+    }
+
+    view burned_total returns amount {
+        total_burned
+    }
+
+    view fees_collected returns amount {
+        fee_collected
+    }
+
+    view fee_rate_bps returns amount {
+        fee_bps
+    }
+
+    -- ─────────────────────────────────────────────────────────────────────
+    -- Tests.  Run: covenant test coin.cov
+    --
+    -- V0.9 test pattern: `action test_X() when <assertion> {}` — the `when`
+    -- guard IS the assertion (holds = pass, fails = revert = fail), and the
+    -- body is empty to avoid side effects mid-assertion. Each test_* runs
+    -- against a fresh instance (per-test isolation).
+    --
+    -- HONEST LIMITATION: because the guard fires BEFORE the body and state
+    -- is reset between tests, this harness cannot express "mutate, then
+    -- assert the result" in a single test. So these tests pin the deploy-time
+    -- invariants; the burn/fee *arithmetic* is exercised on-chain instead
+    -- (see the deploy script's burn / transfer_with_fee calls). A richer
+    -- assert API is V0.9.x backlog.
+    -- ─────────────────────────────────────────────────────────────────────
+
+    -- Genesis mint landed in total_supply, and confirms `supply:` mints RAW
+    -- base units (1e24 raw = 1,000,000 whole tokens at 18 decimals).
+    action test_genesis_supply_minted()
+            when total_supply == 1_000_000_000_000_000_000_000_000 {}
+
+    -- Fee is 0 until set_fee is called. This test documents a REAL compiler
+    -- finding: non-zero field defaults are silently dropped at deploy
+    -- (verified on anvil), so the safe reading is "0 until configured".
+    action test_fee_bps_is_zero_until_configured() when fee_bps == 0 {}
+
+    -- Burn accounting starts clean.
+    action test_burn_counter_starts_at_zero() when total_burned == 0 {}
+
+    -- Fee accounting starts clean.
+    action test_fees_collected_starts_at_zero() when fee_collected == 0 {}
+
+    -- Encodes the operational footgun: fee_recipient is the zero address
+    -- until set_fee is called, so transfer_with_fee must not be used before
+    -- configuration. The deploy script calls set_fee immediately for exactly
+    -- this reason.
+    action test_fee_recipient_unset_at_deploy()
+            when fee_recipient == 0x0000000000000000000000000000000000000000 {}
+}

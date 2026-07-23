@@ -1,0 +1,30 @@
+[package]
+name = "covenant-wasm-bindings-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+# Fuzz package is intentionally outside the parent workspace because
+# cargo-fuzz patches the target with `-Z` flags that aren't compatible
+# with stable workspace builds. Using an empty [workspace] table makes
+# cargo treat this package as its own root.
+[workspace]
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+covenant-wasm-bindings = { path = ".." }
+
+[[bin]]
+name = "compile_pipeline"
+path = "fuzz_targets/compile_pipeline.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "check_only"
+path = "fuzz_targets/check_only.rs"
+test = false
+doc = false

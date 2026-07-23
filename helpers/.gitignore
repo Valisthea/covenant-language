@@ -1,0 +1,11 @@
+# Foundry
+out/
+cache/
+broadcast/
+
+# Compiler artifacts
+*.bytecode
+deploy_output.txt
+
+# Lib
+lib/

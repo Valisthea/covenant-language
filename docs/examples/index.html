@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Covenant By Example</title>
+<meta name="description" content="Covenant By Example — 15 annotated chapters covering fundamentals, standards, and advanced patterns.">
+<meta name="author" content="Kairos Lab">
+<link rel="canonical" href="https://examples.covenant-lang.org/">
+<base href="/examples/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7C3AED">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://examples.covenant-lang.org/">
+<meta property="og:site_name" content="Covenant">
+<meta property="og:title" content="Covenant By Example">
+<meta property="og:description" content="Covenant By Example — 15 annotated chapters covering fundamentals, standards, and advanced patterns.">
+<meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@Valisthea">
+<meta name="twitter:title" content="Covenant By Example">
+<meta name="twitter:description" content="Covenant By Example — 15 annotated chapters covering fundamentals, standards, and advanced patterns.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --ink:          #1a1a1a;
+  --ink-soft:     #3d3d3d;
+  --ink-mute:     #6b7280;
+  --ink-faint:    #9ca3af;
+  --rule:         #d1d5db;
+  --rule-faint:   #e5e7eb;
+  --paper:        #fcfbf8;
+  --paper-pure:   #ffffff;
+  --accent:       #7C3AED;
+  --accent-faint: #faf7ff;
+  --accent-soft:  #a78bfa;
+  --cyan:         #0891b2;
+  --blue:         #2563eb;
+  --green:        #059669;
+  --red:          #dc2626;
+  --orange:       #d97706;
+  --header-h:     56px;
+}
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+
+#site-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(252,251,248,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule-faint);
+  display: flex; align-items: center;
+  padding: 0 48px;
+  z-index: 1000;
+  transition: border-color 0.3s ease;
+}
+#site-header.scrolled { border-bottom-color: var(--rule); }
+.header-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--ink); flex-shrink: 0;
+}
+.header-brand-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.header-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent);
+  padding: 1px 6px; margin-left: 4px;
+}
+.header-spacer { flex: 1; }
+nav.header-nav { display: flex; align-items: center; gap: 32px; }
+.nav-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5pt; font-weight: 400;
+  color: var(--ink-mute); text-decoration: none;
+  letter-spacing: 0.01em; transition: color 0.15s ease;
+}
+.nav-link:hover, .nav-link.active { color: var(--ink); }
+.nav-link-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); text-decoration: none;
+  border: 1px solid var(--accent);
+  padding: 5px 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-link-cta:hover { background: var(--accent); color: white; }
+
+
+.index-hero {
+  padding-top: calc(var(--header-h) + 72px);
+  padding-bottom: 64px;
+  border-bottom: 1px solid var(--ink);
+  background-image: radial-gradient(circle, rgba(26,26,26,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-color: var(--paper);
+}
+.index-hero-inner {
+  max-width: 960px; margin: 0 auto; padding: 0 48px;
+}
+.index-hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 16px;
+}
+.index-hero-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(32pt, 6vw, 54pt);
+  font-weight: 400; line-height: 1.04;
+  letter-spacing: -0.02em; margin-bottom: 16px;
+}
+.index-hero-sub {
+  font-family: 'EB Garamond', serif;
+  font-size: 15pt; font-style: italic;
+  color: var(--ink-mute); line-height: 1.5;
+  max-width: 560px; margin-bottom: 36px;
+}
+.index-hero-meta {
+  display: flex; gap: 32px; flex-wrap: wrap; align-items: center;
+}
+.index-hero-stat {
+  font-family: 'Inter', sans-serif;
+  font-size: 9pt; color: var(--ink-mute);
+}
+.index-hero-stat strong {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11pt; color: var(--ink); display: block;
+  font-weight: 600;
+}
+.index-body {
+  max-width: 960px; margin: 0 auto; padding: 0 48px 96px;
+}
+.section-group { margin-top: 64px; }
+.section-group-header {
+  display: flex; align-items: baseline; gap: 16px;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 12px; margin-bottom: 28px;
+}
+.section-group-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 22pt; font-weight: 400;
+}
+.section-group-desc {
+  font-family: 'Inter', sans-serif;
+  font-size: 9pt; color: var(--ink-mute);
+}
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+.chapter-card {
+  background: var(--paper);
+  padding: 24px 20px;
+  text-decoration: none; color: var(--ink);
+  display: flex; flex-direction: column; gap: 6px;
+  transition: background 0.12s;
+}
+.chapter-card:hover { background: var(--accent-faint); }
+.chapter-card-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+.chapter-card-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 15pt; font-weight: 500; line-height: 1.2;
+}
+.chapter-card-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 8.5pt; color: var(--ink-mute); line-height: 1.4;
+  margin-top: 2px;
+}
+
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <a class="header-brand" href="https://covenant-lang.org">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <polygon points="12,2 22,20 2,20" stroke="#7C3AED" stroke-width="2" fill="none"/>
+      <circle cx="12" cy="20" r="1.5" fill="#7C3AED"/>
+    </svg>
+    <span class="header-brand-name">Covenant</span>
+    <span class="header-badge">V0.7 GA</span>
+  </a>
+  <div class="header-spacer"></div>
+  <nav class="header-nav">
+    <a class="nav-link" href="https://covenant-lang.org">Home</a>
+    <a class="nav-link" href="https://covenant-lang.org/audit">Audit</a>
+    <a class="nav-link  active" href="index">Examples</a>
+    <a class="nav-link" href="https://github.com/Valisthea/covenant-language" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav-link-cta" href="https://crates.io/crates/covenant-cli" target="_blank" rel="noopener">cargo install</a>
+  </nav>
+</header>
+
+
+<div class="index-hero">
+  <div class="index-hero-inner">
+    <p class="index-hero-eyebrow">Covenant By Example</p>
+    <h1 class="index-hero-title">Learn Covenant<br>through annotated code.</h1>
+    <p class="index-hero-sub">
+      15 chapters. From hello contract to encrypted tokens, post-quantum
+      signatures, and full deployment — with real code at every step.
+    </p>
+    <div class="index-hero-meta">
+      <div class="index-hero-stat"><strong>15</strong>chapters</div>
+      <div class="index-hero-stat"><strong>3</strong>sections</div>
+      <div class="index-hero-stat"><strong>Apache-2.0</strong>open source</div>
+      <div class="index-hero-stat"><strong>V0.7 GA</strong>compiler</div>
+    </div>
+  </div>
+</div>
+
+<div class="index-body">
+  
+<section class="section-group">
+  <div class="section-group-header">
+    <h2 class="section-group-title">Fundamentals</h2>
+    <span class="section-group-desc">Chapters 1–5 &mdash; Records, fields, actions, guards, and external calls — the language core.</span>
+  </div>
+  <div class="chapter-grid">
+    <a class="chapter-card" href="01-hello-contract"><span class="chapter-card-num">Chapter 1</span><span class="chapter-card-title">Hello Contract</span><span class="chapter-card-sub">The simplest Covenant contract — record, action, view.</span></a><a class="chapter-card" href="02-fields-and-storage"><span class="chapter-card-num">Chapter 2</span><span class="chapter-card-title">Fields and Storage</span><span class="chapter-card-sub">Every primitive type, plus arrays and maps.</span></a><a class="chapter-card" href="03-actions-events-errors"><span class="chapter-card-num">Chapter 3</span><span class="chapter-card-title">Actions, Events & Errors</span><span class="chapter-card-sub">emit, transfer, revert_with — the full action vocabulary.</span></a><a class="chapter-card" href="04-guards"><span class="chapter-card-num">Chapter 4</span><span class="chapter-card-title">Guards</span><span class="chapter-card-sub">only, when, given — declarative access control and invariants.</span></a><a class="chapter-card" href="05-external-calls"><span class="chapter-card-num">Chapter 5</span><span class="chapter-card-title">External Contract Calls</span><span class="chapter-card-sub">interface, @non_reentrant, and the CEI pattern.</span></a>
+  </div>
+</section>
+<section class="section-group">
+  <div class="section-group-header">
+    <h2 class="section-group-title">Standards</h2>
+    <span class="section-group-desc">Chapters 6–10 &mdash; ERC-20, FHE, encrypted tokens, post-quantum signatures, and ZK proofs.</span>
+  </div>
+  <div class="chapter-grid">
+    <a class="chapter-card" href="06-erc20-token"><span class="chapter-card-num">Chapter 6</span><span class="chapter-card-title">ERC-20 Token</span><span class="chapter-card-sub">Six lines versus one hundred — the token keyword.</span></a><a class="chapter-card" href="07-fhe-basics"><span class="chapter-card-num">Chapter 7</span><span class="chapter-card-title">FHE Basics</span><span class="chapter-card-sub">encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.</span></a><a class="chapter-card" href="08-encrypted-token"><span class="chapter-card-num">Chapter 8</span><span class="chapter-card-title">Encrypted Token (ERC-8227)</span><span class="chapter-card-sub">Private balances with selective disclosure.</span></a><a class="chapter-card" href="09-post-quantum-signatures"><span class="chapter-card-num">Chapter 9</span><span class="chapter-card-title">Post-Quantum Signatures</span><span class="chapter-card-sub">pq_key, @pq_signed — Dilithium-5 authentication.</span></a><a class="chapter-card" href="10-zero-knowledge-proofs"><span class="chapter-card-num">Chapter 10</span><span class="chapter-card-title">Zero-Knowledge Proofs</span><span class="chapter-card-sub">selective_disclosure, verified_by — proving properties without revealing data.</span></a>
+  </div>
+</section>
+<section class="section-group">
+  <div class="section-group-header">
+    <h2 class="section-group-title">Advanced</h2>
+    <span class="section-group-desc">Chapters 11–15 &mdash; Cryptographic amnesia, UUPS upgrades, beacon proxies, oracles, and deployment.</span>
+  </div>
+  <div class="chapter-grid">
+    <a class="chapter-card" href="11-cryptographic-amnesia"><span class="chapter-card-num">Chapter 11</span><span class="chapter-card-title">Cryptographic Amnesia (ERC-8228)</span><span class="chapter-card-sub">amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.</span></a><a class="chapter-card" href="12-uups-upgradeable"><span class="chapter-card-num">Chapter 12</span><span class="chapter-card-title">UUPS Upgradeable</span><span class="chapter-card-sub">upgradeable_by, version, migrate — safe contract upgrades.</span></a><a class="chapter-card" href="13-beacon-proxy"><span class="chapter-card-num">Chapter 13</span><span class="chapter-card-title">Beacon Proxy Pattern</span><span class="chapter-card-sub">@proxy_compatible, deploy_proxy — upgrading many instances atomically.</span></a><a class="chapter-card" href="14-oracle-integration"><span class="chapter-card-num">Chapter 14</span><span class="chapter-card-title">Oracle Integration</span><span class="chapter-card-sub">Chainlink price feeds — staleness checks and typed errors.</span></a><a class="chapter-card" href="15-deploy-to-sepolia"><span class="chapter-card-num">Chapter 15</span><span class="chapter-card-title">Deploy to Sepolia</span><span class="chapter-card-sub">Install, compile, deploy, verify — end-to-end in four commands.</span></a>
+  </div>
+</section>
+</div>
+
+<script>
+const header = document.getElementById('site-header');
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 8);
+}, {passive: true});
+</script>
+</body>
+</html>

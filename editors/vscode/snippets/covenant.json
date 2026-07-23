@@ -1,0 +1,321 @@
+{
+  "Module": {
+    "prefix": "module",
+    "body": [
+      "module ${1:ModuleName} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Basic Covenant module"
+  },
+
+  "Token Construct": {
+    "prefix": "token",
+    "body": [
+      "token ${1:TokenName} {",
+      "\tname: \"${2:Token Name}\"",
+      "\tsymbol: \"${3:SYM}\"",
+      "\tdecimals: 18",
+      "\tsupply: ${4:1_000_000 tokens}",
+      "\tinitial_holder: deployer",
+      "\t",
+      "\tevent Transfer(from: address indexed, to: address indexed, amount: amount)",
+      "\t",
+      "\taction transfer(to: address, value: amount) {",
+      "\t\tgiven balances[caller] >= value",
+      "\t\tbalances[caller] = balances[caller] - value",
+      "\t\tbalances[to] = balances[to] + value",
+      "\t\temit Transfer(caller, to, value)",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "ERC-20 compatible Covenant token"
+  },
+
+  "Encrypted Token (ERC-8227)": {
+    "prefix": "etoken",
+    "body": [
+      "encrypted token ${1:TokenName} {",
+      "\tname: \"${2:Token Name}\"",
+      "\tsymbol: \"${3:SYM}\"",
+      "\tdecimals: 18",
+      "\tsupply: encrypted(${4:1_000_000 tokens})",
+      "\tinitial_holder: deployer",
+      "\t",
+      "\tevent Transfer(from: address indexed, to: address indexed, value_hash: hash)",
+      "\t",
+      "\taction transfer(to: address, value: encrypted amount) {",
+      "\t\tgiven balances[caller] >= value",
+      "\t\tbalances[caller] = balances[caller] - value",
+      "\t\tbalances[to] = balances[to] + value",
+      "\t\temit Transfer(caller, to, hash(value))",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Encrypted token (ERC-8227) — FHE balances, value hashes in events"
+  },
+
+  "Vault Construct": {
+    "prefix": "vault",
+    "body": [
+      "vault ${1:VaultName} {",
+      "\tfield owner: address",
+      "\tfield balances: map<address, encrypted amount>",
+      "\t",
+      "\taction initialize(who: address) {",
+      "\t\towner = who",
+      "\t}",
+      "\t",
+      "\taction deposit(value: encrypted amount) {",
+      "\t\tbalances[caller] = balances[caller] + value",
+      "\t\t$0",
+      "\t}",
+      "\t",
+      "\taction withdraw(value: encrypted amount) {",
+      "\t\tgiven balances[caller] >= value",
+      "\t\tbalances[caller] = balances[caller] - value",
+      "\t}",
+      "}"
+    ],
+    "description": "Encrypted vault with FHE balances"
+  },
+
+  "Bridge Module": {
+    "prefix": "bridge",
+    "body": [
+      "-- Cross-chain asset escrow module (lock/unlock pattern).",
+      "module ${1:BridgeName} {",
+      "\tfield deposits: map<address, amount>",
+      "\tfield locked_total: amount",
+      "\t",
+      "\tevent Locked(who: address, value: amount)",
+      "\tevent Unlocked(who: address, value: amount)",
+      "\t",
+      "\taction lock(value: amount) {",
+      "\t\tdeposits[caller] += value",
+      "\t\tlocked_total += value",
+      "\t\temit Locked(caller, value)",
+      "\t}",
+      "\t",
+      "\taction unlock(value: amount)",
+      "\t\t\twhen deposits[caller] >= value {",
+      "\t\tdeposits[caller] -= value",
+      "\t\tlocked_total -= value",
+      "\t\temit Unlocked(caller, value)",
+      "\t\t$0",
+      "\t}",
+      "\t",
+      "\tview locked_by(who: address) returns amount {",
+      "\t\tdeposits[who]",
+      "\t}",
+      "\t",
+      "\tview total_locked returns amount {",
+      "\t\tlocked_total",
+      "\t}",
+      "}"
+    ],
+    "description": "Cross-chain asset escrow module — lock/unlock pattern (compiles with V0.9)"
+  },
+
+  "Ceremony Construct": {
+    "prefix": "ceremony",
+    "body": [
+      "-- Amnesia ceremony (Covenant construct — no assigned ERC): Shamir-based key destruction.",
+      "-- Synthesizes: setup(), submit_share(bytes32), finalize(), destroy(), phase(), is_destroyed()",
+      "ceremony ${1:CeremonyName} {",
+      "\tguardians: ${2:3}",
+      "\tthreshold: ${3:2}",
+      "\t",
+      "\ton_destroy {",
+      "\t\tdestroy(${4:0})",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Amnesia ceremony (Covenant construct) — guardians/threshold/on_destroy (compiles with V0.9)"
+  },
+
+  "Batch Up To Annotation": {
+    "prefix": "@batch",
+    "body": [
+      "@batch_up_to(${1:32})",
+      "action ${2:batch_action}(items: [${3:amount}; $1]) {",
+      "\tfor i in 0..$1 {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Batched action with @batch_up_to loop unrolling annotation"
+  },
+
+  "Precompute Annotation": {
+    "prefix": "@precompute",
+    "body": [
+      "@precompute(keccak(b\"${1:DOMAIN_SEPARATOR}\"))",
+      "field ${2:DOMAIN}: hash"
+    ],
+    "description": "Compile-time @precompute hash field"
+  },
+
+  "Non-Reentrant Action": {
+    "prefix": "@nonreentrant",
+    "body": [
+      "@non_reentrant",
+      "action ${1:action_name}(${2:args}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Action with explicit @non_reentrant guard annotation"
+  },
+
+  "Post-Quantum Signed Action": {
+    "prefix": "pqsigned",
+    "body": [
+      "action ${1:sensitive_action}(${2:args}) pq_signed(${3:admin_pq_key}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Action guarded by post-quantum signature (CRYSTALS-Dilithium)"
+  },
+
+  "Verified By Guard": {
+    "prefix": "verified",
+    "body": [
+      "action ${1:restricted_action}(${2:args}) verified_by(${3:predicate}(${4:inputs})) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Action with ZK predicate verification guard"
+  },
+
+  "VDF Locked Action": {
+    "prefix": "vdflocked",
+    "body": [
+      "action ${1:timed_action}(${2:args}) vdf_locked(${3:delay}: ${4:duration}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Action locked behind a Verifiable Delay Function (VDF)"
+  },
+
+  "Aggregate Sum View": {
+    "prefix": "sum",
+    "body": [
+      "view total_${1:value}() returns amount {",
+      "\t${2:collection}.sum",
+      "}"
+    ],
+    "description": "View function using .sum aggregate"
+  },
+
+  "Aggregate Count View": {
+    "prefix": "count",
+    "body": [
+      "view ${1:count_view}() returns u256 {",
+      "\t${2:collection}.count",
+      "}"
+    ],
+    "description": "View function using .count aggregate"
+  },
+
+  "Aggregate Argmax By Address": {
+    "prefix": "argmax",
+    "body": [
+      "view highest_${1:item}() returns address {",
+      "\t${2:collection}.argmax_by_address",
+      "}"
+    ],
+    "description": "View function using .argmax_by_address aggregate — returns address of max value holder"
+  },
+
+  "Shares Field (SSS)": {
+    "prefix": "shares",
+    "body": [
+      "field ${1:secret_shares}: shares(${2:3} of ${3:5} among ${4:guardians})"
+    ],
+    "description": "Shamir Secret Sharing typed field"
+  },
+
+  "Match Expression": {
+    "prefix": "match",
+    "body": [
+      "match ${1:value} {",
+      "\t${2:pattern_a} => ${3:result_a},",
+      "\t${4:pattern_b} => ${5:result_b},",
+      "\totherwise    => ${6:default},",
+      "}"
+    ],
+    "description": "Covenant match expression with otherwise fallback"
+  },
+
+  "Try Action": {
+    "prefix": "tryaction",
+    "body": [
+      "try_action ${1:action_call}(${2:args}) {",
+      "\t$0",
+      "} catch {",
+      "\trevert_with \"${3:error message}\"",
+      "}"
+    ],
+    "description": "try_action / catch / revert_with block"
+  },
+
+  "Event Declaration": {
+    "prefix": "event",
+    "body": [
+      "event ${1:EventName}(${2:field}: ${3:type} indexed, ${4:data}: ${5:type})"
+    ],
+    "description": "Covenant event declaration"
+  },
+
+  "Error Declaration": {
+    "prefix": "error",
+    "body": [
+      "error ${1:ErrorName} = \"${2:error message}\""
+    ],
+    "description": "Named error declaration"
+  },
+
+  "FHE Map Field": {
+    "prefix": "fhemap",
+    "body": [
+      "field ${1:balances}: map<address, encrypted ${2:amount}>"
+    ],
+    "description": "FHE-encrypted map field"
+  },
+
+  "Priority Queue Field": {
+    "prefix": "pqueue",
+    "body": [
+      "field ${1:queue}: priority_queue<${2:address}, ${3:amount}>"
+    ],
+    "description": "Priority queue field declaration"
+  },
+
+  "Ballot Construct": {
+    "prefix": "ballot",
+    "body": [
+      "ballot ${1:BallotName} {",
+      "\tfield votes: map<address, encrypted choice>",
+      "\tfield deadline: time",
+      "\tfield finalized: bool = false",
+      "\t",
+      "\tevent VoteCast(voter: address indexed, encrypted_choice: hash)",
+      "\tevent BallotFinalized(winner: hash)",
+      "\t",
+      "\taction vote(choice: encrypted choice) when block.timestamp < deadline {",
+      "\t\tvotes[caller] = choice",
+      "\t\temit VoteCast(caller, hash(choice))",
+      "\t}",
+      "\t",
+      "\taction finalize() when block.timestamp >= deadline, only deployer {",
+      "\t\tfinalized = true",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Encrypted ballot with FHE voting"
+  }
+}

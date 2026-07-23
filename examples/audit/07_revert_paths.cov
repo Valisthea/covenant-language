@@ -1,0 +1,46 @@
+-- 07_revert_paths.cov
+--
+-- AUDIT FIXTURE — Custom error revert paths.
+--
+-- Purpose : exercise the typed-error revert path. Covenant compiles
+-- `revert_with ErrorName(args)` to `REVERT` with the 4-byte error
+-- selector + ABI-encoded args, matching Solidity's custom error
+-- semantics.
+--
+-- Auditor checklist :
+--   - `revert_with InsufficientBalance(have, want)` emits revert data
+--     beginning with selector `keccak256("InsufficientBalance(uint256,uint256)")[..4]`.
+--   - The args ABI-encode AFTER the selector, exactly like Solidity.
+--   - No state changes persist after a revert (atomicity).
+--   - Multiple revert paths in one action all yield correct selectors.
+--   - `Unauthorized(caller)` includes the address arg → ABI-encoded
+--     as 32-byte left-padded address.
+
+record RevertDemo {
+    balance: amount = 100
+
+    action withdraw(amount: amount) only caller {
+        if amount > balance {
+            revert_with InsufficientBalance(balance, amount)
+        }
+        if amount == 0 {
+            revert_with ZeroAmount()
+        }
+        balance -= amount
+        emit Withdrew(caller, amount)
+    }
+
+    action restricted_action() {
+        if caller != deployer {
+            revert_with Unauthorized(caller)
+        }
+        emit RestrictedActionRan()
+    }
+
+    error InsufficientBalance(have: amount, want: amount)
+    error ZeroAmount()
+    error Unauthorized(who: address)
+
+    event Withdrew(who: address, amount: amount)
+    event RestrictedActionRan()
+}

@@ -1,0 +1,31 @@
+-- example_13_nft_minimal.cov
+--
+-- V0.9 Sprint 35.b: the `nft` keyword is now fully wired with ERC-721
+-- auto-synthesis. The 4 lines below produce a deployable NFT contract
+-- with the full ERC-721 surface — same metadata-only declaration model
+-- as `token` (ERC-20) and `confidential token` (ERC-8227).
+--
+-- Auto-synthesized:
+--   Fields:    owners, balances, token_approvals, operator_approvals
+--   Views:     name, symbol, tokenURI, balanceOf, ownerOf, getApproved,
+--              isApprovedForAll
+--   Actions:   approve, setApprovalForAll, transferFrom, mint
+--   Events:    Transfer (indexed from, to, token_id),
+--              Approval (indexed owner, approved, token_id),
+--              ApprovalForAll (indexed owner, operator, approved bool)
+--   Errors:    NotTokenOwner, TokenAlreadyMinted, TokenDoesNotExist,
+--              NotApprovedOrOwner
+--
+-- V0.9.0 limitations:
+--   - `mint` is open-access. Add `only deployer` (or other guard) in
+--     source if you need access control.
+--   - `tokenURI(id)` returns `base_uri` verbatim — id concatenation
+--     lands in V1.0 alongside text-interpolation primitives.
+--   - `safeTransferFrom` (with receiver-hook callback) is V0.9.x +
+--     deferred to keep the V0.9.0 audit surface minimal.
+
+nft TestNFT {
+    name: "Test NFT"
+    symbol: "TST"
+    base_uri: "https://example.com/api/"
+}

@@ -1,0 +1,20 @@
+[package]
+description = "Type checker for the Covenant smart contract language"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "typechecker", "smart-contracts", "covenant"]
+categories = ["development-tools"]
+name = "covenant-types"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+covenant-resolver = { path = "../covenant-resolver", version = "0.9.2" }
+covenant-parser = { path = "../covenant-parser", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }

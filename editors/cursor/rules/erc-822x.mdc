@@ -1,0 +1,132 @@
+---
+description: >-
+  When generating Covenant code that uses FHE, cryptographic amnesia, ZK proof
+  verification, or post-quantum signature guards, conform to the applicable Styx
+  Protocol ERC draft and cite the ERC number in a -- comment near the construct.
+  Covers ERC-8227 (confidential token), ERC-8229 (verified_by), ERC-8231
+  (pq_signed), plus the amnesia ceremony — which has no assigned ERC (ERC-8228
+  is the separate Styx Encrypted Token Standard).
+globs:
+  - "**/*.cov"
+alwaysApply: false
+---
+
+# ERC-822x Conformance Rules (Styx Protocol)
+
+When generating or reviewing Covenant code that uses any of the following
+primitives, verify ERC conformance and cite the ERC number in a `--` comment
+adjacent to the construct.
+
+---
+
+## ERC-8227 — Confidential Token Interface
+
+**Trigger:** `confidential token` construct.
+
+The `confidential token` keyword auto-synthesizes the full ERC-8227 surface:
+
+- `transferEncrypted(to: address, amount: encrypted amount)`
+- `balanceOfEncrypted(who: address) returns encrypted amount`
+- `approveEncrypted(spender: address, amount: encrypted amount)`
+
+**Required citation comment:**
+
+```covenant
+-- ERC-8227: Confidential Token Interface (Styx Protocol)
+confidential token PrivateCoin {
+    symbol:   "PRIV"
+    name:     "Private Coin"
+    decimals: 18
+    supply:   1_000_000 to deployer
+}
+```
+
+**Check:** If `confidential token` is present without the ERC-8227 citation
+comment, flag it as an `erc-822x` rule violation.
+
+---
+
+## Amnesia Ceremony — Covenant construct (no assigned ERC)
+
+**Trigger:** `ceremony` construct, or any use of `destroy()` / `on_destroy { }`.
+
+> **Numbering note:** the amnesia ceremony has no assigned ERC. ERC-8228 was
+> officially assigned to the **Styx Encrypted Token Standard**
+> (`Valisthea/styx-erc-encrypted-token`) — a different spec. Do not emit an
+> `-- ERC-8228` comment for a `ceremony`.
+
+The `ceremony` keyword auto-synthesizes the full amnesia lifecycle:
+
+- Phases: `Setup(0)` → `Active(1)` → `Finalized(2)` → `Destroyed(3)`
+- `setup() → uint256` (returns `session_id`)
+- `submit_share(bytes32) → bool`
+- `finalize() → bool`
+- `destroy() → bool`
+- `phase() → uint256`
+- `is_destroyed() → bool`
+- `session_id() → uint256`
+- `owner() → address`
+
+The `on_destroy` block runs on the `Destroyed` phase transition.
+`destroy(0)` triggers the Wesolowski VDF proof + Shamir reconstruction emission.
+
+**Recommended construct comment:**
+
+```covenant
+-- Amnesia Ceremony — Covenant construct (no assigned ERC)
+ceremony AuditTrail {
+    guardians: 3
+    threshold: 2
+
+    on_destroy {
+        destroy(0)
+    }
+}
+```
+
+**Check:** Do not require an ERC citation for `ceremony`. If a `ceremony` cites
+`ERC-8228`, flag that as incorrect (8228 is the Styx Encrypted Token Standard).
+
+---
+
+## ERC-8229 — FHE Computation Verification
+
+**Trigger:** `verified_by(zk_proof)` guard qualifier on an action.
+
+The `verified_by` guard invokes the Prism layer (Halo2 SNARK + Nova IVC folding)
+to verify a recursive proof before the action body executes.
+
+**Required citation comment:**
+
+```covenant
+-- ERC-8229: FHE Computation Verification (Styx Protocol)
+action settle(proof: proof_payload, result: encrypted amount)
+        verified_by(proof) {
+    treasury += result
+}
+```
+
+**Check:** If `verified_by` is present without the ERC-8229 citation comment,
+flag it as an `erc-822x` rule violation.
+
+---
+
+## ERC-8231 — Post-Quantum Signature Verification
+
+**Trigger:** `pq_signed(content, sig, key)` guard qualifier on an action.
+
+The `pq_signed` guard invokes the Fortress layer (Dilithium-5) to verify a
+post-quantum signature before the action body executes.
+
+**Required citation comment:**
+
+```covenant
+-- ERC-8231: Post-Quantum Signature Verification (Styx Protocol)
+action post_signed(content: hash, sig: bytes)
+        pq_signed(content, sig, keys[caller]) {
+    messages[caller] = content
+}
+```
+
+**Check:** If `pq_signed` is present without the ERC-8231 citation comment,
+flag it as an `erc-822x` rule violation.

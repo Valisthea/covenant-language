@@ -1,0 +1,42 @@
+[package]
+description = "CLI compiler for Covenant, a post-quantum smart contract language with native FHE, ZK, and cryptographic amnesia"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["smart-contracts", "compiler", "post-quantum", "fhe", "zk"]
+categories = ["command-line-utilities", "development-tools", "cryptography"]
+name = "covenant-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "covenant"
+path = "src/main.rs"
+
+[dependencies]
+covenant-driver = { path = "../covenant-driver", version = "0.9.2" }
+covenant-aster-backend = { path = "../covenant-aster-backend", version = "0.9.2" }
+covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }
+covenant-parser = { path = "../covenant-parser", version = "0.9.2" }
+covenant-manifest = { path = "../covenant-manifest", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+covenant-evm-backend = { path = "../covenant-evm-backend", version = "0.9.2" }
+covenant-stdlib = { path = "../covenant-stdlib", version = "0.9.2" }
+covenant-opt = { path = "../covenant-opt", version = "0.9.2" }
+covenant-lint = { path = "../covenant-lint", version = "0.9.2" }
+covenant-testing = { path = "../covenant-testing", version = "0.9.2" }
+covenant-ir = { path = "../covenant-ir", version = "0.9.2" }
+clap = { version = "=4.4", features = ["derive"] }
+clap_complete = "=4.4"
+serde = { workspace = true }
+serde_json = { workspace = true }
+hex = "0.4"
+thiserror = { workspace = true }
+# Pin to versions compatible with Rust 1.81 (avoid edition2024 in transitive deps).
+ariadne = "=0.4.0"
+semver = "1.0"
+
+[dev-dependencies]
+tempfile = "=3.10.1"
+serde_json = { workspace = true }

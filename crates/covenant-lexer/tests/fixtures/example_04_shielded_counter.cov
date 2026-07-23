@@ -1,0 +1,15 @@
+-- ShieldedCounter.cov · an FHE counter.
+-- The `encrypted` qualifier means the `total` field is stored on-chain
+-- as a TFHE ciphertext (ERC-8227). Every observer sees ciphertext bytes;
+-- no one except the owner can see the value. `bump` adds homomorphically
+-- without decryption.
+
+encrypted counter ShieldedCounter {
+    total: amount
+
+    action bump(by: amount) {
+        total += by
+    }
+
+    reveal total to owner
+}

@@ -1,0 +1,63 @@
+-- 09_synthesis_conflict_negative.cov
+--
+-- AUDIT FIXTURE — DOCUMENTATION-ONLY (not buildable via surface syntax).
+--
+-- Purpose : explain why the E601 detector exists and how it is exercised.
+--
+-- The Sprint 27 / PRELIM-005 audit finding (KSR-CVN-PRELIM-005) noted
+-- that a user could shadow auto-synthesized ERC-20 functions (e.g.
+-- `transfer`) with custom logic that violates the standard. The fix
+-- was to add `strict_conflict_detection: true` (default in `StdlibConfig`)
+-- so that the synthesizer aborts with E601 on conflict.
+--
+-- HOWEVER, in V0.9.0 surface syntax, `token` / `nft` / `registry` blocks
+-- are metadata-only — they do NOT allow inline action / event / error
+-- declarations. So the conflict path CANNOT be triggered from a .cov
+-- source file alone in V0.9.0.
+--
+-- The E601 detector IS exercised via :
+--   1. The build API (used by the playground), where pre-lowered IR
+--      can include user-declared functions of the conflicting name.
+--   2. The unit test :
+--      `crates/covenant-stdlib/tests/unit.rs::user_transfer_strict_mode_emits_diag`
+--   3. V0.9.x : when surface syntax extends token/nft/registry blocks
+--      to allow custom actions, this fixture will become buildable
+--      (and the conflict will fire at compile time).
+--
+-- Auditor checklist :
+--   - The E601 long-form explanation MUST exist :
+--       cargo run -- explain E601
+--     Expected : "user-declared function conflicts with auto-synthesized
+--     one ... strict mode catches the case where you accidentally
+--     shadow the standard."
+--   - The unit test MUST pass :
+--       cargo test -p covenant-stdlib user_transfer_strict_mode
+--   - Permissive mode MUST opt-in (StrictConflictDetection: false) :
+--       cargo test -p covenant-stdlib user_transfer_permissive_mode
+--
+-- Documenting this surface-syntax gap explicitly so auditors don't
+-- waste cycles trying to write a `.cov` file that triggers E601 from
+-- source. The honest answer is : "you can't, in V0.9.0".
+
+-- The pseudo-source below would produce E601 if surface syntax
+-- supported it. PRESERVED AS DOCUMENTATION, NOT FOR COMPILATION.
+--
+-- token ConflictingCoin {
+--     symbol: "CONFL"
+--     name: "Conflicting Coin"
+--     decimals: 18
+--     supply: 1_000_000 to deployer
+--     -- Hypothetical V0.9.x surface : custom action inside token block.
+--     action transfer(to: address, value: amount) {
+--         emit BadTransfer(caller, to, value)
+--     }
+--     event BadTransfer(from: address, to: address, value: amount)
+-- }
+--
+-- Until V0.9.x extends the surface, this file is just a placeholder
+-- record : it parses, emits a near-empty contract, and serves as the
+-- carrier for the audit notes above.
+
+record E601Placeholder {
+    note: text = "see comments above"
+}

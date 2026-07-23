@@ -1,0 +1,19 @@
+[package]
+description = "Project manifest handling for Covenant CLI"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "manifest", "smart-contracts", "covenant"]
+categories = ["development-tools"]
+name = "covenant-manifest"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+# Use serde_json for inline manifest generation (no additional deps needed).
+# toml parsing uses a hand-written approach to avoid indexmap 2.14 via toml_edit.
+toml = "=0.5.11"
+semver = "1.0"

@@ -1,0 +1,49 @@
+-- 02_ceremony_lifecycle.cov
+--
+-- AUDIT FIXTURE — Amnesia ceremony lifecycle.
+--
+-- Purpose : end-to-end exercise of the CeremonyHelper bridge.
+--   This is the SAME contract pattern that produced the M1 milestone
+--   on Sepolia (first end-to-end Covenant ceremony, 2026-04-26 ;
+--   see MILESTONES.md). It is the highest-value audit fixture.
+--
+-- Lifecycle stages :
+--   1. Setup (constructor) — emits SetupComplete(session_id)
+--   2. Active — guardians submit shares ; phase() returns 1
+--   3. Finalized — organizer calls finalize() ; phase() returns 2
+--   4. Destroyed — destroy() emits irrevocable destruction proof ;
+--                  storage of shares wiped ; phase() returns 3
+--
+-- Helper-contract call chain :
+--   setup()          → CeremonyHelper.amnesiaSetup(seed)
+--   submit_share(s)  → CeremonyHelper.amnesiaSubmitShare(session, share)
+--   finalize()       → CeremonyHelper.amnesiaFinalize(session)
+--   destroy()        → CeremonyHelper.amnesiaDestroy(session)
+--
+-- Auditor checklist :
+--   - Phase transitions monotonic (0→1→2→3, never backwards).
+--   - msg.sender check : only deployer (organizer) can finalize/destroy.
+--   - Each DISTINCT CALLER can only submit ONE share per session (fixed
+--     OMEGA V6, 2026-07-05, CRT-005 -- previously unenforced anywhere).
+--     NOTE: this is a distinct-address count, not a pre-registered
+--     guardian-identity allowlist -- Covenant's `ceremony` construct has
+--     no language-level way to declare a specific set of guardian
+--     addresses today (only a guardian COUNT via `guardians: N`), so an
+--     attacker with `threshold` distinct addresses can still satisfy this
+--     check. See amnesia_ceremony.rs and DEBT.md.
+--   - Finalize requires threshold-many DISTINCT SUBMITTERS on-chain before
+--     it will even ask the (mocked) precompile (fixed OMEGA V6 CRT-005 --
+--     previously finalize trusted the precompile's boolean with zero
+--     on-chain corroboration, so zero shares submitted could finalize).
+--   - Destroy wipes share storage (verify with on-chain `cast storage`
+--     post-destroy).
+--   - All transitions emit typed events for off-chain provability.
+
+ceremony AuditCeremony {
+    guardians: 3
+    threshold: 2
+
+    on_destroy {
+        destroy(0)
+    }
+}

@@ -1,0 +1,26 @@
+[package]
+description = "Standard library lowering for the Covenant compiler"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "stdlib", "smart-contracts", "erc20"]
+categories = ["development-tools"]
+name = "covenant-stdlib"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+covenant-ir = { path = "../covenant-ir", version = "0.9.2" }
+covenant-privacy = { path = "../covenant-privacy", version = "0.9.2" }
+covenant-types = { path = "../covenant-types", version = "0.9.2" }
+covenant-parser = { path = "../covenant-parser", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+sha3 = "0.10"
+thiserror = { workspace = true }
+
+[dev-dependencies]
+covenant-resolver = { path = "../covenant-resolver", version = "0.9.2" }
+covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }
+covenant-opt = { path = "../covenant-opt", version = "0.9.2" }
+covenant-evm-backend = { path = "../covenant-evm-backend", version = "0.9.2" }

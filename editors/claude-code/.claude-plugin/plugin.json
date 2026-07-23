@@ -1,0 +1,33 @@
+{
+  "name": "covenant",
+  "version": "0.2.0",
+  "description": "Agent-side expertise for Covenant V0.9 — FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, and defensive code review.",
+  "author": {
+    "name": "Valisthea",
+    "url": "https://github.com/Valisthea/covenant-language"
+  },
+  "license": "Apache-2.0",
+  "homepage": "https://covenant-lang.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Valisthea/covenant-language",
+    "directory": "editors/claude-code"
+  },
+  "keywords": [
+    "covenant",
+    "smart-contract",
+    "solidity",
+    "evm",
+    "fhe",
+    "zk",
+    "post-quantum",
+    "privacy",
+    "audit",
+    "kairos",
+    "claude-code",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "agents": "./agents/"
+}

@@ -1,0 +1,107 @@
+name: cargo-fuzz
+
+# Sprint 26 audit Phase 3 — operator delivers fuzz coverage via CI
+# rather than local Windows machine (cargo-fuzz on MSVC is officially
+# fragile per the libfuzzer-sys docs). Linux is the supported platform;
+# GitHub Actions ubuntu-latest runs it cleanly.
+
+on:
+  # Every PR that touches the compiler surface — keeps fixes from
+  # introducing regressions silently.
+  pull_request:
+    paths:
+      - 'crates/covenant-wasm-bindings/**'
+      - 'crates/covenant-driver/**'
+      - 'crates/covenant-evm-backend/**'
+      - 'crates/covenant-evm-runtime/**'
+      - 'crates/covenant-ir/**'
+      - 'crates/covenant-opt/**'
+      - 'crates/covenant-stdlib/**'
+      - 'crates/covenant-lexer/**'
+      - 'crates/covenant-parser/**'
+      - 'crates/covenant-resolver/**'
+      - 'crates/covenant-types/**'
+      - 'crates/covenant-privacy/**'
+      - 'crates/covenant-diag/**'
+      - '.github/workflows/fuzz.yml'
+
+  # Weekly deep run — 4 hours per target on Sunday night UTC.
+  schedule:
+    - cron: '0 23 * * 0'
+
+  # Manual trigger from the Actions tab — useful for ad-hoc audit runs.
+  workflow_dispatch:
+    inputs:
+      duration_seconds:
+        description: 'Fuzz duration per target (seconds)'
+        required: false
+        default: '3600'
+
+jobs:
+  fuzz:
+    name: ${{ matrix.target }} (${{ matrix.duration }}s)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: compile_pipeline
+            duration: ${{ github.event_name == 'schedule' && '14400' || (github.event.inputs.duration_seconds || '3600') }}
+          - target: check_only
+            duration: ${{ github.event_name == 'schedule' && '7200' || (github.event.inputs.duration_seconds || '1800') }}
+
+    timeout-minutes: 280  # > 4h + setup overhead
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo registry + index
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-fuzz-
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Seed corpus from fixtures (compile_pipeline only)
+        if: matrix.target == 'compile_pipeline'
+        run: |
+          mkdir -p crates/covenant-wasm-bindings/fuzz/corpus/${{ matrix.target }}
+          # Fuzzer mutates from a seed corpus much faster than from
+          # random bytes. Use the 15 example .cov fixtures.
+          cp crates/covenant-lexer/tests/fixtures/example_*.cov \
+             crates/covenant-wasm-bindings/fuzz/corpus/${{ matrix.target }}/ \
+             2>/dev/null || true
+
+      - name: Run fuzzer
+        working-directory: crates/covenant-wasm-bindings
+        run: |
+          cargo +nightly fuzz run ${{ matrix.target }} \
+            -- -max_total_time=${{ matrix.duration }} -print_final_stats=1
+
+      - name: Upload crashes if any
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes-${{ matrix.target }}-${{ github.run_id }}
+          path: |
+            crates/covenant-wasm-bindings/fuzz/artifacts/${{ matrix.target }}/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "=== Fuzz session summary ==="
+          echo "Target:   ${{ matrix.target }}"
+          echo "Duration: ${{ matrix.duration }}s"
+          echo "Outcome:  ${{ job.status }}"
+          ls -la crates/covenant-wasm-bindings/fuzz/artifacts/${{ matrix.target }}/ 2>/dev/null \
+            || echo "(no artifacts dir — clean run)"

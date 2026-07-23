@@ -1,0 +1,65 @@
+-- SafeTransfer.cov · typed errors and safe withdrawal pattern.
+--
+-- Demonstrates:
+--   - `error TypeName(field: type, ...)` declarations with fields
+--   - `revert_with ErrorName(args)` for ABI-encoded typed reverts
+--   - `when` guards as an alternative to explicit revert_with
+--
+-- Error ABI encoding: selector = keccak256(sig)[0..4], args ABI-encoded.
+
+module SafeTransfer {
+    error InsufficientBalance(required: amount, actual: amount)
+    error Unauthorized(caller: address)
+    error ZeroAmount()
+
+    field balances: map<address, amount>
+    field owner: address
+    field total_deposits: amount
+
+    event Deposited(who: address, value: amount)
+    event Withdrawn(who: address, value: amount)
+
+    action initialize(who: address) {
+        owner = who
+    }
+
+    action deposit(value: amount) {
+        balances[caller] += value
+        total_deposits += value
+        emit Deposited(caller, value)
+    }
+
+    action safe_withdraw(value: amount)
+            when balances[caller] >= value {
+        balances[caller] -= value
+        total_deposits -= value
+        emit Withdrawn(caller, value)
+    }
+
+    -- Always reverts with InsufficientBalance — used to test error encoding.
+    action force_insufficient(required: amount, actual: amount) {
+        revert_with InsufficientBalance(required, actual)
+    }
+
+    -- Always reverts with Unauthorized(caller) — tests address-typed error arg.
+    action force_unauthorized() {
+        revert_with Unauthorized(caller)
+    }
+
+    -- Always reverts with ZeroAmount() — zero-argument error.
+    action force_zero_amount() {
+        revert_with ZeroAmount()
+    }
+
+    view balance_of(who: address) returns amount {
+        balances[who]
+    }
+
+    view get_owner() returns address {
+        owner
+    }
+
+    view get_total() returns amount {
+        total_deposits
+    }
+}

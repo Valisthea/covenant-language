@@ -1,0 +1,278 @@
+//! EVM backend diagnostic codes (E501–E520, W501–W510).
+#![allow(dead_code)]
+
+use covenant_diag::{DiagCode, Diagnostic, DiagnosticLevel, Span};
+
+pub const E501_STACK_DEPTH: DiagCode = DiagCode(501);
+pub const E502_UNKNOWN_OPCODE: DiagCode = DiagCode(502);
+pub const E503_PRECOMPILE_UNSET: DiagCode = DiagCode(503);
+pub const E504_STORAGE_OVERFLOW: DiagCode = DiagCode(504);
+pub const E505_ABI_TYPE: DiagCode = DiagCode(505);
+pub const E506_SELECTOR_COLLISION: DiagCode = DiagCode(506);
+pub const E507_RUNTIME_TOO_LARGE: DiagCode = DiagCode(507);
+pub const E508_DEPLOY_TOO_LARGE: DiagCode = DiagCode(508);
+pub const E509_STRUCT_LAYOUT: DiagCode = DiagCode(509);
+pub const E510_FHE_BRANCH_SIDE_EFFECTS: DiagCode = DiagCode(510);
+pub const E511_ASSERT_ENCRYPTED: DiagCode = DiagCode(511);
+pub const E512_LOG_TOO_MANY_TOPICS: DiagCode = DiagCode(512);
+pub const E513_DYNAMIC_RETURN: DiagCode = DiagCode(513);
+pub const E514_CIPHERTEXT_HANDLE: DiagCode = DiagCode(514);
+pub const E515_UNRESOLVED_LABEL: DiagCode = DiagCode(515);
+pub const E516_UNLOWERED_AMNESIA_OPCODE: DiagCode = DiagCode(516);
+pub const E517_UNLOWERED_VDF_QUALIFIER: DiagCode = DiagCode(517);
+pub const E518_UNLOWERED_BUILTIN_PREDICATE: DiagCode = DiagCode(518);
+/// A division or remainder whose divisor is the literal `0`. The EVM's
+/// `DIV`/`MOD` are total (`x / 0 == 0`), so this used to compile to bytecode
+/// that silently produced 0. A statically-known zero divisor can never be
+/// correct, so it is rejected at compile time rather than deferred to a
+/// runtime revert.
+pub const E519_DIV_BY_ZERO_LITERAL: DiagCode = DiagCode(519);
+/// An opcode routed to a helper contract that has no method for it. The
+/// selector table in `target.rs` covers 17 of the 31 opcodes reaching
+/// `emit_precompile_call`; the rest used to fall back to the V0.8 namespaced
+/// selector, which matches no function on the deployed helper. The helpers
+/// have no fallback function, so the CALL always reverts: the contract
+/// compiles clean, deploys clean, and bricks on first use.
+pub const E520_HELPER_METHOD_MISSING: DiagCode = DiagCode(520);
+/// A compile-time text constant longer than the 32 bytes the V0 return
+/// encoder can emit. This used to be a bare `assert!`, so an ordinary
+/// `name: "<33+ chars>"` aborted the whole compiler with an ICE instead of
+/// pointing at the offending string. Found by the cargo-fuzz
+/// `compile_pipeline` target.
+pub const E521_TEXT_CONSTANT_TOO_LONG: DiagCode = DiagCode(521);
+
+pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
+pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
+pub const W503_SELECTOR_NEAR_COLLISION: DiagCode = DiagCode(503);
+pub const W504_LARGE_RUNTIME: DiagCode = DiagCode(504);
+pub const W505_EVENT_NO_INDEX: DiagCode = DiagCode(505);
+pub const W506_MANY_PARAMS: DiagCode = DiagCode(506);
+pub const W507_DYNAMIC_RETURN_NOT_ENCODED: DiagCode = DiagCode(507);
+
+fn warn(code: DiagCode, msg: impl Into<String>, span: Span) -> Diagnostic {
+    Diagnostic {
+        level: DiagnosticLevel::Warning,
+        code,
+        message: msg.into(),
+        span,
+        help: None,
+    }
+}
+
+pub fn unknown_opcode(span: Span, name: &str) -> Diagnostic {
+    Diagnostic::error(
+        E502_UNKNOWN_OPCODE,
+        format!("IR opcode `{name}` is not lowerable in the V0 EVM backend"),
+        span,
+    )
+}
+
+pub fn selector_collision(span: Span, a: &str, b: &str) -> Diagnostic {
+    Diagnostic::error(
+        E506_SELECTOR_COLLISION,
+        format!("function selector collision between `{a}` and `{b}`"),
+        span,
+    )
+}
+
+pub fn runtime_too_large(span: Span, size: usize, max: usize) -> Diagnostic {
+    Diagnostic::error(
+        E507_RUNTIME_TOO_LARGE,
+        format!("runtime bytecode size {size} exceeds limit {max}"),
+        span,
+    )
+}
+
+pub fn fhe_branch_side_effects(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E510_FHE_BRANCH_SIDE_EFFECTS,
+        "FheBranch with observable side effects is not supported in V0 backend",
+        span,
+    )
+}
+
+pub fn assert_encrypted_not_lowerable(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E511_ASSERT_ENCRYPTED,
+        "`AssertEncrypted` cannot be lowered in V0 (requires threshold-decrypt-then-revert)",
+        span,
+    )
+}
+
+pub fn dynamic_return_not_encoded(span: Span, ty_name: &str) -> Diagnostic {
+    // OMEGA V6 (MED-003 fix): a `view`/`reveal` returning a genuinely
+    // dynamic ABI type (`text`/`bytes`/a list) only has a real encoder for
+    // a COMPILE-TIME-CONSTANT text literal (`emit_text_return`, used by
+    // stdlib-synthesized `name()`/`symbol()`). Any other dynamic-typed
+    // return value -- a runtime-read field, a computed value, `bytes`, or
+    // a list -- falls through to the scalar path ("place value at memory
+    // 0x00, return 32 bytes"), which returns just the raw handle/pointer
+    // word instead of the offset+length+data a spec-compliant ABI decoder
+    // (ethers.js, viem, a wallet) expects for that declared return type.
+    //
+    // This is deliberately a WARNING, not a hard error like the narrower
+    // CRT-007/pq_key case: unlike that ERC-8231-specific construct, a plain
+    // `view ... returns text { some_field }` is the single most common
+    // pattern in the language (it's literally the "Hello World" example),
+    // so hard-failing it would make routine, widely-relied-upon code
+    // uncompilable rather than fixing an edge case. The audit's own
+    // severity call was Medium specifically because of this — the fix for
+    // "silently wrong with zero diagnostics" is "stop being silent," not
+    // "block compilation" before dynamic-bytes/text/list ABI support
+    // (tracked in DEBT.md) actually lands.
+    warn(
+        W507_DYNAMIC_RETURN_NOT_ENCODED,
+        format!(
+            "returning a non-constant `{ty_name}` value is ABI-encoded as a single raw word by \
+             this release, not the offset+length+data a spec-compliant caller expects for a \
+             dynamic type -- a caller decoding this per the published ABI will misread the \
+             value. Real dynamic-`bytes`/`text`/list return encoding is tracked in DEBT.md."
+        ),
+        span,
+    )
+}
+
+pub fn pq_key_abi_static_dynamic_mismatch(span: Span, fn_name: &str) -> Diagnostic {
+    // OMEGA V6 (CRT-007 fix): `pq_key` (used by the ERC-8231 registry's
+    // `register`/`key_of`) declares ABI type `bytes` (dynamic -- offset +
+    // length + data) but `is_static_abi_ty` treats it as a plain 32-byte
+    // word, so the parameter-read/return-encode paths do a raw
+    // CALLDATALOAD/MSTORE of ONE word. Any spec-compliant caller
+    // ABI-encoding a `bytes` argument places the dynamic-data OFFSET at
+    // that word, not the key bytes -- so the contract silently registers
+    // the constant 32 as the caller's "key", with no revert, no error.
+    // Real dynamic-bytes ABI encoding is a larger, already-tracked item
+    // (DEBT.md "dynamic bytes/string/T[] storage + ABI"); until that
+    // lands, this raises E505 (which DEBT.md already names as the
+    // intended interim signal: "raise E513_DYNAMIC_RETURN / E505_ABI_TYPE
+    // ... so misuse fails loudly instead of mis-compiling") rather than
+    // silently emitting bytecode that corrupts caller-supplied data.
+    Diagnostic::error(
+        E505_ABI_TYPE,
+        format!(
+            "`{fn_name}` uses `pq_key` (ABI type `bytes`, dynamic) in a position that this \
+             release's codegen can only read/return as a single 32-byte word -- a \
+             spec-compliant caller's ABI encoding would silently corrupt the value with no \
+             error. Refusing to compile rather than shipping a compiler-caused key-corruption \
+             bug. Real dynamic-`bytes` ABI support is tracked in DEBT.md."
+        ),
+        span,
+    )
+}
+
+pub fn unlowered_builtin_predicate(span: Span, name: &str) -> Diagnostic {
+    // OMEGA V6 (CRT-004 fix): `only <builtin_predicate>` guards for every
+    // BuiltinPredicate variant beyond owner/admin/deployer/address used to
+    // compile to an unconditional `push 1` ("Placeholder: return true.
+    // Authorization semantics implemented later.") -- a complete,
+    // undiagnosed authorization bypass for a first-class language guard
+    // primitive. Refusing to compile (matching the existing
+    // `unlowered_amnesia_opcode`/`unlowered_vdf_qualifier` pattern for
+    // not-yet-implemented primitives) is strictly safer than shipping a
+    // guard that silently passes for every caller.
+    Diagnostic::error(
+        E518_UNLOWERED_BUILTIN_PREDICATE,
+        format!(
+            "`only {name}` has no real EVM authorization check in this release -- the guard \
+             would silently pass for every caller. Refusing to compile rather than shipping a \
+             defeated access-control guard. Use `only owner`/`only admin`/`only deployer`/an \
+             explicit `only <address>`, which ARE enforced, until a release implements this \
+             predicate for real."
+        ),
+        span,
+    )
+}
+
+pub fn unlowered_amnesia_opcode(span: Span, name: &str) -> Diagnostic {
+    Diagnostic::error(
+        E516_UNLOWERED_AMNESIA_OPCODE,
+        format!(
+            "IR opcode `{name}` has no EVM lowering in this release; emitting a REVERT stub. \
+             Remove the primitive or wait for a release that lowers it (KSR-CVN-022)."
+        ),
+        span,
+    )
+}
+
+pub fn unlowered_vdf_qualifier(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E517_UNLOWERED_VDF_QUALIFIER,
+        "`@vdf_locked(delay)` has no EVM lowering in this release; \
+         refusing to compile a time-locked action that would be instant at runtime (KSR-CVN-023)",
+        span,
+    )
+}
+
+pub fn unresolved_label(span: Span, name: &str) -> Diagnostic {
+    Diagnostic::error(
+        E515_UNRESOLVED_LABEL,
+        format!("unresolved label `{name}` in final assembly"),
+        span,
+    )
+}
+
+/// A statically-known zero divisor. `DIV`/`MOD` on the EVM return 0 rather
+/// than trapping, so this would otherwise compile to bytecode that silently
+/// evaluates to 0 — never what the author meant.
+pub fn div_by_zero_literal(span: Span, op: &str) -> Diagnostic {
+    Diagnostic::error(
+        E519_DIV_BY_ZERO_LITERAL,
+        format!(
+            "`{op}` by a literal zero. The EVM returns 0 instead of trapping, so this \
+             would silently evaluate to 0 rather than fail — rejected at compile time."
+        ),
+        span,
+    )
+}
+
+/// An opcode with no method on the target's helper contract. Emitting the
+/// V0.8 namespaced selector here produced a CALL that cannot dispatch — the
+/// primitive is then neither real NOR mocked, and the action reverts on
+/// chain. Refuse to compile: "deploy no code" beats "deploy broken code",
+/// the same doctrine as E516/E517/E518.
+pub fn helper_method_missing(span: Span, opcode: &str, target: &str) -> Diagnostic {
+    Diagnostic::error(
+        E520_HELPER_METHOD_MISSING,
+        format!(
+            "`{opcode}` has no method on the V0.9 helper contract for target `{target}`. \
+             Emitting a call anyway would carry a selector that matches no function on \
+             that contract, so the primitive would be neither real nor mocked and the \
+             action would revert on first use. Build for `mockchain`, whose native \
+             runtime implements this opcode, or wait for a helper release that adds the \
+             method."
+        ),
+        span,
+    )
+}
+
+/// A text constant too long for the V0 single-word return encoder. Reported
+/// instead of panicking: a 33-byte token name is ordinary user input, not a
+/// compiler invariant violation.
+pub fn text_constant_too_long(span: Span, len: usize) -> Diagnostic {
+    Diagnostic::error(
+        E521_TEXT_CONSTANT_TOO_LONG,
+        format!(
+            "text constant is {len} bytes; the V0 return encoder emits at most 32. \
+             Shorten the string, or return it from a field the caller reads \
+             separately. (Multi-word string returns need head/tail ABI encoding, \
+             which V0 does not implement.)"
+        ),
+        span,
+    )
+}
+
+pub fn warn_near_collision(span: Span, a: &str, b: &str) -> Diagnostic {
+    warn(
+        W503_SELECTOR_NEAR_COLLISION,
+        format!("selectors of `{a}` and `{b}` differ by only one byte — near-collision"),
+        span,
+    )
+}
+
+pub fn warn_large_runtime(span: Span, size: usize) -> Diagnostic {
+    warn(
+        W504_LARGE_RUNTIME,
+        format!("runtime bytecode size {size} exceeds 20 KB — approaching EIP-170 limit"),
+        span,
+    )
+}

@@ -1,0 +1,32 @@
+[package]
+description = "Test harness for Covenant smart contracts"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["testing", "smart-contracts", "evm", "covenant"]
+categories = ["development-tools"]
+name = "covenant-testing"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+# Sprint 23: the runtime (interpreter + ABI + U256 + Address +
+# precompile mocks) was extracted into its own crate so the WASM
+# bundle in covenant-wasm-bindings can pull it in without dragging
+# the harness's dev-flavoured ergonomics. covenant-testing keeps the
+# `harness` module here and re-exports the runtime modules so the
+# 13 integration test files in tests/ keep compiling unchanged.
+covenant-evm-runtime = { path = "../covenant-evm-runtime", version = "0.9.2" }
+covenant-driver = { path = "../covenant-driver", version = "0.9.2" }
+covenant-evm-backend = { path = "../covenant-evm-backend", version = "0.9.2" }
+covenant-stdlib = { path = "../covenant-stdlib", version = "0.9.2" }
+covenant-opt = { path = "../covenant-opt", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+sha3 = "0.10"
+hex = "0.4"
+thiserror = { workspace = true }
+
+[dev-dependencies]
+covenant-aster-backend = { path = "../covenant-aster-backend", version = "0.9.2" }
+serde_json = { workspace = true }

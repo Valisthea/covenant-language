@@ -1,0 +1,35 @@
+-- EncryptedBridge.cov · a cross-chain asset escrow module.
+-- Users lock assets on this side; a watcher observes the event and
+-- mints/releases on the target chain. Unlocks require a prior lock.
+--
+-- This module tracks locked balances per depositor and a global total.
+-- The `when` guard on `unlock` ensures users cannot withdraw more than locked.
+
+module EncryptedBridge {
+    field deposits: map<address, amount>
+    field locked_total: amount
+
+    event Locked(who: address, value: amount)
+    event Unlocked(who: address, value: amount)
+
+    action lock(value: amount) {
+        deposits[caller] += value
+        locked_total += value
+        emit Locked(caller, value)
+    }
+
+    action unlock(value: amount)
+            when deposits[caller] >= value {
+        deposits[caller] -= value
+        locked_total -= value
+        emit Unlocked(caller, value)
+    }
+
+    view locked_by(who: address) returns amount {
+        deposits[who]
+    }
+
+    view total_locked returns amount {
+        locked_total
+    }
+}

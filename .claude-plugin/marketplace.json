@@ -1,0 +1,18 @@
+{
+  "name": "covenant",
+  "description": "Covenant smart contract language tooling — write, review, and migrate Solidity to Covenant with native FHE, ZK, post-quantum, and cryptographic amnesia primitives.",
+  "owner": {
+    "name": "Valisthea",
+    "url": "https://github.com/Valisthea"
+  },
+  "plugins": [
+    {
+      "name": "covenant",
+      "source": "./editors/claude-code",
+      "description": "Agent-side expertise for Covenant V0.9 — FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, and defensive code review.",
+      "version": "0.2.0",
+      "homepage": "https://github.com/Valisthea/covenant-language/tree/main/editors/claude-code",
+      "category": "languages"
+    }
+  ]
+}

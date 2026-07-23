@@ -1,0 +1,14 @@
+/target
+# KSR-CVN-007: Cargo.lock is committed. covenant-cli is a binary and the
+# audit guarantee ("target commit = target version = target bytecode")
+# requires a pinned dependency graph.
+**/*.rs.bk
+.idea/
+.vscode/
+*.orig
+.env
+deployment/logs/
+deployment/artifacts/*.private
+deployment/.env
+# Default `covenant build` output dir.
+/build/

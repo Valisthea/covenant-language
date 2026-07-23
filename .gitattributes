@@ -1,0 +1,10 @@
+# Keep vendored / third-party code out of GitHub language stats and license detection.
+# (GitHub's linguist/licensee keys off the repo root; these paths carry their own licenses.)
+helpers/lib/**        linguist-vendored
+**/forge-std/**       linguist-vendored
+vendor/**             linguist-vendored
+third_party/**        linguist-vendored
+
+# Generated / non-source artifacts should not count as source either.
+**/*.bin              linguist-generated
+**/*.runtime.bin      linguist-generated

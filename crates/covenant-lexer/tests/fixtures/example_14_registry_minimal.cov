@@ -1,0 +1,25 @@
+-- example_14_registry_minimal.cov
+--
+-- V0.9 Sprint 35.b: `registry` now synthesizes the ERC-8231
+-- post-quantum key registry surface. The 1-line declaration below
+-- produces a deployable contract with the full ERC-8231 surface.
+--
+-- Auto-synthesized:
+--   Fields:    keys: map<address, pq_key>, registered: map<address, bool>
+--   Views:     is_registered(account), key_of(account), algorithm_id()
+--   Actions:   register(pk: pq_key), revoke()
+--   Events:    KeyRegistered, KeyUpdated (reserved for Sprint 35.c),
+--              KeyRevoked
+--   Errors:    NotRegistered, AlreadyRegistered
+--
+-- V0.9.0 limitations:
+--   - `update_key(new_pk, sig)` (PQ-signed key rotation) is reserved
+--     in the synthesizer's name conflict list but not yet emitted —
+--     Sprint 35.c will add it once `pq_signed` guards integrate with
+--     stdlib synthesis.
+--   - `algorithm_id()` returns 1 (Dilithium-5 per FIPS 204). V1.0 may
+--     add Falcon-512, SPHINCS+, or hybrid IDs.
+--   - `register` is open-access; `revoke` clears the caller's own slot.
+
+registry KeyRegistry {
+}

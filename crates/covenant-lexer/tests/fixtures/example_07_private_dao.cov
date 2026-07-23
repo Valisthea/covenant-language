@@ -1,0 +1,28 @@
+-- PrivateDAO.cov · an FHE-tally governance contract.
+-- All vote tallies are stored as TFHE ciphertexts — no individual vote is
+-- visible on-chain. The final result is revealed only through a threshold
+-- decrypt, requiring validator consensus. This prevents front-running and
+-- coercion during active voting periods.
+--
+-- Design notes (V0.2):
+--   - `vote_yes()` / `vote_no()` add an encrypted-1 homomorphically to the
+--     respective tally. The side effect reveals 1 bit (that the call happened),
+--     per LESSONS.md §7. Mitigation (dummy calls) is a V1 concern.
+--   - `reveal` functions return the plaintext tally after threshold-decryption.
+--     Access control (`to owner`) is IR-level metadata; EVM enforcement is V1.
+
+encrypted counter PrivateDAO {
+    yes_votes: amount
+    no_votes: amount
+
+    action vote_yes() {
+        yes_votes += 1
+    }
+
+    action vote_no() {
+        no_votes += 1
+    }
+
+    reveal yes_votes to owner
+    reveal no_votes to owner
+}

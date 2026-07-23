@@ -1,0 +1,22 @@
+-- OpenBallot.cov · a public ballot with a deadline.
+-- Every vote is visible on-chain the moment it is cast. This is the
+-- transparency baseline. Example 4 (encrypted counter) shows how to
+-- hide intermediate tallies while keeping the final result verifiable.
+
+ballot OpenBallot {
+    options: [choice] = ["yes", "no", "abstain"]
+    duration: duration  = 7 days
+
+    action cast(pick: choice)
+            when now < opened_at + duration,
+            only first_time_caller,
+            given pick in options {
+        tally[pick] += 1
+        emit Cast(caller, pick)
+    }
+
+    reveal winner returns choice
+            when now >= opened_at + duration {
+        tally.argmax
+    }
+}

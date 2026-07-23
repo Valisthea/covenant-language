@@ -1,0 +1,34 @@
+-- QuantumBoard.cov · an append-only message board with post-quantum auth.
+-- Every post must be signed with Dilithium-5. The registration step is
+-- classical-signed (the ordinary tx signature) because classical crypto
+-- is still secure today; after registration, posting requires PQ auth.
+
+board QuantumBoard {
+    post {
+        author:      address
+        content:     hash       -- hash of the message body, stored off-chain
+        at:          time
+        pq_sig:      bytes      -- Dilithium-5 signature over content
+    }
+
+    field keys: map<address, pq_key>
+
+    action register(pk: pq_key) {
+        keys[caller] = pk
+        emit KeyRegistered(caller)
+    }
+
+    action submit(content: hash, sig: bytes)
+            pq_signed(content, sig, keys[caller]),
+            only registered_key {
+        append post {
+            author:  caller
+            content: content
+            at:      now
+            pq_sig:  sig
+        }
+    }
+
+    view count returns amount { posts.length }
+    view get(i: amount) returns post when i < posts.length { posts[i] }
+}

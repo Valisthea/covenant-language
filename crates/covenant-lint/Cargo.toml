@@ -1,0 +1,37 @@
+[package]
+description = "Lint framework for the Covenant smart contract compiler"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "linter", "smart-contracts", "security"]
+categories = ["development-tools"]
+name = "covenant-lint"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[lib]
+name = "covenant_lint"
+path = "src/lib.rs"
+
+[[bin]]
+name = "covenant-lint"
+path = "src/main.rs"
+
+[dependencies]
+covenant-driver = { path = "../covenant-driver", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+covenant-ir = { path = "../covenant-ir", version = "0.9.2" }
+covenant-parser = { path = "../covenant-parser", version = "0.9.2" }
+# Version pins match Phase 14 (avoid edition2024 transitive deps on Rust 1.81)
+clap = { version = "=4.4", features = ["derive"] }
+ariadne = "=0.4.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = "1"
+
+[dev-dependencies]
+tempfile = "=3.10.1"
+covenant-privacy = { path = "../covenant-privacy", version = "0.9.2" }
+covenant-types = { path = "../covenant-types", version = "0.9.2" }

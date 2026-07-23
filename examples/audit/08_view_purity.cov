@@ -1,0 +1,56 @@
+-- 08_view_purity.cov
+--
+-- AUDIT FIXTURE — View vs action separation (purity boundary).
+--
+-- Purpose : verify that `view` declarations compile to STATICCALL-safe
+-- functions (no state mutation, no event emission, no revert_with side
+-- effects beyond reverting).
+--
+-- Auditor checklist :
+--   - `view` functions appear in the ABI with `stateMutability: "view"`.
+--   - Compiler rejects ANY state mutation inside a `view` body
+--     (assignment to a field, push to a list, etc.) — should fail
+--     compilation with a clear diagnostic.
+--   - Compiler rejects `emit` inside a `view` body.
+--   - Compiler ALLOWS reading state and computing return values.
+--   - `view` functions can be called via STATICCALL on-chain (gas-only,
+--     no state diff).
+--
+-- The actions below are the negative controls : same logic but in an
+-- action context, where mutation is allowed.
+--
+-- EXPECTED LINT FINDINGS (this fixture intentionally trips them) :
+--   * C100 — missing access guard on `increment`. The linter flags
+--     every action without `only(...)` as critical. For this fixture
+--     the action is intentionally public (auditors should observe :
+--     anyone can call it). Suppress with `@allow(C100)` if intentional.
+
+-- Note : `n` (not `counter`) because `counter` is a reserved keyword
+-- in Covenant V0.9.0 (used by the upcoming `counter` construct in
+-- V0.9.x). Same naming trap caught the test_isolation_demo fixture in
+-- Sprint 40.
+
+record ViewDemo {
+    n: amount = 0
+    last_writer: address
+
+    -- Pure read : returns n. STATICCALL-safe.
+    view get_n returns amount { n }
+
+    -- Computed read : returns n * 2. STATICCALL-safe.
+    view get_doubled returns amount { n * 2 }
+
+    -- Param view : returns n + delta without mutating state.
+    -- STATICCALL-safe. `delta` is calldata, not a field.
+    view get_n_plus(delta: amount) returns amount { n + delta }
+
+    -- Mutating action (negative control). Auditors should verify the
+    -- ABI marks this as `nonpayable` (NOT view).
+    action increment() {
+        n += 1
+        last_writer = caller
+        emit Incremented(caller, n)
+    }
+
+    event Incremented(who: address, new_n: amount)
+}

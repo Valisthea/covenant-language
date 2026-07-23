@@ -1,0 +1,220 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Build covenant CLI binary ─────────────────────────────────────────────
+  build:
+    name: Build ${{ matrix.asset_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            asset_name: covenant-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            asset_name: covenant-linux-aarch64
+            cross: true
+          - os: macos-13
+            target: x86_64-apple-darwin
+            asset_name: covenant-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            asset_name: covenant-macos-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset_name: covenant-windows-x86_64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (aarch64 linux)
+        if: matrix.cross
+        run: cargo install cross --locked
+
+      - name: Build binary (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} --bin covenant
+
+      - name: Build binary (native)
+        if: "!matrix.cross"
+        run: cargo build --release --target ${{ matrix.target }} --bin covenant
+
+      - name: Strip binary (unix)
+        if: runner.os != 'Windows' && !matrix.cross
+        run: strip target/${{ matrix.target }}/release/covenant
+
+      - name: Stage artifact (unix)
+        if: runner.os != 'Windows'
+        run: cp target/${{ matrix.target }}/release/covenant ${{ matrix.asset_name }}
+
+      - name: Stage artifact (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/covenant.exe ${{ matrix.asset_name }}
+
+      - name: Checksum (linux)
+        if: runner.os == 'Linux'
+        run: sha256sum ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
+
+      - name: Checksum (macos)
+        if: runner.os == 'macOS'
+        run: shasum -a 256 ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
+
+      - name: Checksum (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Get-FileHash ${{ matrix.asset_name }} -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File ${{ matrix.asset_name }}.sha256
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.asset_name }}
+            ${{ matrix.asset_name }}.sha256
+
+  # ── Build covenant-lsp binary (VS Code extension bundling) ────────────────
+  build-lsp:
+    name: Build covenant-lsp ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64
+            asset_name: covenant-lsp-linux-x64
+            binary: covenant-lsp
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            platform: linux-arm64
+            asset_name: covenant-lsp-linux-arm64
+            binary: covenant-lsp
+            cross: true
+          - os: macos-13
+            target: x86_64-apple-darwin
+            platform: darwin-x64
+            asset_name: covenant-lsp-darwin-x64
+            binary: covenant-lsp
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: darwin-arm64
+            asset_name: covenant-lsp-darwin-arm64
+            binary: covenant-lsp
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32-x64
+            asset_name: covenant-lsp-win32-x64.exe
+            binary: covenant-lsp.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (aarch64 linux)
+        if: matrix.cross
+        run: cargo install cross --locked
+
+      - name: Build covenant-lsp (cross)
+        if: matrix.cross
+        run: cross build --release --target ${{ matrix.target }} --bin covenant-lsp
+
+      - name: Build covenant-lsp (native)
+        if: "!matrix.cross"
+        run: cargo build --release --target ${{ matrix.target }} --bin covenant-lsp
+
+      - name: Strip binary (unix, native only)
+        if: runner.os != 'Windows' && !matrix.cross
+        run: strip target/${{ matrix.target }}/release/covenant-lsp
+
+      - name: Stage asset (unix)
+        if: runner.os != 'Windows'
+        run: cp target/${{ matrix.target }}/release/covenant-lsp ${{ matrix.asset_name }}
+
+      - name: Stage asset (windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: cp target/${{ matrix.target }}/release/covenant-lsp.exe ${{ matrix.asset_name }}
+
+      - name: Make executable (unix)
+        if: runner.os != 'Windows'
+        run: chmod +x ${{ matrix.asset_name }}
+
+      - name: Checksum (linux)
+        if: runner.os == 'Linux'
+        run: sha256sum ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
+
+      - name: Checksum (macos)
+        if: runner.os == 'macOS'
+        run: shasum -a 256 ${{ matrix.asset_name }} > ${{ matrix.asset_name }}.sha256
+
+      - name: Checksum (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Get-FileHash ${{ matrix.asset_name }} -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File ${{ matrix.asset_name }}.sha256
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ matrix.asset_name }}
+            ${{ matrix.asset_name }}.sha256
+
+      - name: Upload artifact (for extension packaging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: covenant-lsp-${{ matrix.platform }}
+          path: ${{ matrix.asset_name }}
+          retention-days: 30
+
+  # ── Publish crates to crates.io ───────────────────────────────────────────
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -e
+          publish() { cargo publish -p "$1" && sleep 35; }
+          publish covenant-diag
+          publish covenant-lexer
+          publish covenant-parser
+          publish covenant-ir
+          publish covenant-resolver
+          publish covenant-types
+          publish covenant-privacy
+          publish covenant-opt
+          publish covenant-evm-backend
+          publish covenant-stdlib
+          publish covenant-lint
+          publish covenant-manifest
+          publish covenant-driver
+          publish covenant-lsp
+          publish covenant-cli

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit — OMEGA V4 · Covenant</title>
+<meta name="description" content="Complete OMEGA V4 security audit of the Covenant compiler. 41 findings across 5 severity levels — all resolved before V0.7 GA. PoCs, methodology, and remediation commits are public.">
+<meta name="author" content="Kairos Lab">
+<link rel="canonical" href="https://covenant-lang.org/audit">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7C3AED">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://covenant-lang.org/audit">
+<meta property="og:site_name" content="Covenant">
+<meta property="og:title" content="OMEGA V4 Audit — 41 findings, all resolved · Covenant">
+<meta property="og:description" content="Full adversarial audit of the Covenant compiler before V0.7 GA. 5 Critical, 8 High, 8 Medium, 6 Low, 9 Informational. Every finding documented with PoC and remediation commit.">
+<meta property="og:image" content="https://covenant-lang.org/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@Valisthea">
+<meta name="twitter:title" content="OMEGA V4 Audit — 41 findings, all resolved · Covenant">
+<meta name="twitter:description" content="Full adversarial audit of the Covenant compiler. 5 Critical (IrGuard not codegenned, proxy hijack, precompile bypass, ceremony bypass). All resolved before V0.7 GA.">
+<meta name="twitter:image" content="https://covenant-lang.org/og-image.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   TOKENS (match index.html exactly)
+   ───────────────────────────────────────────── */
+:root {
+  --ink:          #1a1a1a;
+  --ink-soft:     #3d3d3d;
+  --ink-mute:     #6b7280;
+  --ink-faint:    #9ca3af;
+  --rule:         #d1d5db;
+  --rule-faint:   #e5e7eb;
+  --paper:        #fcfbf8;
+  --paper-pure:   #ffffff;
+  --accent:       #7C3AED;
+  --accent-faint: #faf7ff;
+  --accent-soft:  #a78bfa;
+  --cyan:         #0891b2;
+  --blue:         #2563eb;
+  --green:        #059669;
+  --red:          #dc2626;
+  --orange:       #d97706;
+  --header-h:     56px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#progress {
+  position: fixed; top: 0; left: 0; height: 2px;
+  width: 0; background: var(--accent); z-index: 2000;
+  transition: width 80ms linear;
+}
+
+/* ── Header ── */
+#site-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(252,251,248,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule-faint);
+  display: flex; align-items: center;
+  padding: 0 48px;
+  z-index: 1000;
+  transition: border-color 0.3s ease;
+}
+#site-header.scrolled { border-bottom-color: var(--rule); }
+
+.header-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--ink); flex-shrink: 0;
+}
+.header-brand-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.header-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 1px 6px; margin-left: 4px;
+}
+.header-spacer { flex: 1; }
+nav.header-nav { display: flex; align-items: center; gap: 32px; }
+.nav-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5pt; font-weight: 400;
+  color: var(--ink-mute); text-decoration: none;
+  letter-spacing: 0.01em; transition: color 0.15s ease;
+}
+.nav-link:hover, .nav-link.active { color: var(--ink); }
+.nav-link-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); text-decoration: none;
+  border: 1px solid var(--accent);
+  padding: 5px 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-link-cta:hover { background: var(--accent); color: white; }
+
+/* ── Page hero ── */
+.page-hero {
+  padding-top: calc(var(--header-h) + 64px);
+  padding-bottom: 56px;
+  border-bottom: 1px solid var(--ink);
+  background-image: radial-gradient(circle, rgba(26,26,26,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-color: var(--paper);
+}
+.page-hero-inner {
+  max-width: 900px; margin: 0 auto; padding: 0 48px;
+}
+.page-hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--red);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 20px;
+}
+.page-hero-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+}
+.page-hero-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(32pt, 6vw, 52pt);
+  font-weight: 400; line-height: 1.05;
+  letter-spacing: -0.02em; color: var(--ink);
+  margin-bottom: 20px;
+}
+.page-hero-sub {
+  font-family: 'EB Garamond', serif;
+  font-size: 15pt; font-style: italic;
+  color: var(--ink-mute); line-height: 1.5;
+  max-width: 600px; margin-bottom: 36px;
+}
+.page-hero-stats {
+  display: flex; gap: 32px; flex-wrap: wrap;
+}
+.page-hero-stat {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.page-hero-stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 24pt; font-weight: 600;
+  color: var(--ink); line-height: 1;
+}
+.page-hero-stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 8.5pt; color: var(--ink-mute);
+  letter-spacing: 0.02em;
+}
+
+/* ── Layout ── */
+.container { max-width: 900px; margin: 0 auto; padding: 0 48px; }
+.section {
+  padding: 72px 0;
+  border-bottom: 1px solid var(--rule-faint);
+}
+.section-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint); display: block; margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 26pt; font-weight: 400;
+  letter-spacing: -0.01em; color: var(--ink);
+  margin-bottom: 20px; line-height: 1.1;
+}
+.body-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; color: var(--ink-soft);
+  line-height: 1.65; max-width: 680px;
+}
+.body-text + .body-text { margin-top: 1rem; }
+
+/* ── Severity badges ── */
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 2px;
+  display: inline-block;
+}
+.badge-critical { background: #fef2f2; color: var(--red); border: 1px solid #fca5a5; }
+.badge-high     { background: #fff7ed; color: var(--orange); border: 1px solid #fed7aa; }
+.badge-medium   { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.badge-low      { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+.badge-info     { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
+.badge-resolved { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+
+/* ── Audit summary grid ── */
+.audit-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 36px 0;
+}
+.audit-stat {
+  background: var(--paper);
+  padding: 20px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+  text-align: center;
+}
+.audit-stat-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28pt; font-weight: 600; line-height: 1;
+}
+.audit-stat-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 8pt; color: var(--ink-mute);
+  letter-spacing: 0.03em;
+}
+.audit-stat-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--green);
+  margin-top: 2px;
+}
+.audit-stat-critical .audit-stat-count { color: var(--red); }
+.audit-stat-high .audit-stat-count     { color: var(--orange); }
+.audit-stat-medium .audit-stat-count   { color: #92400e; }
+.audit-stat-low .audit-stat-count      { color: var(--green); }
+.audit-stat-info .audit-stat-count     { color: var(--blue); }
+.audit-stat-total .audit-stat-count    { color: var(--ink); }
+.audit-stat-total                      { background: var(--accent-faint); }
+
+/* ── Finding cards ── */
+.finding-card {
+  border: 1px solid var(--rule);
+  background: var(--paper-pure);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.finding-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; bottom: 0;
+  width: 3px;
+}
+.finding-card.critical::before { background: var(--red); }
+.finding-card.high::before     { background: var(--orange); }
+.finding-card.medium::before   { background: #d97706; }
+
+.finding-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--rule-faint);
+  display: flex; align-items: flex-start; gap: 16px;
+}
+.finding-id-block {
+  flex-shrink: 0;
+}
+.finding-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; font-weight: 600;
+  color: var(--ink-faint); letter-spacing: 0.1em;
+  display: block;
+}
+.finding-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 14pt; font-weight: 500; color: var(--ink);
+  line-height: 1.3; margin-top: 4px;
+}
+.finding-badges {
+  display: flex; gap: 6px; align-items: center;
+  margin-top: 6px;
+}
+.finding-body { padding: 20px 24px; }
+.finding-body p {
+  font-family: 'EB Garamond', serif;
+  font-size: 12.5pt; color: var(--ink-soft); line-height: 1.6;
+  margin-bottom: 12px;
+}
+.finding-body p:last-child { margin-bottom: 0; }
+
+/* ── Code blocks ── */
+.code-diff {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 16px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt;
+  line-height: 1.6;
+  overflow: hidden;
+}
+.code-diff-col { background: var(--paper); overflow-x: auto; }
+.code-diff-header {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--rule-faint);
+  font-size: 7pt; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.code-diff-col.before .code-diff-header { color: var(--red); }
+.code-diff-col.after  .code-diff-header { color: var(--green); }
+.code-diff-col pre { padding: 12px 14px; white-space: pre; color: var(--ink-soft); }
+.code-block {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; line-height: 1.65;
+  color: var(--ink-soft);
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.code-block .cm { color: var(--ink-faint); font-style: italic; }
+.code-block .kw { color: var(--accent); font-weight: 500; }
+.code-block .ok { color: var(--green); }
+.code-block .err { color: var(--red); }
+
+/* ── Methodology phases ── */
+.phase-list { list-style: none; margin: 24px 0; }
+.phase-item {
+  display: flex; gap: 20px; align-items: flex-start;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule-faint);
+}
+.phase-item:last-child { border-bottom: none; }
+.phase-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); flex-shrink: 0; min-width: 72px;
+  margin-top: 2px;
+}
+.phase-label {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; font-weight: 500; color: var(--ink);
+  margin-bottom: 4px; display: block;
+}
+.phase-desc {
+  font-family: 'EB Garamond', serif;
+  font-size: 12pt; color: var(--ink-mute); line-height: 1.5;
+}
+
+/* ── High findings table ── */
+.findings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+}
+.findings-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: left;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.findings-table td {
+  font-family: 'EB Garamond', serif;
+  font-size: 12pt; color: var(--ink-soft);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule-faint);
+  vertical-align: top;
+}
+.findings-table tr:last-child td { border-bottom: none; }
+.findings-table .td-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; color: var(--ink-faint);
+  white-space: nowrap;
+}
+.findings-table .td-commit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; color: var(--accent);
+}
+
+/* ── Known limitations ── */
+.limitation-card {
+  border: 1px solid var(--rule);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  display: flex; gap: 14px; align-items: flex-start;
+}
+.limitation-icon {
+  font-size: 14pt; flex-shrink: 0; margin-top: 2px;
+}
+.limitation-body {}
+.limitation-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; font-weight: 500; color: var(--ink);
+  margin-bottom: 4px;
+}
+.limitation-desc {
+  font-family: 'EB Garamond', serif;
+  font-size: 12pt; color: var(--ink-mute); line-height: 1.5;
+}
+
+/* ── CTAs ── */
+.btn-primary {
+  font-family: 'Inter', sans-serif;
+  font-size: 10pt; font-weight: 500;
+  color: white; background: var(--accent);
+  text-decoration: none;
+  padding: 10px 24px;
+  border: 1px solid var(--accent);
+  transition: background 0.15s ease, transform 0.15s ease;
+  display: inline-block;
+}
+.btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+.btn-secondary {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ink-mute); text-decoration: none;
+  padding: 10px 20px;
+  border: 1px solid var(--rule);
+  transition: border-color 0.15s ease, color 0.15s ease;
+  display: inline-block;
+}
+.btn-secondary:hover { border-color: var(--ink-mute); color: var(--ink); }
+.cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+
+/* ── Reveal ── */
+.reveal { opacity: 0; transform: translateY(5px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+/* ── Footer ── */
+footer#site-footer {
+  border-top: 1px solid var(--ink);
+  padding: 48px 0 40px;
+}
+.footer-inner {
+  max-width: 900px; margin: 0 auto; padding: 0 48px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px;
+}
+.footer-brand { display: flex; flex-direction: column; gap: 12px; }
+.footer-brand-row { display: flex; align-items: center; gap: 8px; }
+.footer-brand-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
+}
+.footer-tagline { font-family: 'EB Garamond', serif; font-size: 11pt; font-style: italic; color: var(--ink-mute); line-height: 1.5; }
+.footer-col-title { font-family: 'JetBrains Mono', monospace; font-size: 7.5pt; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: 14px; }
+.footer-link { font-family: 'Inter', sans-serif; font-size: 10pt; color: var(--ink-soft); text-decoration: none; display: block; margin-bottom: 6px; transition: color 0.15s ease; }
+.footer-link:hover { color: var(--accent); }
+.footer-link-mono { font-family: 'JetBrains Mono', monospace; font-size: 8.5pt; color: var(--ink-mute); text-decoration: none; display: block; margin-bottom: 6px; word-break: break-all; transition: color 0.15s ease; }
+.footer-link-mono:hover { color: var(--accent); }
+.footer-bottom { max-width: 900px; margin: 36px auto 0; padding: 20px 48px 0; border-top: 1px solid var(--rule-faint); display: flex; justify-content: space-between; align-items: center; }
+.footer-closing { font-family: 'EB Garamond', serif; font-size: 11pt; font-style: italic; color: var(--ink-mute); }
+.footer-license { font-family: 'JetBrains Mono', monospace; font-size: 7.5pt; color: var(--ink-faint); letter-spacing: 0.06em; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  #site-header { padding: 0 24px; }
+  .page-hero-inner, .container { padding: 0 24px; }
+  .audit-stats { grid-template-columns: repeat(3, 1fr); }
+  .code-diff { grid-template-columns: 1fr; }
+  nav.header-nav .nav-link { display: none; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+  .page-hero-stats { gap: 20px; }
+  .page-hero-stat-val { font-size: 18pt; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header id="site-header">
+  <a href="/" class="header-brand" aria-label="Covenant — home">
+    <div style="width:32px;height:32px;" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 96 96" id="header-svg">
+        <path d="M 32 20 L 20 20 L 20 76 L 32 76" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="square"/>
+        <path d="M 64 20 L 76 20 L 76 76 L 64 76" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="square"/>
+        <rect x="40" y="40" width="16" height="16" fill="#dc2626" id="header-square"/>
+      </svg>
+    </div>
+    <span class="header-brand-name">Covenant</span>
+    <span class="header-badge">V0.7 GA</span>
+  </a>
+  <div class="header-spacer"></div>
+  <nav class="header-nav" aria-label="Primary navigation">
+    <a href="/manifesto.html" class="nav-link">Manifesto</a>
+    <a href="/#architecture" class="nav-link">Architecture</a>
+    <a href="/audit" class="nav-link active">Audit</a>
+    <a href="/#install" class="nav-link">Install</a>
+    <a href="https://github.com/Valisthea/covenant-language" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+    <a href="https://x.com/Covenant_Lang" target="_blank" rel="noopener" class="nav-link-cta">↗ @Covenant_Lang</a>
+  </nav>
+</header>
+
+<!-- ══════════════════ PAGE HERO ══════════════════ -->
+<div class="page-hero">
+  <div class="page-hero-inner">
+    <p class="page-hero-eyebrow">OMEGA V4 Security Audit · V0.7 GA</p>
+    <h1 class="page-hero-title">41 findings.<br>All resolved.</h1>
+    <p class="page-hero-sub">Full adversarial audit of the Covenant compiler before V0.7 public launch. Every finding is documented, reproducible, and public.</p>
+    <div class="page-hero-stats">
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val" style="color:var(--red)">5</span>
+        <span class="page-hero-stat-label">Critical — resolved</span>
+      </div>
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val" style="color:var(--orange)">8</span>
+        <span class="page-hero-stat-label">High — resolved</span>
+      </div>
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val" style="color:#92400e">8</span>
+        <span class="page-hero-stat-label">Medium — resolved</span>
+      </div>
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val" style="color:var(--green)">6</span>
+        <span class="page-hero-stat-label">Low — resolved</span>
+      </div>
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val" style="color:var(--blue)">9</span>
+        <span class="page-hero-stat-label">Informational</span>
+      </div>
+      <div class="page-hero-stat">
+        <span class="page-hero-stat-val">5</span>
+        <span class="page-hero-stat-label">Audit phases</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ METHODOLOGY ══════════════════ -->
+<div class="container">
+<section class="section" id="methodology" aria-labelledby="method-title">
+  <span class="section-eyebrow">01 — Methodology</span>
+  <h2 class="section-title" id="method-title">OMEGA V4: assume every guarantee is a lie</h2>
+  <p class="body-text">OMEGA V4 is Kairos Lab's internal adversarial audit framework. It is not a checklist. It's a mindset: <em>assume every guarantee the compiler claims to enforce is a lie, and try to prove it.</em> The question is never "does the source look right?" — it's "does the emitted bytecode contain the bytes the source promised?"</p>
+
+  <ul class="phase-list reveal" style="margin-top:28px;">
+    <li class="phase-item">
+      <span class="phase-num">Phase 1</span>
+      <div>
+        <span class="phase-label">Reconnaissance</span>
+        <span class="phase-desc">Map the full attack surface. Parse every crate. Identify every place where source intent becomes bytecode — every opcode, every emit path, every optimization pass.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num">Phase 2</span>
+      <div>
+        <span class="phase-label">Adversarial deep-dive</span>
+        <span class="phase-desc">For every guarantee the compiler claims, construct a source program that <em>should</em> work but the compiler silently breaks. Look at the actual bytecode. Verify the emitted code provides the guarantee.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num">Phase 3</span>
+      <div>
+        <span class="phase-label">Reproducible PoCs</span>
+        <span class="phase-desc">For each finding, produce a minimal working example. Compile it. Simulate deployment. Show — with annotated bytecode — exactly how the bug manifests in production.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num">Phase 4</span>
+      <div>
+        <span class="phase-label">Remediation</span>
+        <span class="phase-desc">Fix each finding with a regression test. The test alone, without the fix, must fail. The test with the fix must pass. No exceptions — every finding has a corresponding test that would have caught it.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num">Phase 5</span>
+      <div>
+        <span class="phase-label">Re-audit</span>
+        <span class="phase-desc">After all fixes are merged, re-run every PoC. Verify no regressions. Look for new attack vectors that fixes might have introduced. Confirm the compiler is clean before GA.</span>
+      </div>
+    </li>
+  </ul>
+</section>
+</div>
+
+<!-- ══════════════════ CRITICAL FINDINGS ══════════════════ -->
+<div class="container">
+<section class="section" id="critical" aria-labelledby="critical-title">
+  <span class="section-eyebrow">02 — Critical Findings</span>
+  <h2 class="section-title" id="critical-title">Five failures that would have made every contract a honeypot</h2>
+  <p class="body-text">These findings share a pattern: the source looked correct, the tests passed, the contracts deployed — but the generated bytecode did not enforce the guarantee the source promised. Silent codegen failures are the worst class of bug.</p>
+
+  <!-- KSR-CVN-011 -->
+  <div class="finding-card critical reveal" style="margin-top:32px;" id="CVN-011">
+    <div class="finding-header">
+      <div class="finding-id-block">
+        <span class="finding-id">KSR-CVN-011</span>
+        <div class="finding-badges">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-resolved">Resolved</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="finding-title">IrGuard never codegenned — access control was fiction</h3>
+      </div>
+    </div>
+    <div class="finding-body">
+      <p>Covenant's access control system lets developers write <code>only(owner)</code>, <code>when(condition)</code>, and <code>given(proof)</code> clauses on actions. These should emit a <code>CALLER + EQ + ISZERO + JUMPI</code> pattern targeting the revert path before any function body executes.</p>
+      <p>The IR builder accepted and type-checked the clause, but the <code>emit_only_assert</code> function was never called. Every deployed Covenant contract with an access control clause would silently accept calls from any address.</p>
+      <div class="code-diff">
+        <div class="code-diff-col before">
+          <div class="code-diff-header">Before — emitted bytecode</div>
+          <pre><span style="color:var(--red)">; withdraw_all() — NO ACCESS CHECK</span>
+JUMPDEST
+PUSH1 0x00
+SLOAD         ; load balance
+CALLER        ; push msg.sender
+; (transfer — no guard before it)
+PUSH1 0x00
+PUSH1 0x00
+SSTORE        ; clear balance
+STOP</pre>
+        </div>
+        <div class="code-diff-col after">
+          <div class="code-diff-header">After — with guard</div>
+          <pre><span style="color:var(--green)">; withdraw_all() — GUARDED</span>
+JUMPDEST
+CALLER        <span style="color:var(--ink-faint)">; msg.sender</span>
+PUSH32 …      <span style="color:var(--ink-faint)">; stored owner</span>
+SLOAD
+EQ
+ISZERO
+PUSH2 revert  <span style="color:var(--ink-faint)">; revert if ≠</span>
+JUMPI
+; (transfer follows)</pre>
+        </div>
+      </div>
+      <p><strong>Fix:</strong> <code>emit_only_assert</code> in <code>covenant-ir/src/builder.rs</code> now emits <code>LoadCaller → LoadPrincipal → Eq → Assert</code>. The EVM backend lowers <code>Assert</code> to <code>ISZERO + JUMPI → __revert__</code>. Regression test in <code>covenant-evm-backend/tests/guard_codegen.rs</code> asserts every <code>only()</code> in source produces the CALLER + EQ + ISZERO + JUMPI pattern in the bytes.</p>
+    </div>
+  </div>
+
+  <!-- KSR-CVN-012 -->
+  <div class="finding-card critical reveal" id="CVN-012">
+    <div class="finding-header">
+      <div class="finding-id-block">
+        <span class="finding-id">KSR-CVN-012</span>
+        <div class="finding-badges">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-resolved">Resolved</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="finding-title">Proxy initializer had no re-init guard — one transaction hijack</h3>
+      </div>
+    </div>
+    <div class="finding-body">
+      <p>Covenant supports UUPS upgradeable proxy patterns. An <code>initializer action</code> is supposed to be callable exactly once. But the bytecode had no re-init guard — <code>initialize()</code> could be called repeatedly, overwriting <code>owner</code> and <code>treasury</code> with attacker-controlled addresses.</p>
+      <p><strong>Fix:</strong> <code>emit_initializer_guard</code> wraps every <code>initialize</code> action with a slot-based flag. The slot is <code>keccak256("covenant.proxy.initializer.&lt;ModuleName&gt;")</code> — EIP-7201 namespaced, unique per module. The bytecode reads the slot, reverts if already set, then sets it before executing the body. Phase 3 is terminal — no re-entry possible.</p>
+    </div>
+  </div>
+
+  <!-- KSR-CVN-013 + 014 -->
+  <div class="finding-card critical reveal" id="CVN-013">
+    <div class="finding-header">
+      <div class="finding-id-block">
+        <span class="finding-id">KSR-CVN-013 + 014</span>
+        <div class="finding-badges">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-resolved">Resolved</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="finding-title">Precompile call safety — PQ signature bypass via stale memory</h3>
+      </div>
+    </div>
+    <div class="finding-body">
+      <p>Cryptographic precompiles (FHE ops, Dilithium verify, ZK proof check) are invoked via <code>STATICCALL</code>. Two separate failures combined into a full bypass of post-quantum authentication:</p>
+      <p><strong>CVN-013</strong>: The <code>STATICCALL</code> success flag was popped and discarded. A precompile that reverted (invalid input, out of gas) was treated as successful.</p>
+      <p><strong>CVN-014</strong>: Before <code>STATICCALL</code>, the return memory slot was not zeroed. A failed <code>STATICCALL</code> left stale memory that <code>MLOAD</code> read as a nonzero value — interpreted as "signature verified".</p>
+      <p><strong>Combined exploit:</strong> An attacker submits a forged Dilithium signature. The precompile reverts. The success flag is dropped. The <code>MLOAD</code> reads stale memory containing a nonzero value from a prior operation. Authentication succeeds. One transaction, deterministic in deployments with prior operations.</p>
+      <div class="code-block">
+        <span class="cm">; Three-layer defense added to every precompile call:</span><br>
+        PUSH0 PUSH0 MSTORE   <span class="cm">; 1. zero the return slot</span><br>
+        (args setup)<br>
+        STATICCALL<br>
+        ISZERO               <span class="cm">; 2. check success flag</span><br>
+        PUSH2 revert_label<br>
+        JUMPI<br>
+        RETURNDATASIZE<br>
+        PUSH1 32<br>
+        EQ                   <span class="cm">; 3. check return size == 32</span><br>
+        ISZERO<br>
+        PUSH2 revert_label<br>
+        JUMPI
+      </div>
+      <p><strong>Bytecode differential:</strong> runtime bytecode grew from 835 → 1336 bytes. The <code>ISZERO</code> opcode count went from 9 → 47. That's 38 new safety checks, one per precompile call site. CI now asserts <code>ISZERO</code> count as a lower bound.</p>
+    </div>
+  </div>
+
+  <!-- KSR-CVN-001 -->
+  <div class="finding-card critical reveal" id="CVN-001">
+    <div class="finding-header">
+      <div class="finding-id-block">
+        <span class="finding-id">KSR-CVN-001</span>
+        <div class="finding-badges">
+          <span class="badge badge-critical">Critical</span>
+          <span class="badge badge-resolved">Resolved</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="finding-title">Ceremony phase transitions unchecked — cryptographic amnesia bypass</h3>
+      </div>
+    </div>
+    <div class="finding-body">
+      <p>Covenant implements ERC-8228 (Cryptographic Amnesia Interface). Amnesia ceremonies have a strict four-phase state machine: idle → gathering → finalized → destroyed. Only phase <em>reads</em> were checked; phase <em>transitions</em> had no guards. An attacker could call <code>destroy()</code> at phase 0, jump to phase 3, and have <code>is_destroyed()</code> return <code>true</code> without a key ever having existed.</p>
+      <p>Downstream integrations (GDPR compliance, regulatory data erasure, institutional key destruction proofs) rely on <code>is_destroyed()</code> being trustworthy. With transitions unchecked, the state machine was decorative.</p>
+      <p><strong>Fix:</strong> Every ceremony function now checks its required precondition phase via <code>emit_assert_phase_eq(expected_phase)</code>. Phases are enforced at bytecode level via <code>SLOAD + EQ + ISZERO + JUMPI</code>. Phase 3 is terminal — no function takes phase 3 as a valid input state.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══════════════════ HIGH FINDINGS ══════════════════ -->
+<div class="container">
+<section class="section" id="high" aria-labelledby="high-title">
+  <span class="section-eyebrow">03 — High Findings</span>
+  <h2 class="section-title" id="high-title">Eight high-severity issues</h2>
+  <p class="body-text">High findings caused incorrect or insecure behaviour without being fully exploitable in isolation. Several had been present since early compiler versions with no visible test failures.</p>
+
+  <table class="findings-table reveal" style="margin-top:24px;">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Finding</th>
+        <th>Commit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="td-id">KSR-CVN-015</td>
+        <td><code>FheCmpNe</code> and <code>FheCmpLe</code> dispatched to wrong precompile addresses — aliasing <code>EQ</code> and <code>LT</code>. Every encrypted <code>!=</code> and <code>&lt;=</code> returned an incorrect result.</td>
+        <td class="td-commit">d378297</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-016</td>
+        <td>CSE optimizer collapsed distinct <code>FheEncryptFresh</code> calls. Two ciphertexts from "fresh" encryption were collapsed to one — the "fresh" guarantee was destroyed.</td>
+        <td class="td-commit">f3a5277</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-017</td>
+        <td>Same CSE bug collapsed <code>PqRand</code> calls — post-quantum nonces reused across operations that required distinct randomness.</td>
+        <td class="td-commit">f3a5277</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-018</td>
+        <td>Reentrancy lints didn't cover the <code>ExternalCall</code> opcode — cross-contract reentrancy went undetected by the linter.</td>
+        <td class="td-commit">d88910c</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-019</td>
+        <td>No <code>EXTCODESIZE</code> canary before <code>CALL</code> to external contracts — EOA and self-destruct patterns went undetected.</td>
+        <td class="td-commit">5ee93a8</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-020</td>
+        <td>No 4-byte ABI selector prefix on precompile calldata — precompile ABI versioning not enforced at call sites.</td>
+        <td class="td-commit">5ee93a8</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-021</td>
+        <td><code>@slot(N)</code> annotation silently ignored — layout guarantees promised to developers were not enforced in emitted bytecode.</td>
+        <td class="td-commit">0eb1ad8</td>
+      </tr>
+      <tr>
+        <td class="td-id">KSR-CVN-027</td>
+        <td>External <code>CALL</code> and <code>STATICCALL</code> success flags discarded — same class as CVN-013, affecting user-invoked external calls.</td>
+        <td class="td-commit">5eb1c38</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+</div>
+
+<!-- ══════════════════ MEDIUM/LOW/INFO ══════════════════ -->
+<div class="container">
+<section class="section" id="other" aria-labelledby="other-title">
+  <span class="section-eyebrow">04 — Medium · Low · Informational</span>
+  <h2 class="section-title" id="other-title">23 further findings — the long tail of defense</h2>
+  <p class="body-text">Medium findings affected correctness and developer safety. Low and Informational findings strengthened tooling, diagnostics, and supply chain. All resolved before V0.7 GA.</p>
+
+  <div class="finding-card medium reveal" style="margin-top:24px;border-left:3px solid var(--orange);">
+    <div class="finding-body">
+      <p><strong>KSR-CVN-022, 023 — Shamir / VDF hard-fail:</strong> Shamir Secret Sharing and Wesolowski VDF opcodes emitted broken stubs that silently succeeded without performing any cryptographic work. Rather than emit silent fiction, the compiler now hard-fails with <code>E516</code>/<code>E517</code> for these opcodes until V0.8 chain support ships. "Deploy no code" beats "deploy broken code."</p>
+      <p><strong>KSR-CVN-024, 025 — P4/P5 invariant detectors:</strong> Privacy invariants P4 (nonce reuse) and P5 (monotonicity) had no lint detectors in the security pass. Detectors added.</p>
+      <p><strong>KSR-CVN-026 — FheBootstrap eliminated by DCE:</strong> Dead Code Elimination was removing <code>FheBootstrap</code> calls (which refresh FHE ciphertext noise budget) because they appeared to have no side effects. DCE now marks FHE refresh ops as side-effecting.</p>
+      <p><strong>Storage / supply chain:</strong> <code>@slot(N)</code> collision detection wired (<code>E423</code>), annotation validation, <code>PRECOMPILE_ABI_VERSION</code> marker in bytecode, Cargo.lock pinning, per-chain version binding. Full list in covenant-audits (coming soon).</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══════════════════ LESSONS ══════════════════ -->
+<div class="container">
+<section class="section" id="lessons" aria-labelledby="lessons-title">
+  <span class="section-eyebrow">05 — What the audit taught us</span>
+  <h2 class="section-title" id="lessons-title">Four lessons that change how we write tests</h2>
+
+  <ul class="phase-list reveal">
+    <li class="phase-item">
+      <span class="phase-num" style="color:var(--red)">Lesson 1</span>
+      <div>
+        <span class="phase-label">Test the bytes, not the source</span>
+        <span class="phase-desc">For every safety guarantee your compiler claims, write a test that inspects the emitted bytecode and asserts the exact opcode pattern. <code>only(owner)</code> should produce <code>CALLER + EQ + ISZERO + JUMPI</code>. If it doesn't, the test fails — not because the source looked wrong, because the bytes are wrong.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num" style="color:var(--red)">Lesson 2</span>
+      <div>
+        <span class="phase-label">Asymmetric tests catch operand ordering bugs</span>
+        <span class="phase-desc">Every test with symmetric values (<code>Add(3,3)</code>, <code>Eq(5,5)</code>) would pass even if operands are reversed. We now test every binary op with asymmetric pairs (<code>Sub(10,3)</code> vs <code>Sub(3,10)</code>, <code>Lt(2,7)</code> vs <code>Lt(7,2)</code>).</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num" style="color:var(--red)">Lesson 3</span>
+      <div>
+        <span class="phase-label">State machines must be enforced at the bytecode level</span>
+        <span class="phase-desc">Writing <code>state = Phase2</code> in a function body doesn't protect you if the function can be called when <code>state</code> is <code>Phase0</code>. Every transition needs a precondition check compiled into bytecode — not documented in source, not enforced by convention.</span>
+      </div>
+    </li>
+    <li class="phase-item">
+      <span class="phase-num" style="color:var(--red)">Lesson 4</span>
+      <div>
+        <span class="phase-label">Defense in depth for external calls</span>
+        <span class="phase-desc"><code>STATICCALL</code> has three failure modes: success flag, return data size mismatch, revert. Check all three. If any single check would have caught CVN-013 or CVN-014 alone, the exploit would have been impossible. That's what defense in depth means.</span>
+      </div>
+    </li>
+  </ul>
+</section>
+</div>
+
+<!-- ══════════════════ KNOWN LIMITATIONS ══════════════════ -->
+<div class="container">
+<section class="section" id="limitations" aria-labelledby="limits-title">
+  <span class="section-eyebrow">06 — Known limitations</span>
+  <h2 class="section-title" id="limits-title">What V0.7 does not yet support</h2>
+  <p class="body-text">Shipping broken stubs is worse than shipping nothing. These features are deliberately disabled until they can be implemented correctly.</p>
+
+  <div style="margin-top:28px;" class="reveal">
+    <div class="limitation-card">
+      <span class="limitation-icon">⛔</span>
+      <div class="limitation-body">
+        <div class="limitation-title">Shamir Secret Sharing (<code>E516</code>)</div>
+        <div class="limitation-desc">Contracts using <code>shamir_split</code>, <code>shamir_recover</code>, or <code>@shamir_threshold</code> will not compile. Full implementation requires Aster Chain support (V0.8).</div>
+      </div>
+    </div>
+    <div class="limitation-card">
+      <span class="limitation-icon">⛔</span>
+      <div class="limitation-body">
+        <div class="limitation-title">Wesolowski VDF (<code>E517</code>)</div>
+        <div class="limitation-desc">Contracts using <code>vdf_eval</code> or <code>@vdf_locked</code> will not compile. Same dependency on Aster SDK for chain-native VDF verification.</div>
+      </div>
+    </div>
+    <div class="limitation-card">
+      <span class="limitation-icon">🔧</span>
+      <div class="limitation-body">
+        <div class="limitation-title">Aster Chain bytecode emission (V0.7 foundation only)</div>
+        <div class="limitation-desc"><code>--target-chain aster</code> compiles to a placeholder artifact (<code>COV7\x01</code> magic + metadata). Full bytecode emission requires Aster SDK GA. V0.7 artifacts are not deployable on-chain.</div>
+      </div>
+    </div>
+    <div class="limitation-card">
+      <span class="limitation-icon">🔧</span>
+      <div class="limitation-body">
+        <div class="limitation-title">External audits (V0.9 target)</div>
+        <div class="limitation-desc">OMEGA V4 was a self-audit. V0.9 will bring independent audits from two external firms. Self-audit is not a substitute for independent verification — this is the roadmap, not a guarantee.</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ══════════════════ CTA ══════════════════ -->
+<div class="container">
+<section class="section" id="report" aria-labelledby="report-title" style="border-bottom:none;">
+  <span class="section-eyebrow">07 — Access the full report</span>
+  <h2 class="section-title" id="report-title">Everything is public. PoCs included.</h2>
+  <p class="body-text">The full OMEGA V4 report will be published at <code>github.com/Valisthea/covenant-audits</code> (coming soon). Every finding has a finding ID, severity, description, annotated bytecode PoC, remediation commit, and regression test. If OMEGA V4 missed something, that's a welcome problem — the bounty program is in the same repo.</p>
+
+  <div class="cta-row reveal">
+    Read the full audit report → (coming soon)
+    <a href="/#install" class="btn-secondary">Install Covenant V0.7 →</a>
+    <a href="https://github.com/Valisthea/covenant-language" target="_blank" rel="noopener" class="btn-secondary">Source on GitHub →</a>
+  </div>
+
+  <div style="margin-top:40px;padding:20px 24px;border:1px solid var(--rule);background:var(--accent-faint);" class="reveal">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:8.5pt;color:var(--ink-mute);margin-bottom:8px;">QUICK INSTALL</p>
+    <div class="code-block" style="margin:0;">cargo install covenant-cli</div>
+  </div>
+</section>
+</div>
+
+<!-- ══════════════════ FOOTER ══════════════════ -->
+<footer id="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-brand-row">
+        <span class="footer-brand-name">Covenant</span>
+      </div>
+      <p class="footer-tagline">Cryptographic guarantees<br>as language primitives.</p>
+    </div>
+    <div>
+      <span class="footer-col-title">Links</span>
+      <a href="/" class="footer-link">Home</a>
+      <a href="/manifesto.html" class="footer-link">Manifesto</a>
+      <a href="/audit" class="footer-link">Audit</a>
+      <a href="/#install" class="footer-link">Install</a>
+    </div>
+    <div>
+      <span class="footer-col-title">Resources</span>
+      <a href="https://github.com/Valisthea/covenant-language" target="_blank" rel="noopener" class="footer-link-mono">github.com/Valisthea/covenant-language</a>
+      github.com/Valisthea/covenant-audits (coming soon)
+      <a href="https://x.com/Covenant_Lang" target="_blank" rel="noopener" class="footer-link-mono">x.com/Covenant_Lang</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-closing">Built solo at Kairos Lab. No token. No VC.</span>
+    <span class="footer-license">Apache-2.0 · CC0 specs · V0.7 GA</span>
+  </div>
+</footer>
+
+<script>
+(function() {
+  'use strict';
+  /* Progress bar */
+  const prog = document.getElementById('progress');
+  window.addEventListener('scroll', function() {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + '%';
+  }, { passive: true });
+
+  /* Header border on scroll */
+  const hdr = document.getElementById('site-header');
+  window.addEventListener('scroll', function() {
+    hdr.classList.toggle('scrolled', window.scrollY > 8);
+  }, { passive: true });
+
+  /* Reveal on scroll */
+  const revEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -24px 0px' });
+  revEls.forEach(function(el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>

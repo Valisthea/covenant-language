@@ -1,0 +1,22 @@
+-- AmnesiaCeremony.cov · an Amnesia ceremony contract.
+-- The `ceremony` keyword synthesizes the full amnesia ceremony lifecycle:
+--   setup() → uint256         : initialize ceremony session, returns session_id
+--   submit_share(bytes32) → bool : guardian submits their key share
+--   finalize() → bool         : ceremony organizer finalizes share collection
+--   destroy() → bool          : irrevocably destroys the secret, emits event
+--   phase() → uint256         : 0=Setup, 1=Active, 2=Finalized, 3=Destroyed
+--   session_id() → uint256    : returns the active session identifier
+--   is_destroyed() → bool     : true once destroy() has been called
+--   owner() → address         : returns the ceremony organizer (deployer)
+--
+-- The `on_destroy` block runs when the ceremony is finalized and calls
+-- the stdlib `destroy()` to generate an irrevocable destruction proof.
+
+ceremony AmnesiaCeremony {
+    guardians: 3
+    threshold: 2
+
+    on_destroy {
+        destroy(0)
+    }
+}

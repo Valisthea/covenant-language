@@ -1,0 +1,21 @@
+[package]
+description = "Privacy flow analysis for the Covenant compiler"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "privacy", "fhe", "smart-contracts"]
+categories = ["development-tools", "cryptography"]
+name = "covenant-privacy"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+covenant-types = { path = "../covenant-types", version = "0.9.2" }
+covenant-resolver = { path = "../covenant-resolver", version = "0.9.2" }
+covenant-parser = { path = "../covenant-parser", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }

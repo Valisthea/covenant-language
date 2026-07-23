@@ -1,0 +1,45 @@
+-- test_isolation_demo.cov
+--
+-- V0.9 Sprint 40 demonstration: each test_* action runs against a fresh
+-- harness instance. State set by one test does NOT leak into the next.
+--
+-- Run with:
+--   cargo run --bin covenant -- test examples/test_isolation_demo.cov
+--
+-- Expected output:
+--   test test_initial_n_is_zero ... ok
+--   test test_set_and_check ... ok
+--   test test_isolation_n_starts_zero_again ... ok
+--   test result: 3 passed; 0 failed
+--
+-- Test pattern (V0.9.0 — pre-stdlib-test-API):
+--   `action test_X() when <condition> {}` — empty body.
+--   The `when` guard is the assertion : if it holds, action returns Ok
+--   = test passes. If it fails, action reverts = test fails. Empty
+--   body avoids side effects mid-assertion. V0.9.x will add a richer
+--   stdlib testing API with `assert!` macro, snapshot/revert helpers,
+--   and value-returning assertions.
+
+record IsolationDemo {
+    n: amount = 0
+
+    -- ---- tests ----
+
+    -- test_X passes iff the `when` guard holds. The guard fires BEFORE
+    -- the (empty) body, so we use it to check the contract's state at
+    -- the start of the test.
+
+    -- Pass iff n is 0 at start (fresh deploy). Verifies hydration.
+    action test_initial_n_is_zero() when n == 0 {}
+
+    -- Mutate n to 5. With per-test isolation, the next test sees n=0
+    -- again (not 5).
+    action test_mutate_n_to_5() {
+        n = 5
+    }
+
+    -- Pass iff n is 0 at start. Critical proof of isolation : if state
+    -- from test_mutate_n_to_5 leaked, n would be 5 here and the
+    -- assertion would fail.
+    action test_isolation_n_starts_zero_again() when n == 0 {}
+}

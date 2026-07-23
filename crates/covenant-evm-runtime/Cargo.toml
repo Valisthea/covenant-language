@@ -1,0 +1,21 @@
+[package]
+name = "covenant-evm-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Minimal EVM interpreter, ABI helpers, and U256 for Covenant-emitted bytecode"
+keywords = ["covenant", "evm", "interpreter", "wasm", "playground"]
+categories = ["compilers", "wasm", "cryptography::cryptocurrencies"]
+
+[dependencies]
+sha3 = "0.10"
+hex = "0.4"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# Tests inside this crate stay minimal — the heavy compiler-side
+# integration suite lives in covenant-testing, which depends on this.

@@ -1,0 +1,46 @@
+-- HybridState.cov · mixed-privacy module construct.
+-- Demonstrates `hybrid module` with per-field privacy qualifiers:
+--   - plain fields (no qualifier) default to public under hybrid
+--   - `field encrypted` marks individual fields as ciphertext<T>
+--
+-- The `module` construct performs no automatic stdlib synthesis;
+-- all functions must be declared explicitly.
+
+hybrid module HybridState {
+    field headcount: amount
+    field treasury: address
+    field locked: amount
+
+    event HeadcountChanged(new_count: amount)
+    event TreasuryUpdated(who: address)
+
+    action set_treasury(who: address) {
+        treasury = who
+        emit TreasuryUpdated(who)
+    }
+
+    action hire() {
+        headcount += 1
+        locked += 1
+        emit HeadcountChanged(headcount)
+    }
+
+    action release()
+            when headcount > 0 {
+        headcount -= 1
+        locked -= 1
+        emit HeadcountChanged(headcount)
+    }
+
+    view count returns amount {
+        headcount
+    }
+
+    view get_treasury returns address {
+        treasury
+    }
+
+    view get_locked returns amount {
+        locked
+    }
+}

@@ -1,0 +1,14 @@
+[package]
+description = "Diagnostic types for the Covenant compiler"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "diagnostics", "smart-contracts"]
+categories = ["development-tools"]
+name = "covenant-diag"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }

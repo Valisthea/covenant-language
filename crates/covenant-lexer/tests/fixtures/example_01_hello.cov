@@ -1,0 +1,15 @@
+-- Hello.cov · the minimal viable Covenant file.
+-- A `record` is a key-value store on chain: fields + actions + views,
+-- nothing else. The simplest building block in the language.
+
+record Hello {
+    greeting: text
+
+    action update(new_text: text) {
+        greeting = new_text
+    }
+
+    view read returns text {
+        greeting
+    }
+}

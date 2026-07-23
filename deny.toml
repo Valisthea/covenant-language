@@ -1,0 +1,58 @@
+# cargo-deny policy for the Covenant workspace (KSR-CVN-009).
+#
+# Run locally with:
+#     cargo deny check
+#
+# CI should run `cargo deny check advisories licenses bans` on every PR.
+# Changes to this file must be reviewed in the same PR as the dependency
+# change that motivates them.
+
+[graph]
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-pc-windows-msvc" },
+    { triple = "aarch64-apple-darwin" },
+]
+all-features = false
+no-default-features = false
+
+[advisories]
+version = 2
+# Warn on unmaintained crates; error on known vulnerabilities.
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+# Covenant is Apache-2.0 / CC0-1.0 dual licensed. Allow the usual
+# compatible-with-Apache licenses. Anything else must be either relicensed
+# upstream or added here with a justification comment.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "CC0-1.0",
+    "Zlib",
+]
+confidence-threshold = 0.8
+exceptions = []
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+# Explicit hard denials — additions here must be motivated by a finding.
+deny = []
+skip = []
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -1,0 +1,143 @@
+{
+  "name": "covenant-lang",
+  "displayName": "Covenant",
+  "description": "Covenant smart contract language — syntax highlighting, diagnostics, hover, and symbols via covenant-lsp. Now surfaces the compiler's fail-loud diagnostics (E424/E425/E519/E521) live. OMEGA V4/V5/V6-audited, V0.9.4.",
+  "version": "0.9.4",
+  "publisher": "kairos-lab",
+  "icon": "icon.png",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Valisthea/covenant-language"
+  },
+  "homepage": "https://covenant-lang.org",
+  "bugs": {
+    "url": "https://github.com/Valisthea/covenant-language/issues"
+  },
+  "galleryBanner": {
+    "color": "#1a1a2e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "covenant",
+    "smart contract",
+    "blockchain",
+    "evm",
+    "fhe",
+    "zero-knowledge",
+    "post-quantum",
+    "cryptography",
+    "privacy",
+    "ethereum",
+    "wasm"
+  ],
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Snippets"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "activationEvents": [
+    "onLanguage:covenant"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "covenant",
+        "aliases": [
+          "Covenant",
+          "covenant"
+        ],
+        "extensions": [
+          ".cov"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "covenant",
+        "scopeName": "source.covenant",
+        "path": "./syntaxes/covenant.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "covenant",
+        "path": "./snippets/covenant.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "covenant.runGasBenchmark",
+        "title": "Covenant: Run Gas Benchmark",
+        "category": "Covenant"
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "covenant",
+        "required": ["task"],
+        "properties": {
+          "task": { "type": "string", "description": "The Covenant task to execute" },
+          "target": { "type": "string", "enum": ["evm"], "description": "Compilation target (evm only in V0.9)" }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "covenant",
+        "owner": "covenant",
+        "fileLocation": ["absolute"],
+        "pattern": [
+          {
+            "regexp": "^\\[([EW]\\d+)\\] (Error|Warning): (.+)$",
+            "code": 1,
+            "severity": 2,
+            "message": 3
+          },
+          {
+            "regexp": "^\\s+[^\\[]*\\[(.+):(\\d+):(\\d+)\\]",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Covenant",
+      "properties": {
+        "covenant.lsp.path": {
+          "type": "string",
+          "default": "covenant-lsp",
+          "description": "Path to the covenant-lsp binary. Leave empty / default to use the bundled binary (recommended). Override only if you built covenant-lsp from source."
+        },
+        "covenant.lsp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Covenant language server (diagnostics, hover, symbols)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "typescript": "^5.3.0"
+  }
+}

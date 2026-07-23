@@ -1,0 +1,39 @@
+[workspace]
+members = [
+    "crates/covenant-lexer",
+    "crates/covenant-parser",
+    "crates/covenant-resolver",
+    "crates/covenant-types",
+    "crates/covenant-privacy",
+    "crates/covenant-ir",
+    "crates/covenant-opt",
+    "crates/covenant-evm-backend",
+    "crates/covenant-aster-backend",
+    "crates/covenant-wasm-backend",
+    "crates/covenant-circuits",
+    "crates/covenant-stdlib",
+    "crates/covenant-diag",
+    "crates/covenant-driver",
+    "crates/covenant-cli",
+    "crates/covenant-manifest",
+    "crates/covenant-testing",
+    "crates/covenant-lsp",
+    "crates/covenant-lint",
+    "crates/covenant-wasm-bindings",
+    "crates/covenant-evm-runtime",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.9.4"
+edition = "2021"
+authors = ["Valisthea <valisthea@kairos-lab.org>"]
+license = "Apache-2.0"
+repository = "https://github.com/Valisthea/covenant-language"
+homepage = "https://covenant-lang.org"
+documentation = "https://docs.rs/covenant-cli"
+
+[workspace.dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

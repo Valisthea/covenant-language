@@ -1,0 +1,25 @@
+-- 01_token_basic.cov
+--
+-- AUDIT FIXTURE — ERC-20 surface via the `token` keyword.
+--
+-- Purpose : verify that the stdlib synthesizer produces an ERC-20-conformant
+-- ABI from a 4-line declaration. Auditors should check :
+--   - Synthesized fields : supply, balances, allowances, name, symbol, decimals
+--   - Synthesized actions : transfer, approve, transfer_from
+--   - Synthesized views : balance_of, allowance, total_supply
+--   - Synthesized events : Transfer(from,to,value), Approval(owner,spender,value)
+--   - No conflict with developer-declared symbols (E601 detector)
+--
+-- Build :
+--   covenant build examples/audit/01_token_basic.cov --target-chain=mockchain
+--
+-- Expected ABI : matches ERC-20 selector set
+-- (transfer = 0xa9059cbb, approve = 0x095ea7b3, transferFrom = 0x23b872dd,
+--  balanceOf = 0x70a08231, allowance = 0xdd62ed3e, totalSupply = 0x18160ddd).
+
+token AuditCoin {
+    symbol: "AUDC"
+    name: "Audit Coin"
+    decimals: 18
+    supply: 1_000_000 to deployer
+}

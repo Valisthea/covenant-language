@@ -1,0 +1,37 @@
+-- 06_auth_only_deployer.cov
+--
+-- AUDIT FIXTURE — Authorization boundary (only deployer pattern).
+--
+-- Purpose : exercise the most common access-control pattern. The
+-- `only deployer` clause should compile to a runtime check that reverts
+-- if `msg.sender != contract.deployer` (the account that ran the
+-- constructor).
+--
+-- Auditor checklist :
+--   - `set_value` reverts when called by anyone other than the deployer.
+--   - `read_value` is callable by anyone (no `only`).
+--   - The deployer address is captured at constructor time, NOT at
+--     each call (i.e. a state field, not `tx.origin` lookup).
+--   - No path allows `deployer` to be modified post-deploy (no setter).
+--
+-- Negative-test scenarios :
+--   - Non-deployer calls `set_value(42)` → revert with `OnlyDeployer`
+--     (or whatever the synthesized error is).
+--   - Deployer calls `set_value(42)` → succeeds, emits ValueSet, state
+--     updates to 42.
+--   - Anyone calls `read_value()` → returns the current value.
+
+record AccessControlled {
+    value: amount = 0
+
+    action set_value(new_value: amount) only deployer {
+        value = new_value
+        emit ValueSet(caller, new_value)
+    }
+
+    view read_value returns amount {
+        value
+    }
+
+    event ValueSet(setter: address, value: amount)
+}

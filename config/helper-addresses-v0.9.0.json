@@ -1,0 +1,99 @@
+{
+  "$schema": "./helper-addresses.schema.json",
+  "version": "0.9.0",
+  "release_date": "TBD-AT-V0.9.0-TAG",
+  "sepolia_deployed_date": "2026-04-26",
+  "compiler_version_required": "^0.9.0",
+
+  "_notes": {
+    "create2_factory": "0x4e59b44847b379578588920cA78FbF26c0B4956C",
+    "create2_factory_name": "Arachnid CREATE2 Deployer Proxy (deterministic across EVM chains)",
+    "create2_salts": {
+      "ceremony_helper": "keccak256(\"covenant-v0.9.0-ceremony\") = 0xaa3683e135b450331ce1899b8ad889cc906f5fe4c9ed330de2bc348b8ff5b4e7",
+      "fhe_helper":      "keccak256(\"covenant-v0.9.0-fhe\")      = 0x1792482698b3c7bafe518e48de69cd21abd5e541142f999a9b813486a67ac5cc",
+      "pq_helper":       "keccak256(\"covenant-v0.9.0-pq\")       = 0x9d5165c3388db4c52af656ce0e1d06d9a10ca418fbb8c26df6b886ba4d5edad8",
+      "zk_helper":       "keccak256(\"covenant-v0.9.0-zk\")       = 0xc1632257f2966ef776fd4dc929fc1e2c32ead93cf712907fba66c93832bd8efd"
+    },
+    "init_code_hashes_v0.9.0": {
+      "ceremony_helper": "0x4cff4b620e4a0d7d9b01ae09e9d8c482787b42f45797cc474887eb5b132e8272",
+      "fhe_helper":      "0xa19be4cd752bba2ec1fa11edd333a7efa20dcaa81e65f12b2daec5ccb7e31aab",
+      "pq_helper":       "0x9b21aaebd6d7026423cdf96d339a940eaf7b85e15d9794df0a67e9166ad9efdb",
+      "zk_helper":       "0x405b577a069c8e464fa2897806ee80cc07eb7a7f3a14a52679c67d09f8a29b02"
+    },
+    "predicted_addresses": "Computed via getCreate2Address(arachnid, salt, initCodeHash). Identical on every EVM chain that has Arachnid factory at 0x4e59...956C deployed (Sepolia ✅, Aster ✅ once verified). See _CREATE2_PREDICTION below.",
+    "_CREATE2_PREDICTION": {
+      "ceremony_helper": "0x6cABDD5Acf86D43C30CE560be68780E62F78A16e",
+      "fhe_helper":      "0x8f38e4F079570D77900fF2d6FfD0e6c96c401E44",
+      "pq_helper":       "0xD3FcA4d62dc2162d9b07DEC2aCFc0A4Bda2A9010",
+      "zk_helper":       "0xa9910bce5A3A47D0a92441C63D1e555A6CD7513c"
+    }
+  },
+
+  "targets": {
+    "sepolia": {
+      "chain_id": 11155111,
+      "deployed_at_block": 10737692,
+      "deployer_address": "0x409D61d3582AD5A655927E615AC3CF366c165a55",
+      "deploy_block_hex": "0xa3d21c",
+      "helpers": {
+        "ceremony_helper":     "0x627f1Ff6Dc93AEba050c242FD9E26961E8F6c6F0",
+        "ceremony_helper_v090":"0x6cABDD5Acf86D43C30CE560be68780E62F78A16e",
+        "fhe_helper":          "0x8f38e4F079570D77900fF2d6FfD0e6c96c401E44",
+        "pq_helper":           "0xD3FcA4d62dc2162d9b07DEC2aCFc0A4Bda2A9010",
+        "zk_helper":           "0xa9910bce5A3A47D0a92441C63D1e555A6CD7513c"
+      },
+      "_helpers_note": "V0.9.1 patched CeremonyHelper at 0x627f... adds the amnesiaSetup(uint256) 1-arg overload that the Covenant compiler emits via Opcode::AmnesiaBegin. Original V0.9.0 helper at 0x6cAB...A16e remains deployed for direct cast diagnostics + audit trail. Compiler routes new ceremonies to the V0.9.1 address.",
+      "selectors": {
+        "amnesiaSetup":         "0xcba445bb",
+        "amnesiaSetupV091":     "0xa1c83bd6",
+        "amnesiaSubmitShare":   "0x75ee5722",
+        "amnesiaFinalize":      "0x4ef88c73",
+        "amnesiaDestroy":       "0x7688304b",
+        "encryptTrivial":       "0x1af05900",
+        "encryptFresh":         "0xc58ba7dd",
+        "add":                  "0xd1de592a",
+        "sub":                  "0x41aa0080",
+        "mul":                  "0x96ce1ec7",
+        "eq":                   "0x3447c030",
+        "lt":                   "0xd102b4d3",
+        "cmux":                 "0x3efd7983",
+        "decrypt":              "0x33a5fbf4",
+        "verify":               "0x5bf48e3a",
+        "nullifier":            "0xd72a0b67",
+        "proofAggregate":       "0xb86c3c15",
+        "pqVerify":             "0x0ec97af7",
+        "pqKeygenFromSeed":     "0x924f5fe3",
+        "pqRandom":             "0x5261ff4c"
+      },
+      "verification": {
+        "etherscan_verified": true,
+        "code_hashes": null,
+        "etherscan_links": {
+          "ceremony_helper": "https://sepolia.etherscan.io/address/0x6cabdd5acf86d43c30ce560be68780e62f78a16e#code",
+          "fhe_helper":      "https://sepolia.etherscan.io/address/0x8f38e4f079570d77900ff2d6ffd0e6c96c401e44#code",
+          "pq_helper":       "https://sepolia.etherscan.io/address/0xd3fca4d62dc2162d9b07dec2acfc0a4bda2a9010#code",
+          "zk_helper":       "https://sepolia.etherscan.io/address/0xa9910bce5a3a47d0a92441c63d1e555a6cd7513c#code"
+        },
+        "first_call_tx": "0xc9543870f61194fe40a984a03d335ba1892d6da642c1c588fd7f40f2f9970ca6",
+        "first_call_method": "CeremonyHelper.amnesiaSetup(42, 3, 2)",
+        "first_call_gas_used": 157444,
+        "first_call_phase_after": 1
+      },
+      "_status": "DEPLOYED + VERIFIED on Sepolia (block 10737692, 2026-04-26). All 4 CREATE2 addresses match Sprint 30 Arachnid-factory predictions exactly. End-to-end smoke test successful: cast send to amnesiaSetup → status=1, AmnesiaSetup event emitted, phase()=1 (Active), sessionCount()=1. KSR-CVN-005 (V0.8 audit) status flips to 'Fix verified'."
+    },
+
+    "aster_testnet": {
+      "chain_id": 1996,
+      "helpers": null,
+      "selectors": null,
+      "_status": "Helper deployment coordinated by Sprint 42-43. Predicted addresses identical to Sepolia IF Arachnid factory is deployed on Aster. Verify in Sprint 42."
+    },
+
+    "mainnet": {
+      "chain_id": 1,
+      "helpers": null,
+      "selectors": null,
+      "_status": "V0.9 ships testnet-only. Mainnet helpers land in V1.0 post-external-audit. Compiler refuses --target=mainnet. Mocked* helpers also revert at runtime if block.chainid==1 (defense in depth)."
+    }
+  }
+}

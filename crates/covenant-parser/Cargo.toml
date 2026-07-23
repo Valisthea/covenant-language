@@ -1,0 +1,16 @@
+[package]
+description = "Parser for the Covenant smart contract language"
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords = ["compiler", "parser", "smart-contracts", "covenant"]
+categories = ["development-tools"]
+name = "covenant-parser"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+thiserror = { workspace = true }

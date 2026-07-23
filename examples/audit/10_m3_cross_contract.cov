@@ -1,0 +1,54 @@
+-- 10_m3_cross_contract.cov
+--
+-- M3 MILESTONE FIXTURE — first cross-contract Covenant call on Sepolia.
+-- Unblocked by V0.9.1 resolver fix (registers external_contracts in
+-- the construct scope so `IFoo.at(addr).method(...)` chains type-check).
+--
+-- Purpose : exercise the `external contract` declaration + `IFoo.at(addr)`
+-- call syntax (Sprint 33 / V0.7-V0.8 era, V0.9.1 resolver gap closed)
+-- by calling INTO the M2 NFT contract from a separate Covenant contract.
+--
+-- M2 NFT (target) : 0xf8d9895cc265886d958841af8d9a6469be94bc25 on Sepolia
+--
+-- Build :
+--   covenant build examples/audit/10_m3_cross_contract.cov --target-chain=sepolia
+--
+-- Deploy + exercise :
+--   cast send --create $BYTECODE --rpc-url $SEPOLIA --private-key $PK
+--   cast send <m3_addr> "set_nft(address)" 0xf8d9895c...4bc25 --rpc-url $SEPOLIA --private-key $PK
+--   cast call <m3_addr> "lookup_balance(address)(uint256)" 0x000...dEaD --rpc-url $SEPOLIA
+--   cast call <m3_addr> "lookup_owner(uint256)(address)" 1 --rpc-url $SEPOLIA
+
+external contract IAuditNFT {
+    function name() view returns text
+    function symbol() view returns text
+    function balanceOf(address) view returns amount
+    function ownerOf(amount) view returns address
+}
+
+record M3CrossContractViewer {
+    nft_addr: address
+
+    action set_nft(addr: address) only deployer {
+        nft_addr = addr
+        emit NftLinked(addr)
+    }
+
+    view lookup_name returns text {
+        IAuditNFT.at(nft_addr).name()
+    }
+
+    view lookup_symbol returns text {
+        IAuditNFT.at(nft_addr).symbol()
+    }
+
+    view lookup_balance(who: address) returns amount {
+        IAuditNFT.at(nft_addr).balanceOf(who)
+    }
+
+    view lookup_owner(token_id: amount) returns address {
+        IAuditNFT.at(nft_addr).ownerOf(token_id)
+    }
+
+    event NftLinked(addr: address)
+}

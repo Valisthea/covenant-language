@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fields and Storage · Covenant By Example</title>
+<meta name="description" content="Every primitive type, plus arrays and maps.">
+<meta name="author" content="Kairos Lab">
+<link rel="canonical" href="https://examples.covenant-lang.org/02-fields-and-storage">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="alternate icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#7C3AED">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://examples.covenant-lang.org/02-fields-and-storage">
+<meta property="og:site_name" content="Covenant By Example">
+<meta property="og:title" content="Fields and Storage · Covenant By Example">
+<meta property="og:description" content="Every primitive type, plus arrays and maps.">
+<meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@Valisthea">
+<meta name="twitter:title" content="Fields and Storage · Covenant By Example">
+<meta name="twitter:description" content="Every primitive type, plus arrays and maps.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --ink:          #1a1a1a;
+  --ink-soft:     #3d3d3d;
+  --ink-mute:     #6b7280;
+  --ink-faint:    #9ca3af;
+  --rule:         #d1d5db;
+  --rule-faint:   #e5e7eb;
+  --paper:        #fcfbf8;
+  --paper-pure:   #ffffff;
+  --accent:       #7C3AED;
+  --accent-faint: #faf7ff;
+  --accent-soft:  #a78bfa;
+  --cyan:         #0891b2;
+  --blue:         #2563eb;
+  --green:        #059669;
+  --red:          #dc2626;
+  --orange:       #d97706;
+  --header-h:     56px;
+}
+
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'EB Garamond', Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+
+#site-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: rgba(252,251,248,0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule-faint);
+  display: flex; align-items: center;
+  padding: 0 48px;
+  z-index: 1000;
+  transition: border-color 0.3s ease;
+}
+#site-header.scrolled { border-bottom-color: var(--rule); }
+.header-brand {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; color: var(--ink); flex-shrink: 0;
+}
+.header-brand-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.header-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent);
+  padding: 1px 6px; margin-left: 4px;
+}
+.header-spacer { flex: 1; }
+nav.header-nav { display: flex; align-items: center; gap: 32px; }
+.nav-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5pt; font-weight: 400;
+  color: var(--ink-mute); text-decoration: none;
+  letter-spacing: 0.01em; transition: color 0.15s ease;
+}
+.nav-link:hover, .nav-link.active { color: var(--ink); }
+.nav-link-cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); text-decoration: none;
+  border: 1px solid var(--accent);
+  padding: 5px 12px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.nav-link-cta:hover { background: var(--accent); color: white; }
+
+
+.page-wrap {
+  display: flex;
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  border-right: 1px solid var(--rule-faint);
+  padding: 32px 0 48px;
+  background: var(--paper);
+}
+.sidebar-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 6.5pt; font-weight: 600;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0 20px;
+  margin: 20px 0 6px;
+}
+.sidebar-section-label:first-child { margin-top: 0; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 20px;
+  text-decoration: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 9pt;
+  color: var(--ink-mute);
+  transition: color 0.12s, background 0.12s;
+  border-left: 2px solid transparent;
+}
+.sidebar-link:hover { color: var(--ink); background: var(--accent-faint); }
+.sidebar-link.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  background: var(--accent-faint);
+  font-weight: 500;
+}
+.sidebar-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; color: var(--ink-faint);
+  flex-shrink: 0; width: 18px; text-align: right;
+}
+.sidebar-link.active .sidebar-num { color: var(--accent-soft); }
+.main {
+  flex: 1;
+  min-width: 0;
+  max-width: 820px;
+  padding: 56px 64px 96px;
+}
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { padding: 40px 24px 80px; max-width: 100%; }
+}
+
+
+.chapter-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.chapter-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(24pt, 4vw, 38pt);
+  font-weight: 400; line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.chapter-subtitle {
+  font-family: 'EB Garamond', serif;
+  font-size: 14pt; font-style: italic;
+  color: var(--ink-mute); line-height: 1.5;
+  margin-bottom: 36px;
+}
+.chapter-divider {
+  border: none; border-top: 1px solid var(--ink);
+  margin-bottom: 40px;
+}
+.prose {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; color: var(--ink-soft);
+  line-height: 1.7; max-width: 680px;
+  margin-bottom: 32px;
+}
+.prose code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; background: var(--rule-faint);
+  padding: 1px 5px; border-radius: 2px; color: var(--ink);
+}
+.prose + .prose { margin-top: -16px; }
+/* Code block */
+.code-wrap {
+  margin: 28px 0;
+  border: 1px solid var(--rule);
+  background: #1a1a1a;
+  border-radius: 0;
+}
+.code-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5pt; font-weight: 500;
+  color: #9ca3af;
+  padding: 8px 16px;
+  border-bottom: 1px solid #2d2d2d;
+  background: #111;
+  letter-spacing: 0.06em;
+}
+.code-block {
+  margin: 0; padding: 20px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; line-height: 1.65;
+  color: #e5e7eb; overflow-x: auto;
+  tab-size: 4;
+}
+.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
+.code-block .tp   { color: #67e8f9; }  /* types — cyan */
+.code-block .str  { color: #86efac; }  /* strings — green */
+.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
+.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+/* Notes table */
+.notes-table {
+  width: 100%; border-collapse: collapse;
+  margin: 32px 0;
+}
+.notes-table tr { border-top: 1px solid var(--rule-faint); }
+.notes-table tr:first-child { border-top: 1px solid var(--rule); }
+.notes-table td {
+  padding: 10px 12px;
+  font-family: 'EB Garamond', serif;
+  font-size: 12pt; vertical-align: top;
+  color: var(--ink-soft); line-height: 1.55;
+}
+.notes-table td:first-child {
+  width: 200px; white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5pt; color: var(--ink);
+  padding-right: 20px;
+}
+.notes-table td code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9pt; background: var(--rule-faint);
+  padding: 1px 4px; border-radius: 2px; color: var(--ink);
+}
+/* Takeaways */
+.takeaways-heading {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 40px 0 12px;
+}
+.takeaways {
+  list-style: none;
+  padding: 0; margin: 0;
+}
+.takeaways li {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; color: var(--ink-soft);
+  line-height: 1.55; padding: 6px 0;
+  padding-left: 20px; position: relative;
+}
+.takeaways li::before {
+  content: '→';
+  position: absolute; left: 0;
+  color: var(--accent); font-style: normal;
+}
+.takeaways li code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10pt; background: var(--rule-faint);
+  padding: 1px 5px; border-radius: 2px; color: var(--ink);
+}
+/* Section label */
+.section-badge {
+  display: inline-flex; align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 2px 8px; margin-bottom: 12px;
+}
+.section-badge.fundamentals { color: var(--accent); border: 1px solid var(--accent); }
+.section-badge.standards    { color: var(--cyan);   border: 1px solid var(--cyan); }
+.section-badge.advanced     { color: var(--green);  border: 1px solid var(--green); }
+/* Navigation footer */
+.chapter-nav {
+  display: flex; gap: 16px; margin-top: 64px;
+  padding-top: 32px; border-top: 1px solid var(--rule-faint);
+}
+.chapter-nav-btn {
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
+  padding: 16px 20px; border: 1px solid var(--rule);
+  text-decoration: none; color: var(--ink);
+  transition: border-color 0.15s, background 0.15s;
+}
+.chapter-nav-btn:hover { border-color: var(--accent); background: var(--accent-faint); }
+.chapter-nav-btn.next { text-align: right; align-items: flex-end; }
+.chapter-nav-direction {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7pt; font-weight: 600;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.chapter-nav-title {
+  font-family: 'EB Garamond', serif;
+  font-size: 13pt; color: var(--ink);
+}
+
+</style>
+</head>
+<body>
+
+<header id="site-header">
+  <a class="header-brand" href="https://covenant-lang.org">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <polygon points="12,2 22,20 2,20" stroke="#7C3AED" stroke-width="2" fill="none"/>
+      <circle cx="12" cy="20" r="1.5" fill="#7C3AED"/>
+    </svg>
+    <span class="header-brand-name">Covenant</span>
+    <span class="header-badge">V0.7 GA</span>
+  </a>
+  <div class="header-spacer"></div>
+  <nav class="header-nav">
+    <a class="nav-link" href="https://covenant-lang.org">Home</a>
+    <a class="nav-link" href="https://covenant-lang.org/audit">Audit</a>
+    <a class="nav-link  active" href="index">Examples</a>
+    <a class="nav-link" href="https://github.com/Valisthea/covenant-language" target="_blank" rel="noopener">GitHub</a>
+    <a class="nav-link-cta" href="https://crates.io/crates/covenant-cli" target="_blank" rel="noopener">cargo install</a>
+  </nav>
+</header>
+
+<div class="page-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-section-label">Fundamentals</div>
+<a class="sidebar-link" href="01-hello-contract"><span class="sidebar-num">1</span>Hello Contract</a>
+<a class="sidebar-link active" href="02-fields-and-storage"><span class="sidebar-num">2</span>Fields and Storage</a>
+<a class="sidebar-link" href="03-actions-events-errors"><span class="sidebar-num">3</span>Actions, Events & Errors</a>
+<a class="sidebar-link" href="04-guards"><span class="sidebar-num">4</span>Guards</a>
+<a class="sidebar-link" href="05-external-calls"><span class="sidebar-num">5</span>External Contract Calls</a>
+<div class="sidebar-section-label">Standards</div>
+<a class="sidebar-link" href="06-erc20-token"><span class="sidebar-num">6</span>ERC-20 Token</a>
+<a class="sidebar-link" href="07-fhe-basics"><span class="sidebar-num">7</span>FHE Basics</a>
+<a class="sidebar-link" href="08-encrypted-token"><span class="sidebar-num">8</span>Encrypted Token (ERC-8227)</a>
+<a class="sidebar-link" href="09-post-quantum-signatures"><span class="sidebar-num">9</span>Post-Quantum Signatures</a>
+<a class="sidebar-link" href="10-zero-knowledge-proofs"><span class="sidebar-num">10</span>Zero-Knowledge Proofs</a>
+<div class="sidebar-section-label">Advanced</div>
+<a class="sidebar-link" href="11-cryptographic-amnesia"><span class="sidebar-num">11</span>Cryptographic Amnesia (ERC-8228)</a>
+<a class="sidebar-link" href="12-uups-upgradeable"><span class="sidebar-num">12</span>UUPS Upgradeable</a>
+<a class="sidebar-link" href="13-beacon-proxy"><span class="sidebar-num">13</span>Beacon Proxy Pattern</a>
+<a class="sidebar-link" href="14-oracle-integration"><span class="sidebar-num">14</span>Oracle Integration</a>
+<a class="sidebar-link" href="15-deploy-to-sepolia"><span class="sidebar-num">15</span>Deploy to Sepolia</a>
+  </aside>
+  <main class="main">
+    <span class="section-badge fundamentals">Fundamentals</span>
+    <p class="chapter-eyebrow">Chapter 2 / 15</p>
+    <h1 class="chapter-title">Fields and Storage</h1>
+    <p class="chapter-subtitle">Every primitive type, plus arrays and maps.</p>
+    <hr class="chapter-divider">
+    
+    <p class="prose">Covenant's type system maps cleanly to EVM storage slots while adding
+semantic types that prevent common mistakes — for example, using <code>amount</code>
+instead of <code>u256</code> for ether values makes units explicit.</p>
+    <div class="code-wrap"><div class="code-label">storage_types.cov</div><pre class="code-block" data-lang="covenant">record Catalog {
+    // Semantic primitives
+    owner:      address;
+    balance:    amount;       // wei — prevents unit confusion
+    created:    time;         // unix timestamp
+    lock_for:   duration;     // seconds
+    checksum:   hash;         // bytes32
+
+    // Text
+    name:       text;
+
+    // Integer widths
+    small:      u8;
+    counter:    u64;
+    big:        u256;
+    signed_val: i256;
+
+    // Boolean
+    active:     bool;
+
+    // Fixed-size array (max 32 entries)
+    tags:       [text; 32];
+
+    // Dynamic map
+    deposits:   map(address => amount);
+
+    // Nested map
+    allowances: map(address => map(address => amount));
+}</pre></div>
+<div class="code-wrap"><div class="code-label">Reading and writing fields</div><pre class="code-block" data-lang="covenant">record Counter {
+    count: u64;
+    owner: address;
+
+    action increment() only(self.owner) {
+        self.count += 1;
+    }
+
+    action reset() only(self.owner) {
+        self.count = 0;
+    }
+
+    view get() -> u64 {
+        return self.count;
+    }
+}</pre></div>
+    
+<p class="takeaways-heading" style="margin-top:44px">Annotations</p>
+<table class="notes-table">
+<tr><td><code>amount</code></td><td>compiles to <code>uint256</code> but the compiler rejects arithmetic that mixes amounts with bare integers.</td></tr>
+<tr><td><code>time</code> / <code>duration</code></td><td>prevent accidental subtraction of timestamps and durations — the compiler enforces dimensional compatibility.</td></tr>
+<tr><td><code>map(K => V)</code></td><td>compiles to a Solidity mapping; nested maps compile to nested mappings.</td></tr>
+<tr><td><code>[T; N]</code></td><td>is a fixed-size array stored packed into adjacent slots when possible.</td></tr>
+</table>
+
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Semantic types (<code>amount</code>, <code>time</code>, <code>duration</code>) prevent an entire class of unit bugs at compile time.</li>
+<li>Maps and arrays have familiar syntax but compile to efficient EVM layouts.</li>
+<li>Field initialization to zero is implicit — no constructor boilerplate needed.</li></ul>
+    <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="01-hello-contract"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Hello Contract</span></a><a class="chapter-nav-btn next" href="03-actions-events-errors"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Actions, Events & Errors</span></a></nav>
+  </main>
+</div>
+<script>
+
+function hl(code, lang) {
+  // Escape HTML
+  code = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  if (lang === 'bash' || lang === 'shell') {
+    code = code.replace(/(#[^\n]*)/g, '<span class="cmt">$1</span>');
+    code = code.replace(/\b(cargo|covenant|export|git|npm)\b/g, '<span class="kw">$1</span>');
+    code = code.replace(/"([^"]*?)"/g, '<span class="str">"$1"</span>');
+    return code;
+  }
+
+  // Covenant
+  const KEYWORDS = [
+    'record','token','encrypted token','action','view','constant','interface',
+    'only','when','given','emit','transfer','revert_with','return','let',
+    'if','else','fhe_add','fhe_mul','fhe_sub','decrypt','reveal','encrypt',
+    'encrypted','pq_key','selective_disclosure','verified_by','amnesia',
+    'destroy','vdf_proof','upgradeable_by','migrate','from','to',
+    'deploy_proxy','event','error','map','import','as','pub'
+  ];
+  const TYPES = [
+    'address','amount','time','duration','hash','text','bool','field',
+    'u8','u16','u32','u64','u128','u256','i256','u80','u112',
+    'zk_proof','bytes','Dilithium3','Dilithium5','Falcon512','Falcon1024'
+  ];
+  const BUILTINS = [
+    'msg\\.sender','msg\\.value','block\\.timestamp','self\\.addr\\(\\)',
+    'keccak256','merkle_verify'
+  ];
+
+  // Comments first
+  code = code.replace(/(\/\/[^\n]*)/g, '\x00cmt\x01$1\x00/cmt\x01');
+  // Strings
+  code = code.replace(/"([^"]*?)"/g, '\x00str\x01"$1"\x00/str\x01');
+  // Decorators
+  code = code.replace(/(@\w+)/g, '\x00dec\x01$1\x00/dec\x01');
+  // Numbers (before keywords to avoid clashing with identifiers)
+  code = code.replace(/\b(\d[\d_]*(?:\.\d+)?(?:e\d+)?(?:u8|u16|u32|u64|u128|u256)?)\b/g,
+    '\x00num\x01$1\x00/num\x01');
+  // Builtins
+  for (const b of BUILTINS) {
+    code = code.replace(new RegExp(b, 'g'), '\x00fn\x01$&\x00/fn\x01');
+  }
+  // Keywords (longest first to avoid partial matches)
+  const kwSorted = [...KEYWORDS].sort((a,b) => b.length - a.length);
+  for (const kw of kwSorted) {
+    const safe = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    code = code.replace(new RegExp('(?<![\\w\\x00-\\x01])' + safe + '(?![\\w\\x00-\\x01])','g'),
+      '\x00kw\x01' + kw + '\x00/kw\x01');
+  }
+  // Types
+  for (const tp of TYPES) {
+    code = code.replace(new RegExp('(?<![\\w\\x00-\\x01])' + tp + '(?![\\w\\x00-\\x01])','g'),
+      '\x00tp\x01' + tp + '\x00/tp\x01');
+  }
+  // Convert placeholders to spans
+  code = code
+    .replace(/\x00kw\x01/g,  '<span class="kw">')
+    .replace(/\x00\/kw\x01/g,'</span>')
+    .replace(/\x00tp\x01/g,  '<span class="tp">')
+    .replace(/\x00\/tp\x01/g,'</span>')
+    .replace(/\x00str\x01/g, '<span class="str">')
+    .replace(/\x00\/str\x01/g,'</span>')
+    .replace(/\x00num\x01/g, '<span class="num">')
+    .replace(/\x00\/num\x01/g,'</span>')
+    .replace(/\x00cmt\x01/g, '<span class="cmt">')
+    .replace(/\x00\/cmt\x01/g,'</span>')
+    .replace(/\x00dec\x01/g, '<span class="dec">')
+    .replace(/\x00\/dec\x01/g,'</span>')
+    .replace(/\x00fn\x01/g,  '<span class="fn">')
+    .replace(/\x00\/fn\x01/g,'</span>');
+  return code;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('pre[data-lang]').forEach(pre => {
+    const lang = pre.getAttribute('data-lang') || 'covenant';
+    pre.innerHTML = hl(pre.textContent, lang);
+  });
+
+  // Header scroll effect
+  const header = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 8);
+  }, {passive: true});
+});
+
+</script>
+</body>
+</html>

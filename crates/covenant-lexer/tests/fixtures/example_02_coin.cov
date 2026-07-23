@@ -1,0 +1,14 @@
+-- Coin.cov · a standard ERC-20-conformant token.
+-- The `token` keyword generates:
+--   - fields: supply, balances, allowances, name, symbol, decimals
+--   - actions: transfer, approve, transfer_from
+--   - views:   balance_of, allowance
+--   - events:  Transfer, Approval
+-- The developer writes only the metadata and any custom logic.
+
+token Coin {
+    symbol: "COIN"
+    name: "Covenant Coin"
+    decimals: 18
+    supply: 1_000_000 to deployer
+}

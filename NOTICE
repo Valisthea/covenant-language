@@ -1,0 +1,14 @@
+Covenant Language ("Covenant")
+Copyright 2026 Kairos Lab
+
+This product includes software developed by Kairos Lab (https://kairos-lab.org).
+
+The compiler and tooling in this repository are licensed under the Apache
+License, Version 2.0 — see LICENSE.
+
+The language specifications and the example `.cov` contracts are dedicated to
+the public domain under CC0-1.0 — see examples/LICENSE and LICENSING.md.
+
+"Covenant", "Covenant Language", "Covenant Lang", and associated logos are
+trademarks of Kairos Lab. The Apache-2.0 license does not grant permission to
+use these marks (Apache-2.0, Section 6). See LICENSING.md.

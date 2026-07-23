@@ -1,0 +1,50 @@
+-- 04_nft_minimal.cov
+--
+-- AUDIT FIXTURE — ERC-721 surface via the `nft` keyword.
+--
+-- Purpose : verify ERC-721 auto-synthesis (Sprint 35.b).
+--
+-- Auto-synthesized fields :
+--   owners              : map<token_id, address>
+--   balances            : map<address, amount>
+--   token_approvals     : map<token_id, address>
+--   operator_approvals  : map<address, map<address, bool>>
+--
+-- Auto-synthesized views :
+--   name(), symbol(), tokenURI(id), balanceOf(owner), ownerOf(id),
+--   getApproved(id), isApprovedForAll(owner, operator)
+--
+-- Auto-synthesized actions :
+--   approve(to, id)            — gated : only owner OR isApprovedForAll
+--   setApprovalForAll(op, ok)  — gated : caller authorizes operator
+--   transferFrom(from, to, id) — ENFORCED (V0.9.2) : caller is owner OR
+--                                getApproved OR isApprovedForAll ; reverts
+--                                on to == address(0)
+--   burn(id)                   — ENFORCED (V0.9.2) : same authorization gate
+--   mint(to, id)               — V0.9.0 : OPEN ACCESS (audit flag !)
+--
+-- Auto-synthesized events :
+--   Transfer(indexed from, indexed to, indexed token_id)
+--   Approval(indexed owner, indexed approved, indexed token_id)
+--   ApprovalForAll(indexed owner, indexed operator, bool approved)
+--
+-- Auto-synthesized errors :
+--   NotTokenOwner, TokenAlreadyMinted, TokenDoesNotExist,
+--   NotApprovedOrOwner, InvalidReceiver
+--
+-- V0.9.0 audit warnings :
+--   * `mint` is OPEN-ACCESS by default. Real NFT contracts MUST add an
+--     access guard (e.g. `only deployer` or a role check) at user level.
+--     Documented in docs/v0.9/audit-scope-v0.9.0.md ; auditors should
+--     flag any deployed NFT that uses bare `nft { ... }` without a guard.
+--   * `tokenURI(id)` returns `base_uri` verbatim — no id concatenation
+--     until V1.0 text-interpolation primitives ship. Functionally
+--     identical metadata for every token.
+--   * `safeTransferFrom` (with receiver-hook callback) is V0.9.x deferred.
+--     Non-contract recipients work correctly with `transferFrom`.
+
+nft AuditNFT {
+    name: "Audit NFT"
+    symbol: "ANFT"
+    base_uri: "https://example.com/api/"
+}

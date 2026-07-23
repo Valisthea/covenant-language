@@ -1,0 +1,144 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Covenant",
+  "scopeName": "source.covenant",
+  "fileTypes": ["cov"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#annotations" },
+    { "include": "#aggregate-methods" },
+    { "include": "#intrinsic-functions" },
+    { "include": "#construct-keywords" },
+    { "include": "#privacy-keywords" },
+    { "include": "#type-keywords" },
+    { "include": "#control-keywords" },
+    { "include": "#guard-keywords" },
+    { "include": "#builtin-keywords" },
+    { "include": "#boolean-literals" },
+    { "include": "#duration-units" },
+    { "include": "#operators" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.double-dash.covenant",
+      "match": "--.*$"
+    },
+    "strings": {
+      "name": "string.quoted.double.covenant",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.covenant",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.covenant",
+          "match": "\\b0x[0-9A-Fa-f][0-9A-Fa-f_]*\\b"
+        },
+        {
+          "name": "constant.numeric.integer.covenant",
+          "match": "\\b[0-9][0-9_]*\\b"
+        }
+      ]
+    },
+    "annotations": {
+      "patterns": [
+        {
+          "comment": "Named V0.9 annotations with specific scope",
+          "name": "entity.name.function.annotation.covenant",
+          "match": "@(non_reentrant|proxy_compatible|batch_up_to|precompute|slot|deprecated|prove_offchain|verify_at_compile_time|selective_disclosure|version|audit|invariant)\\b"
+        },
+        {
+          "comment": "Generic annotations — fallback",
+          "name": "entity.other.attribute-name.covenant",
+          "match": "@[A-Za-z_][A-Za-z0-9_]*"
+        }
+      ]
+    },
+    "aggregate-methods": {
+      "comment": "Aggregate operators: .sum .count .max .min .avg .argmax_by_address etc.",
+      "match": "\\.(sum|count|max|min|avg|argmax_by_address|argmin_by_address|any|all|first|last|length)\\b",
+      "captures": {
+        "0": { "name": "support.function.aggregate.covenant" }
+      }
+    },
+    "intrinsic-functions": {
+      "comment": "Built-in cryptographic and runtime intrinsics",
+      "name": "support.function.builtin.covenant",
+      "match": "\\b(decrypt|encrypt|hash|keccak|sha256|fhe_random_bytes|destroy|freeze|verify_proof|sign|verify_signature|commit|reveal_value|noise_budget)\\b"
+    },
+    "construct-keywords": {
+      "name": "keyword.declaration.covenant",
+      "match": "\\b(module|record|token|ballot|counter|board|market|vault|registry|bridge|ceremony|test|struct|credential)\\b"
+    },
+    "privacy-keywords": {
+      "name": "storage.modifier.covenant",
+      "match": "\\b(public|private|encrypted|sealed|hybrid|confidential)\\b"
+    },
+    "type-keywords": {
+      "name": "support.type.covenant",
+      "match": "\\b(amount|time|duration|hash|text|address|choice|pq_key|bytes|bool|ciphertext|map|priority_queue|shares|amnesia_phase|validator_set|u8|u16|u32|u64|u128|u256|i8|i16|i32|i64|i128|i256|fhe)\\b"
+    },
+    "control-keywords": {
+      "name": "keyword.control.covenant",
+      "match": "\\b(action|view|reveal|when|only|given|match|let|return|for|each|in|if|else|encrypted_when|otherwise|try_action|catch|revert_with|field|event|error|version|phase|helper|constant)\\b"
+    },
+    "guard-keywords": {
+      "comment": "Access control and verification guards",
+      "name": "keyword.other.guard.covenant",
+      "match": "\\b(verified_by|pq_signed|anchored_on|upgradeable_by|vdf_locked|encrypted_when|only|when|given)\\b"
+    },
+    "builtin-keywords": {
+      "name": "keyword.other.covenant",
+      "match": "\\b(on_destroy|migrate|from|to|selective_disclosure|using|as|returns|import|emit|transfer|append|discard|delete|external|contract|function|deployer|caller|block|timestamp|self|validators|idle|gathering|finalized|destroyed)\\b"
+    },
+    "boolean-literals": {
+      "name": "constant.language.boolean.covenant",
+      "match": "\\b(true|false)\\b"
+    },
+    "duration-units": {
+      "name": "constant.language.duration.covenant",
+      "match": "\\b(seconds|minutes|hours|days|weeks)\\b"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.covenant",
+          "match": "(\\+=|-=|\\*=|/=|%=|=)"
+        },
+        {
+          "name": "keyword.operator.comparison.covenant",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.logical.covenant",
+          "match": "(&&|\\|\\||!)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.covenant",
+          "match": "(\\+|-|\\*|/|%|\\+\\+)"
+        },
+        {
+          "name": "keyword.operator.bitwise.covenant",
+          "match": "(&|\\||\\^|~|<<|>>)"
+        },
+        {
+          "name": "keyword.operator.arrow.covenant",
+          "match": "(->|=>|::)"
+        }
+      ]
+    },
+    "identifiers": {
+      "name": "variable.other.covenant",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+    }
+  }
+}

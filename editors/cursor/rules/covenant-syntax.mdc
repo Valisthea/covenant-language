@@ -1,0 +1,112 @@
+---
+description: >-
+  Persistent syntax and style rules for Covenant V0.9 .cov source files.
+  Apply whenever editing or generating .cov code.
+globs:
+  - "**/*.cov"
+alwaysApply: false
+---
+
+# Covenant V0.9 Syntax Rules
+
+Apply these rules whenever editing or generating `.cov` source files.
+
+## Comments
+
+- Use `--` for single-line comments. **Never** `//`.
+- Use `(* ... *)` for block comments (nestable). **Never** `/* ... */`.
+- Both `//` and `/* */` are rejected by the compiler with a dedicated diagnostic.
+
+## Top-level construct selection
+
+Prefer the most specialized construct over generic `module`:
+
+| Use case | Preferred construct |
+|----------|---------------------|
+| Fungible token (public balances) | `token` |
+| Fungible token (FHE-encrypted balances) | `confidential token` |
+| Value custody / escrow | `vault` |
+| On-chain voting | `ballot` |
+| Cryptographic amnesia / secret-sharing | `ceremony` |
+| Identity or key directory | `registry` |
+| Append-only message log | `board` |
+| Order book / marketplace | `market` |
+| Cross-chain escrow | `bridge` |
+| Single-value counter (plaintext) | `counter` |
+| Single-value counter (FHE-encrypted) | `encrypted counter` |
+| Key-value storage with auto-getters | `record` |
+| Mixed plaintext + encrypted fields | `hybrid module` |
+| Generic logic (last resort) | `module` |
+
+## Type and keyword aliases
+
+Always write:
+
+| Write | Not |
+|-------|-----|
+| `amount` | `uint256` |
+| `action name() { }` | `function name() public { }` |
+| `view name() returns T { }` | `function name() public view returns (T) { }` |
+| `when condition` (guard) | `require(condition, "msg")` |
+| `only X` (guard) | `modifier onlyX() { _; }` |
+| `map<K, V>` | `mapping(K => V)` |
+| `record` / `token` / appropriate keyword | `contract` |
+| `caller` | `msg.sender` |
+| `text` | `string` |
+| `action initialize(…)` | `constructor(…)` |
+
+## Field declarations
+
+- Inside `module` and `hybrid module`: use `field name: type`
+- Inside `record`: bare `name: type` (no `field` keyword)
+- Remove all Solidity visibility modifiers (`public`, `private`, `internal`, `external`)
+
+## vault — reentrancy default
+
+`vault` is `@non_reentrant` by default. Do **not** add `@non_reentrant` manually;
+the compiler will warn. Write:
+
+```covenant
+-- correct
+vault MyVault {
+    field balances: map<address, amount>
+
+    action withdraw(value: amount)
+            when balances[caller] >= value {
+        balances[caller] -= value
+        transfer(value, to: caller)
+    }
+}
+```
+
+## Post-quantum (`pq_signed`)
+
+- `pq_signed(content, sig, key)` at action level enables Dilithium-5 verification (Fortress layer).
+- `pq_key` is the correct type for Dilithium-5 public keys.
+
+## FHE / encrypted fields
+
+- Fields qualified `encrypted` require TFHE context (Veil layer).
+- `reveal X to Y` is the only way to disclose an encrypted field; it declares an access policy.
+- Use `encrypted_when ... otherwise` for conditional logic over FHE values; this compiles to a
+  homomorphic `cmux`. In-body `if/else` over plaintext values is a V0.9 feature.
+
+## Time and duration
+
+- `now` is typed `time`, not `amount`. You cannot add a bare number to `now`.
+- Write `now + 7 days` (produces `time`). Available duration literals:
+  `seconds`, `minutes`, `hours`, `days`, `weeks`.
+- Do not cast `now` to `amount` — use a separate `time` field if comparison is needed.
+
+## Events and errors
+
+```covenant
+event Transfer(from: address, to: address, value: amount)
+emit Transfer(caller, to, value)
+
+error InsufficientBalance(required: amount, actual: amount)
+revert_with InsufficientBalance(needed, balances[caller])
+```
+
+- Use `revert_with ErrorName(args)` not bare `revert`.
+- Prefer typed errors over bare string reverts for ABI-decodable failures.

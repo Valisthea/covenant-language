@@ -1,0 +1,10 @@
+[package]
+name = "covenant-circuits"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+covenant-privacy = { path = "../covenant-privacy", version = "0.9.2" }
+covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
+thiserror = { workspace = true }
