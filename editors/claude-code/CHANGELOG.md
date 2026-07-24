@@ -5,7 +5,7 @@ All notable changes to the Covenant Claude Code plugin are documented here.
 ## [0.2.0] — 2026-06-09
 
 ### Fixed
-- **Corrected the ERC-8228 attribution.** The `ceremony` (amnesia) guidance no longer cites ERC-8228 — that number was officially assigned to the Styx *Encrypted Token* Standard (`Valisthea/styx-erc-encrypted-token`), a different spec. The amnesia ceremony has no assigned ERC; the reviewer no longer flags a "missing ERC-8228 comment" for `ceremony`, and the scaffold template emits a plain construct comment instead. Updated `CLAUDE.md`, `agents/reviewer.md`, `commands/new.md`, `commands/review.md`.
+- **Corrected the ERC-8228 attribution.** The `ceremony` (amnesia) guidance no longer cites ERC-8228 — that number was officially assigned to the Styx *Encrypted Token* Standard (`Valisthea/styx-erc-encrypted-token`), a different spec. The amnesia ceremony has no assigned ERC; the reviewer no longer flags a "missing ERC-8228 comment" for `ceremony`, and the scaffold template emits a plain construct comment instead. Updated `CLAUDE.md`, `agents/reviewer.md`, `commands/new.md`, `commands/review.md`. **⚠️ REVERTED (2026-07-24): this was wrong. Per ethereum/ERCs PR #1681 (editor-renumbered 1681→8228, titled "Cryptographic Amnesia"), ERC-8228 IS the amnesia standard — a `ceremony` DOES cite ERC-8228.**
 
 ### Changed
 - Description tracked to Covenant **V0.9** (was V0.8).
