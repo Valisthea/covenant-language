@@ -7,6 +7,7 @@
     "url": "https://github.com/Valisthea/covenant-language"
   },
   "license": "Apache-2.0",
+  "icon": "icon.png",
   "homepage": "https://covenant-lang.org",
   "repository": {
     "type": "git",
