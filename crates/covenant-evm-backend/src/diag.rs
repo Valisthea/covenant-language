@@ -40,6 +40,15 @@ pub const E520_HELPER_METHOD_MISSING: DiagCode = DiagCode(520);
 /// pointing at the offending string. Found by the cargo-fuzz
 /// `compile_pipeline` target.
 pub const E521_TEXT_CONSTANT_TOO_LONG: DiagCode = DiagCode(521);
+/// A nested map field (`map(K, map(...))`). The V0 map codegen lowers exactly
+/// one `keccak(key ‖ slot)` level: the inner assignment `m[a][b] = v` was
+/// never lowered at all (the write emitted ZERO SSTORE and the whole statement
+/// was silently dropped), and the matching read hashed the key against the
+/// outer entry's stored value — which is always 0 for a never-written nested
+/// map — so `m[a][b]` returned 0. A well-typed nested-map program therefore
+/// compiled to bytecode that silently discarded every write. Refuse to compile
+/// rather than ship that. (OMEGA F09.)
+pub const E522_NESTED_MAP_UNSUPPORTED: DiagCode = DiagCode(522);
 
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
@@ -48,6 +57,13 @@ pub const W504_LARGE_RUNTIME: DiagCode = DiagCode(504);
 pub const W505_EVENT_NO_INDEX: DiagCode = DiagCode(505);
 pub const W506_MANY_PARAMS: DiagCode = DiagCode(506);
 pub const W507_DYNAMIC_RETURN_NOT_ENCODED: DiagCode = DiagCode(507);
+/// `only caller` — a guard that lowers to `msg.sender == msg.sender`, i.e. a
+/// tautology that imposes NO restriction. It is not a miscompile (the bytecode
+/// faithfully implements "no restriction"), but it USED to be the one
+/// degenerate principal that produced no diagnostic at all, while every other
+/// unenforceable `only` principal already warns (W-class / KSR-CVN-011). This
+/// closes that gap so an accidental no-op guard is no longer silent. (OMEGA F05.)
+pub const W508_ONLY_CALLER_NOOP: DiagCode = DiagCode(508);
 
 fn warn(code: DiagCode, msg: impl Into<String>, span: Span) -> Diagnostic {
     Diagnostic {
@@ -257,6 +273,53 @@ pub fn text_constant_too_long(span: Span, len: usize) -> Diagnostic {
              separately. (Multi-word string returns need head/tail ABI encoding, \
              which V0 does not implement.)"
         ),
+        span,
+    )
+}
+
+/// A non-anonymous event with more than 3 `indexed` parameters. topic0 is
+/// reserved for the event-signature hash, leaving room for at most 3 indexed
+/// args. Beyond that, `emit` fell through to an unconditional `PUSH0 PUSH0
+/// REVERT` (no `LOG5` opcode exists) AND the emitted ABI advertised >3 indexed
+/// fields, which no spec-compliant decoder accepts. Reject at compile time so
+/// the invalid event never reaches an artifact. (OMEGA F04.)
+pub fn log_too_many_topics(span: Span, event: &str, indexed: usize) -> Diagnostic {
+    Diagnostic::error(
+        E512_LOG_TOO_MANY_TOPICS,
+        format!(
+            "event `{event}` declares {indexed} `indexed` parameters; a non-anonymous EVM \
+             event allows at most 3 (topic0 is the event-signature hash, leaving 3 topics for \
+             indexed args). This used to compile to an unconditional REVERT in `emit` and ship \
+             an invalid ABI. Mark at most 3 parameters `indexed`."
+        ),
+        span,
+    )
+}
+
+/// A nested map field. See [`E522_NESTED_MAP_UNSUPPORTED`].
+pub fn nested_map_unsupported(span: Span, field: &str) -> Diagnostic {
+    Diagnostic::error(
+        E522_NESTED_MAP_UNSUPPORTED,
+        format!(
+            "field `{field}` is a nested map (`map(_, map(...))`), which this release's map \
+             codegen cannot lower correctly: a nested write `{field}[a][b] = v` emitted no \
+             SSTORE (the statement was silently dropped) and the matching read returned 0. \
+             Refusing to compile rather than shipping a map that silently discards every \
+             write. Flatten to a single map keyed by a composite/hashed key, or split into \
+             separate maps."
+        ),
+        span,
+    )
+}
+
+/// `only caller` is a tautological, no-op guard. See [`W508_ONLY_CALLER_NOOP`].
+pub fn warn_only_caller_noop(span: Span) -> Diagnostic {
+    warn(
+        W508_ONLY_CALLER_NOOP,
+        "`only caller` is a no-op guard: it lowers to `msg.sender == msg.sender`, always \
+         true, so it imposes NO access-control restriction (0 CALLER checks emitted). If you \
+         meant to restrict access use `only owner` / `only deployer` / `only <address>`; if \
+         you intend no restriction, drop the guard to make that explicit.",
         span,
     )
 }

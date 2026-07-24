@@ -105,8 +105,9 @@ fn parses_example_3_open_ballot() {
             TopLevelDecl::Action(a) => {
                 actions += 1;
                 if a.name.name.as_ref() == "cast" {
-                    // Action has three guards: when, only, given.
-                    assert_eq!(a.guards.len(), 3);
+                    // Action has two guards: when, only. (The `given pick in options`
+                    // guard was removed with F01/E426 — the `in` operator is now fail-loud.)
+                    assert_eq!(a.guards.len(), 2);
                 }
             }
             TopLevelDecl::Reveal(_) => reveals += 1,

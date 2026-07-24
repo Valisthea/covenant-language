@@ -38,6 +38,22 @@ pub const E424_STDLIB_MATH_UNIMPLEMENTED: DiagCode = DiagCode(424);
 /// backend answered all three with `PUSH0`, so `.length` read 0 and
 /// `for each k in m.keys` ran zero iterations on clean-compiling source.
 pub const E425_MAP_INTROSPECTION_UNIMPLEMENTED: DiagCode = DiagCode(425);
+/// The `in` membership operator has no lowering. `given x in list` previously
+/// fell through `choose_binop` to `Opcode::Eq`, so `x in [a, b, c]` compiled to
+/// a single scalar `x == a` — the guard passed only when `x` equalled the FIRST
+/// element and silently rejected every other legitimate member (or, read the
+/// other way, a membership guard enforced almost nothing it claimed to). A real
+/// lowering is a `ListContains` loop (compare + branch over each element), which
+/// the single-opcode `choose_binop` cannot express. Refuse until it exists.
+pub const E426_MEMBERSHIP_IN_UNIMPLEMENTED: DiagCode = DiagCode(426);
+/// `map.argmax` / `map.argmin` have no lowering. They fell through the map
+/// `FieldAccess` arm to `Opcode::StructGet(0)`, so the reduction never iterated:
+/// it read field 0 of the map handle and returned a constant, never the key with
+/// the maximum/minimum value. Clean-compiling source, wrong key, no diagnostic —
+/// the same silent-miscompile class as E424/E425. A Covenant map carries no key
+/// array to iterate, so there is nothing correct to emit. List `.argmax` /
+/// `.argmin` still lower (`ListArgMax` / `ListArgMin`); this is map-only.
+pub const E427_MAP_ARG_REDUCTION_UNIMPLEMENTED: DiagCode = DiagCode(427);
 /// KSR-CVN-030: an annotation name is not in the canonical set. Warning,
 /// not error, because user-defined metadata annotations are legitimate —
 /// but a typo on a security-relevant name like `@non_reentrant` would
@@ -151,6 +167,45 @@ pub fn map_introspection_unimplemented(span: Span, member: &str) -> Diagnostic {
              Covenant maps carry no length word and no key array. Track size and \
              membership explicitly for now: a `count: amount` field bumped alongside \
              each write, and a list field for iteration."
+        ),
+        span,
+    )
+}
+
+/// The `in` membership operator cannot be lowered. Refuse rather than emit a
+/// scalar `Eq` against the first element, which silently mis-enforces the guard.
+pub fn membership_in_unimplemented(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E426_MEMBERSHIP_IN_UNIMPLEMENTED,
+        "the `in` membership operator has no lowering and cannot be compiled. It \
+         previously compiled to a scalar equality against the FIRST element only, \
+         so `x in list` silently passed for the first element and rejected every \
+         other member, with no diagnostic. A real lowering is a `ListContains` \
+         loop, which does not exist yet. Test membership explicitly for now — \
+         e.g. `given x == a or x == b or x == c` — instead of `given x in list`."
+            .to_string(),
+        span,
+    )
+}
+
+/// `map.argmax` / `map.argmin` cannot be lowered. Refuse rather than answer
+/// `StructGet(0)`, which never iterates and returns a constant.
+pub fn map_arg_reduction_unimplemented(span: Span, member: &str) -> Diagnostic {
+    Diagnostic::error(
+        E427_MAP_ARG_REDUCTION_UNIMPLEMENTED,
+        format!(
+            "`map.{member}` has no lowering and cannot be compiled. It previously \
+             compiled to `StructGet(0)` — the reduction never iterated and returned \
+             a constant instead of the key with the {} value, with no diagnostic. \
+             Covenant maps carry no key array to iterate. List `.{member}` still \
+             works; track the winning key explicitly for a map (e.g. update a \
+             `leader` field alongside each write) until an enumerable-map \
+             convention exists.",
+            if member == "argmax" {
+                "maximum"
+            } else {
+                "minimum"
+            }
         ),
         span,
     )

@@ -202,7 +202,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-aster-backend"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-ir",
@@ -213,7 +213,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-circuits"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-privacy",
@@ -222,7 +222,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-cli"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "ariadne",
  "clap",
@@ -249,14 +249,14 @@ dependencies = [
 
 [[package]]
 name = "covenant-diag"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "thiserror",
 ]
 
 [[package]]
 name = "covenant-driver"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-aster-backend",
  "covenant-circuits",
@@ -277,7 +277,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-evm-backend"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-ir",
@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-evm-runtime"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "hex",
  "serde",
@@ -306,7 +306,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-ir"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-lexer",
@@ -319,7 +319,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-lexer"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "logos",
@@ -328,7 +328,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-lint"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "anyhow",
  "ariadne",
@@ -347,7 +347,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-lsp"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-driver",
@@ -362,7 +362,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-manifest"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "semver",
  "serde",
@@ -372,7 +372,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-opt"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-ir",
@@ -386,7 +386,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-parser"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-lexer",
@@ -395,7 +395,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-privacy"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-lexer",
@@ -407,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-resolver"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-lexer",
@@ -417,7 +417,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-stdlib"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-evm-backend",
@@ -434,7 +434,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-testing"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-aster-backend",
  "covenant-diag",
@@ -451,7 +451,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-types"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-lexer",
@@ -462,7 +462,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-wasm-backend"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "covenant-diag",
  "covenant-ir",
@@ -472,7 +472,7 @@ dependencies = [
 
 [[package]]
 name = "covenant-wasm-bindings"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "console_error_panic_hook",
  "covenant-diag",

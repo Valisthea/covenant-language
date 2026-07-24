@@ -2,6 +2,16 @@
 -- Every vote is visible on-chain the moment it is cast. This is the
 -- transparency baseline. Example 4 (encrypted counter) shows how to
 -- hide intermediate tallies while keeping the final result verifiable.
+--
+-- NOTE (compiler status): two conveniences are intentionally NOT used here
+-- because they have no lowering yet and the compiler now refuses them rather
+-- than miscompile them silently:
+--   * `given pick in options`  → E426 (the `in` operator is a ListContains
+--     loop; it used to compile to `pick == options[0]` only, silently rejecting
+--     every option but the first). Omitted until `in` is lowered.
+--   * `tally.argmax`           → E427 (map .argmax has no key array to iterate;
+--     it used to compile to StructGet(0) and return a constant). The reveal
+--     returns a placeholder until an enumerable-map reduction exists.
 
 ballot OpenBallot {
     options: [choice] = ["yes", "no", "abstain"]
@@ -9,14 +19,16 @@ ballot OpenBallot {
 
     action cast(pick: choice)
             when now < opened_at + duration,
-            only first_time_caller,
-            given pick in options {
+            only first_time_caller {
         tally[pick] += 1
         emit Cast(caller, pick)
     }
 
-    reveal winner returns choice
+    -- The real reveal is `winner` = the choice with the max tally, which needs
+    -- map .argmax (refused by E427 until an enumerable-map reduction exists).
+    -- Until then, expose a computable deadline-gated fact: when voting closed.
+    reveal deadline returns time
             when now >= opened_at + duration {
-        tally.argmax
+        opened_at + duration
     }
 }

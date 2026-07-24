@@ -119,14 +119,41 @@ pub fn synthesize(module: &mut IrModule, _config: &StdlibConfig, diags: &mut Vec
     // on-chain-routing change (tracked in DEBT.md); this at least makes the
     // synthesized contract's OWN submitter-count gate honor the declared
     // value instead of enforcing nothing.
-    let threshold = module
-        .metadata
-        .get("threshold")
-        .and_then(|m| match m {
+    let int_meta = |key: &str| {
+        module.metadata.get(key).and_then(|m| match m {
             IrMetadataValue::Integer(n) => Some(*n),
             _ => None,
         })
-        .unwrap_or(1);
+    };
+    let threshold_declared = int_meta("threshold");
+    let guardians_declared = int_meta("guardians");
+    let threshold = threshold_declared.unwrap_or(1);
+
+    // F10 fix: refuse to synthesize a ceremony whose `threshold` does not
+    // satisfy `1 <= threshold <= guardians`. A `threshold` of 0 degenerates
+    // the CRT-005 finalize gate (`distinct_submitters >= 0` is always true, so
+    // the secret is destroyed with ZERO guardian shares), and a `threshold`
+    // exceeding `guardians` demands more distinct submitters than can ever
+    // participate. Both would lower to plausible-but-wrong bytecode, so we
+    // fail loud (E611) instead of emitting it.
+    if threshold == 0 {
+        diags.push(crate::diag::ceremony_threshold_invalid(
+            span,
+            threshold,
+            guardians_declared,
+        ));
+        return;
+    }
+    if let Some(guardians) = guardians_declared {
+        if threshold > guardians {
+            diags.push(crate::diag::ceremony_threshold_invalid(
+                span,
+                threshold,
+                Some(guardians),
+            ));
+            return;
+        }
+    }
 
     inject_events(module, span);
     inject_errors(module, span);
@@ -608,6 +635,121 @@ mod tests {
                 .iter()
                 .any(|(name, _)| *name == "destroy"),
             "must include destroy"
+        );
+    }
+
+    fn with_meta(pairs: &[(&str, u128)]) -> IrModule {
+        let mut m = make_ceremony_module();
+        for (k, v) in pairs {
+            m.metadata.insert(
+                (*k).into(),
+                covenant_ir::module::IrMetadataValue::Integer(*v),
+            );
+        }
+        m
+    }
+
+    fn error_count(diags: &[Diagnostic]) -> usize {
+        diags
+            .iter()
+            .filter(|d| d.level == covenant_diag::DiagnosticLevel::Error)
+            .count()
+    }
+
+    // ------------------------------------------------------------------
+    // F10 regression: `1 <= threshold <= guardians` is validated at
+    // compile time (E611). Negative-control: neutralizing the guard in
+    // `synthesize` (removing the `threshold == 0` / `threshold > guardians`
+    // early-returns) makes `threshold_zero_is_rejected` and
+    // `threshold_gt_guardians_is_rejected` FAIL (0 errors emitted), while
+    // `valid_threshold_compiles_clean` keeps passing either way.
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn threshold_zero_is_rejected() {
+        // guardians: 3, threshold: 0 — the degenerate finalize gate.
+        let mut module = with_meta(&[("guardians", 3), ("threshold", 0)]);
+        let config = crate::config::StdlibConfig::default();
+        let mut diags = Vec::new();
+        synthesize(&mut module, &config, &mut diags);
+        assert_eq!(
+            error_count(&diags),
+            1,
+            "threshold:0 must be a compile error, got diags: {diags:?}"
+        );
+        assert!(
+            diags
+                .iter()
+                .any(|d| d.code == crate::diag::E611_CEREMONY_THRESHOLD_INVALID),
+            "must emit E611"
+        );
+        // Must NOT have synthesized the lifecycle functions.
+        assert!(
+            module.functions.is_empty(),
+            "must refuse synthesis on invalid threshold"
+        );
+    }
+
+    #[test]
+    fn threshold_gt_guardians_is_rejected() {
+        // guardians: 2, threshold: 3 — can never finalize.
+        let mut module = with_meta(&[("guardians", 2), ("threshold", 3)]);
+        let config = crate::config::StdlibConfig::default();
+        let mut diags = Vec::new();
+        synthesize(&mut module, &config, &mut diags);
+        assert_eq!(
+            error_count(&diags),
+            1,
+            "threshold>guardians must be a compile error, got diags: {diags:?}"
+        );
+        assert!(
+            diags
+                .iter()
+                .any(|d| d.code == crate::diag::E611_CEREMONY_THRESHOLD_INVALID),
+            "must emit E611"
+        );
+    }
+
+    #[test]
+    fn guardians_zero_is_rejected() {
+        // guardians: 0 with defaulted threshold(1) — 1 > 0, no valid threshold.
+        let mut module = with_meta(&[("guardians", 0)]);
+        let config = crate::config::StdlibConfig::default();
+        let mut diags = Vec::new();
+        synthesize(&mut module, &config, &mut diags);
+        assert_eq!(
+            error_count(&diags),
+            1,
+            "guardians:0 must be a compile error, got diags: {diags:?}"
+        );
+    }
+
+    #[test]
+    fn valid_threshold_compiles_clean() {
+        // guardians: 3, threshold: 2 — the shipped fixture values.
+        let mut module = with_meta(&[("guardians", 3), ("threshold", 2)]);
+        let config = crate::config::StdlibConfig::default();
+        let mut diags = Vec::new();
+        synthesize(&mut module, &config, &mut diags);
+        assert_eq!(
+            error_count(&diags),
+            0,
+            "valid threshold must compile clean, got diags: {diags:?}"
+        );
+        assert_eq!(module.functions.len(), 8, "must synthesize 8 functions");
+    }
+
+    #[test]
+    fn threshold_eq_guardians_compiles_clean() {
+        // guardians: 3, threshold: 3 — unanimity is a valid boundary.
+        let mut module = with_meta(&[("guardians", 3), ("threshold", 3)]);
+        let config = crate::config::StdlibConfig::default();
+        let mut diags = Vec::new();
+        synthesize(&mut module, &config, &mut diags);
+        assert_eq!(
+            error_count(&diags),
+            0,
+            "threshold==guardians must compile clean, got diags: {diags:?}"
         );
     }
 

@@ -33,6 +33,10 @@ pub struct Parser<'a> {
     /// Current recursive-descent nesting depth (expressions + blocks
     /// combined). Guarded by `enter_depth`/`exit_depth` to bound stack usage.
     pub(crate) nest_depth: u32,
+    /// Current `parse_type` recursion depth (nested `map<>`, `encrypted T`,
+    /// `[T]`, `priority_queue<>`). Guarded by `enter_type_depth`/
+    /// `exit_type_depth` to bound stack usage independently of `nest_depth`.
+    pub(crate) type_depth: u32,
     pub(crate) diagnostics: Vec<Diagnostic>,
     pub(crate) source_id: SourceId,
 }
@@ -44,6 +48,7 @@ impl<'a> Parser<'a> {
             pos: 0,
             paren_depth: 0,
             nest_depth: 0,
+            type_depth: 0,
             diagnostics: Vec::new(),
             source_id,
         }
@@ -67,6 +72,28 @@ impl<'a> Parser<'a> {
     /// successful `enter_depth`.
     pub(crate) fn exit_depth(&mut self) {
         self.nest_depth = self.nest_depth.saturating_sub(1);
+    }
+
+    /// Enter one level of `parse_type` recursion. Returns `Err` without
+    /// incrementing once the depth limit is reached, having already pushed a
+    /// diagnostic -- callers should `?` this and bail out like any other parse
+    /// error. Kept separate from `enter_depth` so a deeply nested *type*
+    /// (`map<address, map<address, ...>>`) fails loud with its own diagnostic
+    /// instead of overflowing the native stack (F06).
+    pub(crate) fn enter_type_depth(&mut self) -> Result<(), ParseError> {
+        if self.type_depth >= MAX_PARSE_DEPTH {
+            let span = self.current_span();
+            self.push_diag(diag::type_too_deeply_nested(span));
+            return Err(ParseError);
+        }
+        self.type_depth += 1;
+        Ok(())
+    }
+
+    /// Leave one level of `parse_type` recursion. Must be paired with a
+    /// successful `enter_type_depth`.
+    pub(crate) fn exit_type_depth(&mut self) {
+        self.type_depth = self.type_depth.saturating_sub(1);
     }
 
     // -------- low-level cursor --------

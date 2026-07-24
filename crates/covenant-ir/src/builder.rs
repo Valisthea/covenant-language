@@ -13,7 +13,8 @@ use covenant_diag::{Diagnostic, Span};
 use covenant_parser::ast::{
     ActionDecl, ActionQualifier, AnchorClause, AnnotationArg, AssignOp, BinaryOp, ConstructKind,
     Expr, Ident, LValue, LiteralExpr, MetadataValue, OnDestroyBlock, Principal, PrincipalKind,
-    PrivacyQualifier, RevealDecl, Stmt, TopLevelDecl, UnaryOp, UpgradeableClause, ViewDecl,
+    PrivacyQualifier, RevealDecl, RevealTarget, Stmt, TopLevelDecl, UnaryOp, UpgradeableClause,
+    ViewDecl,
 };
 use covenant_privacy::{PrivacyCheckedFile, PrivacyDomain};
 use covenant_resolver::{Binding, BuiltinPredicate, LangIdent, LocalId, StdlibFn, StdlibModule};
@@ -490,6 +491,20 @@ impl Builder {
             fb.guards.push(lowered);
         }
 
+        // F07 (CRITICAL): enforce the `to <target>` disclosure restriction.
+        // The one-liner `reveal <field> to owner` used to DROP the target
+        // entirely — the reveal compiled with zero caller check, so the
+        // owner-only restriction was silently unenforced (private_dao.cov even
+        // documented "Access control (`to owner`) is IR-level metadata; EVM
+        // enforcement is V1"). Lower the target into the SAME authorization
+        // assertion machinery that `only <principal>` guards use, so a
+        // non-owner call reverts before anything is disclosed. This runs before
+        // the body/return below, so the check gates the disclosure.
+        if let Some(target) = &r.target {
+            let principal = self.reveal_target_principal(&mut fb, target);
+            self.emit_only_assert(&mut fb, &principal, r.span);
+        }
+
         match &r.body {
             Some(body) => {
                 let v = self.lower_expr(&mut fb, body);
@@ -545,6 +560,42 @@ impl Builder {
             }
         }
         fb.finish()
+    }
+
+    /// F07: map a `reveal ... to <target>` restriction onto the same
+    /// `IrPrincipal` vocabulary that `only <principal>` guards use, so
+    /// `emit_only_assert` can lower it to a real caller check.
+    fn reveal_target_principal(
+        &mut self,
+        fb: &mut FunctionBuilder,
+        t: &RevealTarget,
+    ) -> IrPrincipal {
+        match t {
+            // `to owner`: gate on the `owner` field if the construct declares
+            // one, otherwise on the deployer — the natural on-chain owner of a
+            // construct with no explicit owner field (e.g. an `encrypted
+            // counter`). This reuses `only owner` / `only deployer` codegen
+            // verbatim and matches the harness's own expectation that the
+            // reveal recipient "owner = deployer".
+            RevealTarget::Owner => match self.field_by_name.get("owner") {
+                Some((gid, _, _)) => IrPrincipal::Owner(Some(*gid)),
+                None => IrPrincipal::Deployer,
+            },
+            // `to caller`: the caller IS the recipient, so `caller == caller`
+            // is trivially true — an unrestricted (public) reveal. No check.
+            RevealTarget::Caller => IrPrincipal::Caller,
+            // `to parties`: a collection-membership check that is not yet
+            // lowered — `emit_only_assert` fails it CLOSED (reverts every call)
+            // with the KSR-CVN-011 diagnostic, never silently open.
+            RevealTarget::Parties => {
+                IrPrincipal::Parties(self.field_by_name.get("parties").map(|(id, _, _)| *id))
+            }
+            // `to address(expr)`: gate on the evaluated address.
+            RevealTarget::Address(e) => {
+                let v = self.lower_expr(fb, e);
+                IrPrincipal::Address(v)
+            }
+        }
     }
 
     fn lower_on_destroy(&mut self, od: &OnDestroyBlock) -> IrFunction {
@@ -1606,6 +1657,23 @@ impl Builder {
             Expr::Literal(lit) => self.lower_literal(fb, lit, ty),
             Expr::Ident(id) => self.lower_ident(fb, id, ty),
             Expr::Binary { op, lhs, rhs, span } => {
+                // Fail-loud, mirroring the E424 stdlib-math refusal. The `in`
+                // membership operator has no real lowering: `choose_binop` maps
+                // exactly one opcode, but membership is a `ListContains` loop
+                // (compare + branch over each element). The old placeholder
+                // returned `Opcode::Eq`, so `x in [a, b, c]` compiled to
+                // `x == a` — a guard that silently passed only for the first
+                // element and rejected every other member, with no diagnostic.
+                if matches!(op, BinaryOp::In) {
+                    // Still lower operands so their spans/types are recorded,
+                    // then refuse — matching the emit-const-after-diag shape of
+                    // E424/E425.
+                    let _ = self.lower_expr(fb, lhs);
+                    let _ = self.lower_expr(fb, rhs);
+                    self.diagnostics
+                        .push(diag::membership_in_unimplemented(*span));
+                    return fb.emit_const(IrConstant::Integer(0), ty, *span);
+                }
                 let l = self.lower_expr(fb, lhs);
                 let r = self.lower_expr(fb, rhs);
                 let l_ty = fb.value_types.get(&l).cloned().unwrap_or(Ty::Unknown);
@@ -1673,6 +1741,20 @@ impl Builder {
                         member @ ("length" | "len" | "keys" | "values") => {
                             self.diagnostics
                                 .push(diag::map_introspection_unimplemented(*span, member));
+                            return fb.emit_const(IrConstant::Integer(0), ty, *span);
+                        }
+                        // Fail-loud, mirroring the E425 map-introspection
+                        // refusal. `.argmax`/`.argmin` fell through to
+                        // `StructGet(0)`: the reduction never iterated and
+                        // returned a constant (field 0 of the map handle)
+                        // instead of the key with the max/min value — a
+                        // clean-compiling silent miscompile. A Covenant map has
+                        // no key array to iterate, so nothing correct can be
+                        // emitted. List `.argmax`/`.argmin` still lower via the
+                        // `Ty::List` arm above (ListArgMax / ListArgMin).
+                        member @ ("argmax" | "argmin") => {
+                            self.diagnostics
+                                .push(diag::map_arg_reduction_unimplemented(*span, member));
                             return fb.emit_const(IrConstant::Integer(0), ty, *span);
                         }
                         _ => Opcode::StructGet(0),
@@ -2337,7 +2419,12 @@ fn choose_binop(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Opcode {
             Ty::List(_) => Opcode::ListConcat,
             _ => Opcode::TextConcat,
         },
-        In => Opcode::Eq, // placeholder; real "in" lowering is a ListContains loop
+        // `in` is intercepted and fail-loud-refused (E426) at the sole call
+        // site above, before `choose_binop` is ever reached, because membership
+        // is a `ListContains` loop that a single-opcode mapping cannot express.
+        // Reaching here means that guard was bypassed — a compiler bug, never a
+        // silent scalar `Eq` again.
+        In => unreachable!("`in` must be refused with E426 before choose_binop"),
     }
 }
 

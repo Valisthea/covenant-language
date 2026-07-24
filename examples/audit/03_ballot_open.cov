@@ -9,22 +9,25 @@
 -- Synthesized surface (auditors should verify) :
 --   Fields :   tally: map<choice, amount>, opened_at: timestamp, options
 --   Actions :  cast(pick: choice)        — guarded by when/only/given
---   Reveals :  winner returns choice     — only after deadline
+--   Reveals :  deadline returns time      — only after deadline (the real
+--                                          `winner` reveal awaits map .argmax)
 --   Events :   Cast(caller, pick)
 --
 -- Guard semantics (CRITICAL audit point) :
 --   `when now < opened_at + duration` — deadline check ; reverts if past.
 --   `only first_time_caller`           — replay protection ; reverts if
 --                                        caller already voted.
---   `given pick in options`            — input validation ; reverts if
---                                        pick is not one of the 3 options.
---   All three are evaluated BEFORE the body executes. Failure = revert,
+--   Both are evaluated BEFORE the body executes. Failure = revert,
 --   no state change, no event.
+--
+--   `given pick in options` (input validation) is intentionally OMITTED: the
+--   `in` membership operator has no lowering yet and the compiler now refuses
+--   it (E426) rather than miscompile it to `pick == options[0]`, which used to
+--   silently accept only the first option. Restore it once `in` lowers.
 --
 -- Negative-test scenarios (auditors should construct) :
 --   - Vote past the deadline → expect revert.
 --   - Same caller votes twice → second tx reverts.
---   - Vote with `pick = "maybe"` (not in options) → expect revert.
 --   - Reveal before deadline → expect revert.
 --
 -- EXPECTED LINT FINDINGS (this fixture intentionally trips them) :
@@ -40,14 +43,18 @@ ballot AuditBallot {
 
     action cast(pick: choice)
             when now < opened_at + duration,
-            only first_time_caller,
-            given pick in options {
+            only first_time_caller {
         tally[pick] += 1
         emit Cast(caller, pick)
     }
 
-    reveal winner returns choice
+    -- The real reveal is `winner` = the choice with the max tally, which needs
+    -- map .argmax. That has no lowering (no key array to iterate) and the
+    -- compiler now refuses it (E427) instead of compiling to StructGet(0), which
+    -- returned a constant. Until an enumerable-map reduction exists, expose a
+    -- computable deadline-gated fact instead: when voting closed.
+    reveal deadline returns time
             when now >= opened_at + duration {
-        tally.argmax
+        opened_at + duration
     }
 }

@@ -88,6 +88,30 @@ fn e031_deeply_nested_parens_does_not_overflow_stack_hgh_029() {
 }
 
 #[test]
+fn e032_deeply_nested_map_type_does_not_overflow_stack_f06() {
+    // OMEGA V6 F06 regression test: a deeply nested type
+    // `map<address, map<address, ... amount ...>>` used to recurse one native
+    // stack frame per level in `parse_type` with no depth counter (the E031
+    // guard only covers expressions and blocks), overflowing the process stack
+    // -- an uncatchable `STATUS_STACK_OVERFLOW`, not a normal Rust panic --
+    // and crashing `covenant check/build/fmt/lint` and the LSP. If the type
+    // depth guard regresses, this test process crashes outright rather than
+    // failing an assertion.
+    //
+    // Negative control: neutralize the guard (delete the `enter_type_depth()?`
+    // wrapper in `parse_type`, or raise `MAX_PARSE_DEPTH` above 1500) and this
+    // test either overflows the stack or fails the assertion below.
+    let depth = 1500;
+    let opens = "map<address, ".repeat(depth);
+    let closes = ">".repeat(depth);
+    let src = format!("record R {{\n field m: {opens}amount{closes}\n}}\n");
+    assert!(
+        has_code(&src, codes::E032_TYPE_TOO_DEEPLY_NESTED),
+        "expected E032 (type too deeply nested) for {depth} nested map<> levels"
+    );
+}
+
+#[test]
 fn multiple_errors_reported() {
     // Three separate problems should produce ≥ 3 diagnostics (error recovery
     // keeps parsing).

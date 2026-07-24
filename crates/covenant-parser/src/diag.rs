@@ -23,6 +23,25 @@ pub const E028_BAD_CONSTRUCT_KEYWORD: DiagCode = DiagCode(28);
 pub const E029_BAD_SHARES: DiagCode = DiagCode(29);
 pub const E030_BAD_STMT_TERMINATOR: DiagCode = DiagCode(30);
 pub const E031_TOO_DEEPLY_NESTED: DiagCode = DiagCode(31);
+pub const E032_TYPE_TOO_DEEPLY_NESTED: DiagCode = DiagCode(32);
+
+pub fn type_too_deeply_nested(span: Span) -> Diagnostic {
+    // OMEGA V6 (F06 fix): the E031 guard covers the Pratt expression parser and
+    // the block parser, but `parse_type` recursed one native stack frame per
+    // type-nesting level (`map<address, map<address, ...>>`, `encrypted T`,
+    // `[T]`, `priority_queue<...>`) with no counter of its own -- a ~1500-deep
+    // nested type overflowed the process stack (an uncatchable
+    // `STATUS_STACK_OVERFLOW`, not a normal Rust panic) and crashed
+    // `covenant check/build/fmt/lint` and the LSP before any diagnostic could be
+    // produced. This bails out with a normal, catchable diagnostic well before
+    // that point instead.
+    Diagnostic::error(
+        E032_TYPE_TOO_DEEPLY_NESTED,
+        "type nesting exceeds the maximum supported depth",
+        span,
+    )
+    .with_help("introduce a named type alias for the inner type to reduce nesting")
+}
 
 pub fn too_deeply_nested(span: Span) -> Diagnostic {
     // OMEGA V6 (HGH-029 fix): the Pratt expression parser and block parser

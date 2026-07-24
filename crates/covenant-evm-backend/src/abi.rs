@@ -1,7 +1,7 @@
 //! ABI type mapping, signature computation, selector computation, and JSON
 //! emission.
 
-use covenant_ir::{module::IrEvent, IrFunction, IrFunctionKind, IrModule};
+use covenant_ir::{instr::Terminator, module::IrEvent, IrFunction, IrFunctionKind, IrModule};
 use covenant_types::Ty;
 use sha3::{Digest, Keccak256};
 
@@ -23,6 +23,24 @@ pub fn abi_type_of(t: &Ty) -> String {
         Ty::Unit => "".to_string(),
         _ => "bytes".to_string(),
     }
+}
+
+/// The type actually returned by a function whose `returns` clause is absent
+/// (the `reveal <field> to <target>` one-liner): trace the first
+/// `Return(Some(v))` terminator to the returned value's type. This is the
+/// decrypted field type for an encrypted reveal (the `RevealDecrypt` result),
+/// or the field type directly for a plaintext one. (F08.)
+fn reveal_return_ty(f: &IrFunction) -> Option<Ty> {
+    for b in &f.blocks {
+        if let Terminator::Return(Some(v)) = &b.terminator {
+            if let Some(ty) = f.value_types.get(v) {
+                if !matches!(ty, Ty::Unit) {
+                    return Some(ty.clone());
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Canonical signature for a function: `name(type1,type2,...)`.
@@ -131,18 +149,30 @@ pub fn emit_abi(module: &IrModule, include_test_actions: bool) -> String {
                 )
             })
             .collect();
-        let outputs: Vec<String> = match &f.returns {
-            Some(ty) if !matches!(ty, Ty::Unit) => {
-                vec![format!(
-                    "{{\"name\":\"\",\"type\":\"{}\"}}",
-                    abi_type_of(ty)
-                )]
-            }
-            _ => Vec::new(),
+        // F08: a `reveal` is read-only and RETURNs 32 bytes at runtime, but the
+        // one-liner form (`reveal total to owner`) carries no explicit `returns`
+        // clause, so `f.returns` is `None` and the ABI used to advertise
+        // `outputs:[]` — a caller decoding the return per the published ABI got
+        // nothing. Recover the real output type from the return terminator's
+        // value (the decrypted field type) when there is no declared return.
+        let output_ty: Option<Ty> = match &f.returns {
+            Some(ty) if !matches!(ty, Ty::Unit) => Some(ty.clone()),
+            _ if matches!(f.kind, IrFunctionKind::Reveal) => reveal_return_ty(f),
+            _ => None,
         };
+        let outputs: Vec<String> = match &output_ty {
+            Some(ty) => vec![format!(
+                "{{\"name\":\"\",\"type\":\"{}\"}}",
+                abi_type_of(ty)
+            )],
+            None => Vec::new(),
+        };
+        // F08: `reveal` is a read-only disclosure — it never writes state — so
+        // its ABI `stateMutability` is `view`, not `nonpayable`.
         let mutability = match f.kind {
             IrFunctionKind::View => "view",
-            IrFunctionKind::Action | IrFunctionKind::Reveal => "nonpayable",
+            IrFunctionKind::Reveal => "view",
+            IrFunctionKind::Action => "nonpayable",
             IrFunctionKind::SelectiveDisclosure => "view",
             _ => "nonpayable",
         };

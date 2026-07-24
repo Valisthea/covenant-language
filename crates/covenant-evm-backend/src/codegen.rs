@@ -32,6 +32,13 @@ pub fn value_memory_offset(v: Value) -> u32 {
     SSA_MEMORY_BASE + v.0 * 32
 }
 
+/// A `map` whose value type is itself a `map` — i.e. `map(K, map(...))`. The V0
+/// map codegen only implements a single keccak(key ‖ slot) level, so these
+/// cannot be lowered correctly (F09).
+fn is_nested_map_ty(t: &Ty) -> bool {
+    matches!(t, Ty::Map(_, v) if matches!(v.as_ref(), Ty::Map(_, _)))
+}
+
 pub struct Codegen<'a> {
     pub module: &'a IrModule,
     pub config: &'a EvmConfig,
@@ -49,9 +56,46 @@ impl<'a> Codegen<'a> {
         }
     }
 
+    /// F04: reject non-anonymous events with more than 3 `indexed` parameters.
+    /// topic0 is the event-signature hash, so only 3 topics remain for indexed
+    /// args. Beyond that, `emit_log` used to fall through to an unconditional
+    /// REVERT while the ABI advertised the extra indexed fields — a clean
+    /// compile that bricks on first `emit` and ships an invalid ABI.
+    fn check_events(&mut self) {
+        for e in &self.module.events {
+            let indexed = e.params.iter().filter(|(_, _, idx)| *idx).count();
+            if indexed > 3 {
+                self.diagnostics.push(d::log_too_many_topics(
+                    e.span,
+                    e.name.name.as_ref(),
+                    indexed,
+                ));
+            }
+        }
+    }
+
+    /// F09: reject nested map fields (`map(_, map(...))`). The V0 map codegen
+    /// lowers exactly one keccak level; a nested write emitted zero SSTORE (the
+    /// statement was dropped) and the read returned 0. Fail loud rather than
+    /// ship a map that silently discards every write.
+    fn check_nested_maps(&mut self) {
+        for field in &self.module.fields {
+            if is_nested_map_ty(&field.ty) {
+                self.diagnostics.push(d::nested_map_unsupported(
+                    field.span,
+                    field.name.name.as_ref(),
+                ));
+            }
+        }
+    }
+
     /// Emit the full runtime bytecode (dispatcher + all public functions).
     pub fn emit_runtime(&mut self) -> Vec<AsmOp> {
         let mut asm = Assembler::new();
+
+        // Module-wide fail-loud checks that don't depend on emitted bytecode.
+        self.check_events();
+        self.check_nested_maps();
 
         // Compute selectors up front.
         for (name, _sig, sel) in
@@ -398,6 +442,23 @@ impl<'a> Codegen<'a> {
     }
 
     fn emit_function(&mut self, asm: &mut Assembler, f: &IrFunction) {
+        // F05: `only caller` is a tautological no-op guard (`msg.sender ==
+        // msg.sender`). It emits zero CALLER checks and used to be the one
+        // degenerate principal with NO diagnostic, unlike every other
+        // unenforceable `only` principal (which already warns). Surface it so
+        // an accidental no-op guard is no longer silent. (Not fail-loud: the
+        // bytecode is not wrong — it faithfully means "no restriction" — and
+        // `only caller` is a widely-used explicit "anyone" marker; a hard
+        // error would break existing examples/tests for no correctness gain.)
+        for g in &f.guards {
+            if matches!(
+                g,
+                covenant_ir::function::IrGuard::Only(covenant_ir::function::IrPrincipal::Caller)
+            ) {
+                self.diagnostics.push(d::warn_only_caller_noop(f.name.span));
+            }
+        }
+
         // KSR-CVN-023: `@vdf_locked(delay)` is parsed all the way to
         // `IrActionQualifier::VdfLocked` but never lowered to a time-lock
         // predicate. Compiling such an action silently produces bytecode

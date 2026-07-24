@@ -4,14 +4,13 @@ Release history for the Covenant compiler and specifications.
 
 Format : [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning : [SemVer](https://semver.org) when feature-complete ; pre-release tags for research milestones.
 
-> **⚠️ Naming disambiguation (2026-04-26)** : Pre-V0.9.0 entries below
-> use "ERC-8228" to refer to the Covenant amnesia ceremony pattern.
-> That number was aspirational at the time and is **NOT** officially
-> assigned to the ceremony. EIP editors have since assigned EIP-8228
-> to the Styx **Encrypted Token Standard** (a different specification,
-> see [Valisthea/styx-erc-encrypted-token](https://github.com/Valisthea/styx-erc-encrypted-token)).
-> Going forward, Covenant docs refer to it as "Amnesia Ceremony" with
-> no EIP number. Internal Rust module rename (`covenant-stdlib::erc8228`
+> **⚠️ Naming note (updated 2026-07-24)** : ERC-8228 IS the **Cryptographic
+> Amnesia** standard — ethereum/ERCs PR #1681 (editor-renumbered 1681→8228,
+> titled "Cryptographic Amnesia"). The Encrypted Token Standard is a
+> separate proposal, **ERC-8227**
+> ([Valisthea/styx-erc-encrypted-token](https://github.com/Valisthea/styx-erc-encrypted-token)).
+> Pre-V0.9.0 entries referencing "ERC-8228" for the amnesia ceremony were
+> correct. Internal Rust module rename (`covenant-stdlib::erc8228`
 > → `covenant-stdlib::amnesia_ceremony`) is tracked in `DEBT.md` for
 > V0.9.1. Historical entries below are preserved verbatim — they
 > reflect the project's state at that time.
@@ -26,6 +25,62 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 (empty — V0.9.4 just shipped.)
 
 ---
+
+## [0.9.5] — 2026-07-24 (OMEGA adversarial bounty pass — reveal access-control + fail-loud sweep)
+
+> An internal OMEGA adversarial bounty run against v0.9.4 (two-block aggressive-generator /
+> hostile-critic, 210 probes, every PoC confirmed on anvil, source citations checked) surfaced
+> **1 Critical + 2 High + 4 Medium + 2 Low**. All fixed here, each with a negative-controlled
+> regression test. **1102 tests, clippy-clean, fmt-clean.**
+
+### Fixed — Critical
+
+- **Reveal access-control gate (F07).** `reveal <field> to <target>` compiled with **zero** caller
+  check — the owner-only disclosure restriction was silently unenforced (the target was dropped at
+  IR lowering, so the reveal reached the backend guardless). The reveal now emits the
+  `msg.sender == owner` gate, reusing the same `only <principal>` codegen: `to owner` resolves to the
+  `owner` field or the deployer, `to caller` is public, and collection / unresolved targets fail
+  closed. **Anvil-verified: a non-owner reveal reverts, the owner's succeeds.**
+  `covenant-ir::lower_reveal` + `reveal_access_control.rs`.
+
+### Fixed — High
+
+- **`in` membership operator (F01, `E426`).** `given x in list` lowered to a single scalar `EQ`
+  (an `In => Opcode::Eq` placeholder) — a membership guard that passed only for the first element.
+  Now **fail-loud** (`E426`) until a real `ListContains` compare-loop lands.
+- **Nested-map writes (F09, `E522`).** `inner[a][b] = v` emitted zero `SSTORE`, returned success,
+  and read back `0` — a silent dropped write on the allowance/`owner→spender→amount` pattern. Now
+  **fail-loud** (`E522 nested map not yet supported`) instead of a success-returning no-op.
+
+### Fixed — Medium
+
+- **Map `.argmax`/`.argmin` (F02, `E427`).** Fell through to `StructGet(0)` (no iteration, always
+  returned `0`). Now fail-loud for **maps**; list `.argmax`/`.argmin` still work.
+- **Over-indexed events (F04, `E512`).** A non-anonymous event with >3 `indexed` params compiled
+  clean but the `emit` lowered to an unconditional `REVERT` and shipped an invalid ABI. Now rejected
+  at compile time (`E512`).
+- **`parse_type` stack overflow (F06).** A deeply-nested `map<…>` **type** overflowed the Rust stack
+  — an uncatchable crash on every subcommand and the LSP. Added a type-nesting depth guard mirroring
+  the expression-depth `E031`.
+- **Reveal ABI (F08).** The reveal function's ABI declared `outputs:[]` / `nonpayable` while the
+  runtime is read-only and returns 32 bytes of plaintext. Now emits `stateMutability:"view"` + the
+  real output type.
+
+### Fixed — Low
+
+- **Ceremony threshold validation (F10).** `threshold: 0` (or `threshold > guardians`) compiled clean
+  and degenerated the finalize gate to `count >= 0` (always true → finalize with **zero** guardian
+  shares, re-opening the CRT-005 fail-open via a degenerate config). Now validated
+  `1 <= threshold <= guardians` at compile time.
+- **`only caller` no-op (F05, `W508`).** `only caller` emitted an allow-all no-op while every other
+  degenerate principal fails closed with `W421`. Now flagged, consistent with that path.
+
+### Also
+
+- **ERC mapping corrected** to the canonical Styx numbering — ERC-8227 Encrypted Token,
+  **ERC-8228 Cryptographic Amnesia**, ERC-8229 FHE Verification, ERC-8231 PQ Key Registry — per
+  ethereum/ERCs PR #1681 (editor-renumbered 1681 → 8228). Reverses an earlier mis-statement that
+  the amnesia ceremony had no assigned ERC.
 
 ## [0.9.4] — 2026-07-23 (fail-loud pass — no more silent miscompiles)
 

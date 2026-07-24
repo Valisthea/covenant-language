@@ -12,7 +12,18 @@ use crate::parser::{describe, ParseError, Parser};
 impl<'a> Parser<'a> {
     /// Parse a type expression. Returns a synthesized `Type::User("<error>")`
     /// on failure (the diagnostic is already recorded).
+    ///
+    /// Wraps [`parse_type_body`] in a depth guard so a deeply nested type
+    /// (`map<address, map<address, ...>>`) fails loud with E032 instead of
+    /// recursing until the native stack overflows (F06).
     pub(crate) fn parse_type(&mut self) -> Result<Type, ParseError> {
+        self.enter_type_depth()?;
+        let result = self.parse_type_body();
+        self.exit_type_depth();
+        result
+    }
+
+    fn parse_type_body(&mut self) -> Result<Type, ParseError> {
         let t = match self.peek() {
             Some(t) => t,
             None => {
