@@ -134,7 +134,7 @@ Multiple guards are comma-separated, **not** joined with `&&`.
 | ERC | Covenant trigger | Auto-synthesized surface |
 |-----|-----------------|--------------------------|
 | **ERC-8227** — Confidential Token Interface | `confidential token C { }` | `transferEncrypted`, `balanceOfEncrypted`, `approveEncrypted` |
-| **Amnesia Ceremony** (Covenant construct — no assigned ERC; ERC-8228 is the unrelated Styx Encrypted Token Standard) | `ceremony C { }` with `on_destroy` / `destroy()` | `setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`, `session_id`, `owner` — lifecycle: Setup → Active → Finalized → Destroyed |
+| **Amnesia Ceremony** (ERC-8228 — Cryptographic Amnesia, Styx Protocol) | `ceremony C { }` with `on_destroy` / `destroy()` | `setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`, `session_id`, `owner` — lifecycle: Setup → Active → Finalized → Destroyed |
 | **ERC-8229** — FHE Computation Verification | `verified_by(zk_proof)` guard on an action | Halo2 SNARK + Nova IVC proof verification at action entry |
 | **ERC-8231** — Post-Quantum Signature Verification | `pq_signed(content, sig, key)` guard on an action | Dilithium-5 signature check at action entry |
 

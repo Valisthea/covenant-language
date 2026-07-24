@@ -142,15 +142,16 @@ confidential token PrivateCoin {
 If `confidential token` is present without the ERC-8227 citation comment, flag it
 as a compliance gap in any review output.
 
-### Amnesia Ceremony  (Covenant construct — no assigned ERC)
+### ERC-8228 — Cryptographic Amnesia (Amnesia Ceremony)
 
 **Trigger:** `ceremony` construct, or any use of `destroy()` / `on_destroy { }`.
 
-> **Numbering note:** the amnesia ceremony has **no** assigned ERC. ERC-8228 was
-> officially assigned by the EIP editors to the **Styx Encrypted Token Standard**
-> (`Valisthea/styx-erc-encrypted-token`) — a different spec. Do **not** emit an
-> `-- ERC-8228` comment for a `ceremony`; that number belongs to the encrypted
-> token, not the ceremony.
+> **Numbering note:** the amnesia ceremony maps to **ERC-8228 (Cryptographic
+> Amnesia)** — a Draft standard authored by Kairos Lab as the Styx Protocol
+> (`Valisthea/styx-erc-cryptographic-amnesia`). ERC-8227 is the separate
+> Encrypted Token Standard (`Valisthea/styx-erc-encrypted-token`). A `ceremony`
+> **should** carry an `-- ERC-8228` citation, exactly as a `confidential token`
+> carries `-- ERC-8227`.
 
 The `ceremony` keyword auto-synthesizes the full amnesia lifecycle:
 
@@ -167,10 +168,10 @@ The `ceremony` keyword auto-synthesizes the full amnesia lifecycle:
 The `on_destroy` block runs on the `Destroyed` phase transition.
 `destroy(0)` triggers the Wesolowski VDF proof + Shamir reconstruction emission.
 
-**Recommended construct comment:**
+**Required citation comment:**
 
 ```covenant
--- Amnesia Ceremony — Covenant construct (no assigned ERC)
+-- ERC-8228: Cryptographic Amnesia (Styx Protocol)
 ceremony AuditTrail {
     guardians: 3
     threshold: 2
@@ -181,9 +182,9 @@ ceremony AuditTrail {
 }
 ```
 
-Do not flag a missing ERC citation for `ceremony` — it is not a standardized ERC.
-If you see a `ceremony` that cites `ERC-8228`, that is incorrect (8228 is the Styx
-Encrypted Token Standard) and should be corrected.
+If `ceremony` is present without the ERC-8228 citation comment, flag it as a
+compliance gap in any review output. A `ceremony` that cites `ERC-8228`
+(Cryptographic Amnesia) is correct — do not flag it.
 
 ### ERC-8229 — FHE Computation Verification
 

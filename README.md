@@ -171,7 +171,7 @@ Three axes, deliberately decoupled — see [STATUS.md](STATUS.md).
 
 ## Standards
 
-The Styx privacy / PQ / ZK ERC specs are **drafts authored by Kairos Lab**. Only **ERC-8227** (Encrypted Token) has a live Draft thread; the others are proposals, **not** editor-assigned EIP numbers. (EIP-8228 was assigned by the EIP editors to the separate Styx *Encrypted Token* Standard — the amnesia ceremony has no assigned ERC.)
+The Styx Protocol ERC specs are **Draft standards authored by Kairos Lab**: **ERC-8227** (Encrypted Token), **ERC-8228** (Cryptographic Amnesia), **ERC-8229** (FHE Computation Verification), and **ERC-8231** (Post-Quantum Key Registry). The amnesia ceremony maps to **ERC-8228** (Cryptographic Amnesia), exactly as the confidential token maps to ERC-8227.
 
 ## License
 

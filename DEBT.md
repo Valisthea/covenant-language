@@ -238,15 +238,19 @@ below. **RESOLVED in V0.9.2** :
 
 ### Rename `covenant-stdlib::erc8228` module → `amnesia_ceremony`
 
-EIP-8228 was officially assigned by Ethereum EIP editors to the
-[Styx Encrypted Token Standard](https://github.com/Valisthea/styx-erc-encrypted-token)
-(FHE balances + ZK transfers — a fundamentally different specification
-from the Covenant amnesia ceremony pattern).
+Per the canonical Styx Protocol mapping (draft standards authored by
+Kairos Lab), ERC-8228 is the
+[Cryptographic Amnesia Standard](https://github.com/Valisthea/styx-erc-cryptographic-amnesia)
+— i.e. the amnesia ceremony pattern. The Encrypted Token Standard
+(FHE balances + ZK transfers) is a separate spec, ERC-8227
+([Valisthea/styx-erc-encrypted-token](https://github.com/Valisthea/styx-erc-encrypted-token)).
 
 The Covenant compiler's amnesia ceremony synthesizer module is named
 `crates/covenant-stdlib/src/erc8228.rs` (with public exports
-`ERC8228_CANONICAL_SELECTORS` etc.). This naming was aspirational
-when picked ; it is now incorrect and confusing.
+`ERC8228_CANONICAL_SELECTORS` etc.). Since ERC-8228 *is* Cryptographic
+Amnesia, this naming is actually correct — the amnesia ceremony
+legitimately maps to ERC-8228, exactly as confidential-token maps to
+ERC-8227. A rename here is optional/cosmetic, not a correctness fix.
 
 **Files to refactor in V0.9.1** :
   - Rename `crates/covenant-stdlib/src/erc8228.rs` → `amnesia_ceremony.rs`

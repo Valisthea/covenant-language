@@ -354,6 +354,16 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
   so the Covenant amnesia ceremony pattern carries no EIP number.
   No bytecode change. (DEBT.md V0.9.0→V0.9.1 candidate — closed.)
 
+  > **Follow-up correction** : the above claim was mistaken and has
+  > since been reverted. Per the canonical Styx Protocol mapping (draft
+  > standards authored by Kairos Lab), **ERC-8228 = Cryptographic
+  > Amnesia** (`Valisthea/styx-erc-cryptographic-amnesia`), and the
+  > Encrypted Token Standard is **ERC-8227**. The amnesia ceremony
+  > therefore *does* map to ERC-8228 and should cite it, exactly as
+  > confidential-token cites ERC-8227. The Rust module name
+  > `amnesia_ceremony` remains fine, but its ERC-8228 attribution is
+  > correct, not a misnomer.
+
 - **Workspace bump** : `0.9.0` → `0.9.1` across the 22-crate
   workspace + per-crate Cargo.toml inter-crate version pins.
 

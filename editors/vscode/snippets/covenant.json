@@ -122,7 +122,7 @@
   "Ceremony Construct": {
     "prefix": "ceremony",
     "body": [
-      "-- Amnesia ceremony (Covenant construct — no assigned ERC): Shamir-based key destruction.",
+      "-- ERC-8228: Cryptographic Amnesia (Styx Protocol) — Shamir-based key destruction.",
       "-- Synthesizes: setup(), submit_share(bytes32), finalize(), destroy(), phase(), is_destroyed()",
       "ceremony ${1:CeremonyName} {",
       "\tguardians: ${2:3}",

@@ -3,9 +3,9 @@ description: >-
   When generating Covenant code that uses FHE, cryptographic amnesia, ZK proof
   verification, or post-quantum signature guards, conform to the applicable Styx
   Protocol ERC draft and cite the ERC number in a -- comment near the construct.
-  Covers ERC-8227 (confidential token), ERC-8229 (verified_by), ERC-8231
-  (pq_signed), plus the amnesia ceremony — which has no assigned ERC (ERC-8228
-  is the separate Styx Encrypted Token Standard).
+  Covers ERC-8227 (confidential token), ERC-8228 (amnesia ceremony), ERC-8229
+  (verified_by), ERC-8231 (pq_signed). These are draft standards authored by
+  Kairos Lab as the Styx Protocol.
 globs:
   - "**/*.cov"
 alwaysApply: false
@@ -46,14 +46,15 @@ comment, flag it as an `erc-822x` rule violation.
 
 ---
 
-## Amnesia Ceremony — Covenant construct (no assigned ERC)
+## ERC-8228 — Cryptographic Amnesia
 
 **Trigger:** `ceremony` construct, or any use of `destroy()` / `on_destroy { }`.
 
-> **Numbering note:** the amnesia ceremony has no assigned ERC. ERC-8228 was
-> officially assigned to the **Styx Encrypted Token Standard**
-> (`Valisthea/styx-erc-encrypted-token`) — a different spec. Do not emit an
-> `-- ERC-8228` comment for a `ceremony`.
+> **Numbering note:** the amnesia ceremony maps to **ERC-8228 (Cryptographic
+> Amnesia)** — the Oblivion construct of the Styx Protocol
+> (`Valisthea/styx-erc-cryptographic-amnesia`). A `ceremony` SHOULD carry an
+> `-- ERC-8228` citation comment, exactly like a `confidential token` carries
+> `-- ERC-8227`.
 
 The `ceremony` keyword auto-synthesizes the full amnesia lifecycle:
 
@@ -70,10 +71,10 @@ The `ceremony` keyword auto-synthesizes the full amnesia lifecycle:
 The `on_destroy` block runs on the `Destroyed` phase transition.
 `destroy(0)` triggers the Wesolowski VDF proof + Shamir reconstruction emission.
 
-**Recommended construct comment:**
+**Required citation comment:**
 
 ```covenant
--- Amnesia Ceremony — Covenant construct (no assigned ERC)
+-- ERC-8228: Cryptographic Amnesia (Styx Protocol)
 ceremony AuditTrail {
     guardians: 3
     threshold: 2
@@ -84,8 +85,10 @@ ceremony AuditTrail {
 }
 ```
 
-**Check:** Do not require an ERC citation for `ceremony`. If a `ceremony` cites
-`ERC-8228`, flag that as incorrect (8228 is the Styx Encrypted Token Standard).
+**Check:** If `ceremony` (or `destroy()` / `on_destroy`) is present without the
+ERC-8228 citation comment, flag it as an `erc-822x` rule violation. An
+`-- ERC-8228` citation on a `ceremony` is correct and expected (8228 is
+Cryptographic Amnesia).
 
 ---
 

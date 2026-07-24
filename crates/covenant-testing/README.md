@@ -37,13 +37,16 @@ Deterministic stand-ins for the Styx suite (see `src/precompiles.rs`):
 | ZK       | `0x130..0x133` | success-by-default; `nullifier` returns `keccak(input)`     |
 | PQ (8231)| `0x150..0x154` | `verify_*` succeeds unless `state.pq_force_fail` is set     |
 
-> **Note** : early Covenant docs labeled the FHE / Amnesia / ZK address
-> groups as "ERC-8227 / 8228 / 8229" — those numbers were aspirational,
-> not officially registered. Since EIP-8228 was officially assigned to
-> the Styx **Encrypted Token Standard** (a different specification, see
-> [Valisthea/styx-erc-encrypted-token](https://github.com/Valisthea/styx-erc-encrypted-token)),
-> Covenant docs use neutral group names instead. Only ERC-8231 (PQ key
-> registry) is correctly registered.
+> **Note** : the FHE / Amnesia / ZK address groups map to the Styx
+> Protocol draft standards authored by Kairos Lab — ERC-8227 (Encrypted
+> Token / FHE), **ERC-8228 (Cryptographic Amnesia)**, and ERC-8229 (FHE
+> Computation Verification / ZK). ERC-8228 is the amnesia ceremony
+> standard (see
+> [Valisthea/styx-erc-cryptographic-amnesia](https://github.com/Valisthea/styx-erc-cryptographic-amnesia)),
+> while the Encrypted Token Standard is ERC-8227 (see
+> [Valisthea/styx-erc-encrypted-token](https://github.com/Valisthea/styx-erc-encrypted-token)).
+> ERC-8231 is the PQ key registry. These are draft standards, not yet
+> officially registered with the Ethereum EIP editors.
 
 ## Test surface
 

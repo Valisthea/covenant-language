@@ -24,7 +24,7 @@ If no argument is given, operate on the currently selected code in the editor.
 2. **Check `rules/covenant-syntax.mdc`** — flag all violations.
 3. **Check `docs/diagnostic-codes.md`** — match patterns against the full lint catalog;
    cite the diagnostic code (e.g., `E0421`) in each finding where applicable.
-4. **Check `rules/erc-822x.mdc`** — verify ERC-8227/8229/8231 citation conformance (note: `ceremony` has no ERC — 8228 is the Styx Encrypted Token Standard, not the ceremony)
+4. **Check `rules/erc-822x.mdc`** — verify ERC-8227/8228/8229/8231 citation conformance (note: a `ceremony` maps to ERC-8228 — Cryptographic Amnesia, Styx Protocol)
    wherever the corresponding constructs or guards appear.
 5. **Output structured findings** — one block per issue, then a summary table.
 
@@ -89,7 +89,7 @@ PASSED (no issues found in)
 | `now` used as `amount` (type error) | `covenant-syntax` |
 | `now + N` without duration literal | `covenant-syntax` |
 | `confidential token` missing ERC-8227 `--` comment | `erc-822x` |
-| `ceremony` citing ERC-8228 (wrong — 8228 is the Styx Encrypted Token) | `erc-822x` |
+| `ceremony` missing its ERC-8228 (Cryptographic Amnesia) citation | `erc-822x` |
 | `verified_by` missing ERC-8229 `--` comment | `erc-822x` |
 | `pq_signed` missing ERC-8231 `--` comment | `erc-822x` |
 | State-mutating action emits no event | `covenant-syntax` (low) |

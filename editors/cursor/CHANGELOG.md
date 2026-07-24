@@ -6,6 +6,7 @@ All notable changes to the Covenant Cursor plugin are documented here.
 
 ### Fixed
 - **Corrected the ERC-8228 attribution.** The `ceremony` (amnesia) guidance no longer cites ERC-8228 — that number was officially assigned to the Styx *Encrypted Token* Standard (`Valisthea/styx-erc-encrypted-token`), a different spec. The amnesia ceremony has no assigned ERC; the `erc-822x` rule no longer requires an ERC-8228 comment for `ceremony`, and the scaffold template emits a plain construct comment instead. Updated `rules/erc-822x.mdc`, `agents/reviewer.md`, `commands/new.md`, `commands/review.md`.
+  > **Follow-up correction (reverted):** this change was based on a wrong mapping and has since been reverted. Per the canonical Styx Protocol mapping (draft standards authored by Kairos Lab), **ERC-8228 = Cryptographic Amnesia** (`Valisthea/styx-erc-cryptographic-amnesia`) and the *Encrypted Token* Standard is **ERC-8227**. The amnesia `ceremony` therefore *does* map to ERC-8228 and should cite it, exactly as `confidential token` cites ERC-8227.
 
 ### Changed
 - Description tracked to Covenant **V0.9** (was V0.8).

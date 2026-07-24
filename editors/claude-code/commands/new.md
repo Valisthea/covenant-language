@@ -263,7 +263,7 @@ bridge <Name> anchored_on ["ethereum", "aster"] {
 ### ceremony
 
 ```covenant
--- Amnesia Ceremony — Covenant construct (no assigned ERC; ERC-8228 is the unrelated Styx Encrypted Token Standard)
+-- ERC-8228: Cryptographic Amnesia (Styx Protocol)
 ceremony <Name> {
     guardians: 3
     threshold: 2
