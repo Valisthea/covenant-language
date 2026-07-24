@@ -1,13 +1,13 @@
 ---
 description: >-
-  Persistent syntax and style rules for Covenant V0.9 .cov source files.
+  Persistent syntax and style rules for Covenant v0.9.5 .cov source files.
   Apply whenever editing or generating .cov code.
 globs:
   - "**/*.cov"
 alwaysApply: false
 ---
 
-# Covenant V0.9 Syntax Rules
+# Covenant v0.9.5 Syntax Rules
 
 Apply these rules whenever editing or generating `.cov` source files.
 
@@ -110,3 +110,29 @@ revert_with InsufficientBalance(needed, balances[caller])
 
 - Use `revert_with ErrorName(args)` not bare `revert`.
 - Prefer typed errors over bare string reverts for ABI-decodable failures.
+
+## Compiler diagnostics (fail-loud)
+
+The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
+plausible-but-wrong bytecode, it refuses and errors. Do **not** generate the
+constructs below; if a user hits one of these, explain the error and pick a
+supported construct.
+
+| Code | Meaning |
+|------|---------|
+| **E424** | stdlib math builtins `min`/`max`/`abs`/`pow`/`sqrt` are not implemented → compile error (don't use them). |
+| **E425** | map introspection `.length`/`.keys`/`.values` is unsupported → error. |
+| **E426** | the `in` membership operator (`given x in list`) is not implemented → error. |
+| **E427** | map `.argmax`/`.argmin` is unsupported → error (list `.argmax`/`.argmin` DO work). |
+| **E512** | a non-anonymous event with >3 `indexed` params → error (max 3 indexed). |
+| **E519** | division/modulo by a literal zero → error (a non-literal divisor gets a runtime guard). |
+| **E520** | a missing precompile helper method → error. |
+| **E521** | a text/string constant longer than 32 bytes → error. |
+| **E522** | nested maps (`map<_, map<_,_>>`) are not yet supported → error (use a struct-valued map or flatten). |
+| **W508** | `only caller` is an allow-all no-op → warning (it guards nothing; use a real principal). |
+
+Guard principals that can't be resolved fail **closed** (E516/E517/E518 from earlier releases).
+
+**Trust the error and pick a supported construct** — the compiler refuses rather
+than silently miscompiling, so a diagnostic here is protecting you from wrong
+bytecode, not blocking working code.

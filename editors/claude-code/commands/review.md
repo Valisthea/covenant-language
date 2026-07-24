@@ -1,14 +1,14 @@
 ---
 name: covenant-review
 description: >-
-  Defensive review of a Covenant V0.9 .cov file or selection. Checks against
+  Defensive review of a Covenant v0.9.5 .cov file or selection. Checks against
   covenant-syntax rules, docs/diagnostic-codes.md, and erc-822x rules. Outputs
   structured findings by severity with suggested fixes. Usage: /covenant-review [file.cov]
 ---
 
 # /covenant-review
 
-Run a defensive review of Covenant V0.9 code.
+Run a defensive review of Covenant v0.9.5 code.
 
 ## Usage
 

@@ -1,14 +1,14 @@
 ---
 name: covenant-migrate
 description: >-
-  Migrate a Solidity .sol file (or current selection) to Covenant V0.9 .cov,
+  Migrate a Solidity .sol file (or current selection) to Covenant v0.9.5 .cov,
   applying the 11 anti-pattern transformations and selecting the most specialized
   top-level construct. Usage: /covenant-migrate [path/to/Contract.sol]
 ---
 
 # /covenant-migrate
 
-Migrate Solidity code to Covenant V0.9.
+Migrate Solidity code to Covenant v0.9.5.
 
 ## Usage
 

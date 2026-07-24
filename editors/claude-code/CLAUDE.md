@@ -111,6 +111,32 @@ revert_with InsufficientBalance(needed, balances[caller])
 
 ---
 
+## Compiler diagnostics (fail-loud)
+
+The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
+plausible-but-wrong bytecode, it **refuses and errors**. Do **not** generate the
+constructs below — they will not compile. If a user hits one of these, explain the
+error and pick a supported construct instead. Trust the error.
+
+| Code | Refused construct | Guidance |
+|------|-------------------|----------|
+| **E424** | stdlib math builtins `min` / `max` / `abs` / `pow` / `sqrt` | Not implemented → compile error. Do not use them; write the arithmetic explicitly. |
+| **E425** | map introspection `.length` / `.keys` / `.values` | Unsupported → error. Track size/keys in a separate field. |
+| **E426** | the `in` membership operator (`given x in list`) | Not implemented → error. Use an explicit lookup / `map` membership. |
+| **E427** | map `.argmax` / `.argmin` | Unsupported → error. (List `.argmax` / `.argmin` **do** work.) |
+| **E512** | a non-anonymous `event` with **>3** `indexed` params | Error. Max 3 indexed params (drop `indexed` or make the event `anonymous`). |
+| **E519** | division / modulo by a **literal** zero | Error. (A non-literal divisor instead gets a runtime guard.) |
+| **E520** | a missing precompile helper method | Error. The referenced precompile helper does not exist. |
+| **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
+| **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
+| **W508** | `only caller` | Warning — it is an allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
+
+Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
+earlier releases) — a guard whose principal is unknown errors rather than silently
+allowing the action.
+
+---
+
 ## ERC-822x Compliance (Styx Protocol)
 
 When generating or reviewing Covenant code that uses any of the following

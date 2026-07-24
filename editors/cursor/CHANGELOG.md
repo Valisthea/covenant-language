@@ -2,6 +2,28 @@
 
 All notable changes to the Covenant Cursor plugin are documented here.
 
+## [0.9.5] — 2026-07-24
+
+### Changed
+- **Version realigned to the compiler / VS Code line (0.9.5).** The plugin previously
+  carried its own `0.2.0` scheme; it now tracks the Covenant compiler and VS Code
+  extension release train. `.cursor-plugin/plugin.json`, README, commands, and the
+  reviewer agent now describe the shipping release as **v0.9.5**.
+
+### Added
+- **Knowledge updated for the OMEGA v0.9.5 fail-loud diagnostics.** Added a
+  "Compiler diagnostics (fail-loud)" section to `rules/covenant-syntax.mdc` and
+  `skills/covenant-expert/SKILL.md` listing the constructs the compiler now refuses
+  (E424 math builtins, E425 map introspection, E426 `in` operator, E427 map
+  `.argmax`/`.argmin`, E512 >3 indexed event params, E519 literal-zero division,
+  E520 missing precompile helper, E521 >32-byte text constant, E522 nested maps,
+  W508 `only caller` no-op). The AI no longer generates these plausible-but-wrong
+  constructs and explains the error when a user hits one.
+
+### Notes
+- The **ERC-8228 = Cryptographic Amnesia** correction is already in place (a `ceremony`
+  cites ERC-8228); this release leaves that mapping intact.
+
 ## [0.2.0] — 2026-06-09
 
 ### Fixed

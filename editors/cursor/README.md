@@ -1,6 +1,6 @@
 # Covenant — Cursor Plugin
 
-Agent-side Covenant V0.9 language expertise for [Cursor](https://cursor.sh).
+Agent-side Covenant v0.9.5 language expertise for [Cursor](https://cursor.sh).
 Teaches the Cursor agent how to write, migrate, and defensively review `.cov`
 smart contracts — FHE, ZK, post-quantum, and cryptographic amnesia included.
 
@@ -13,7 +13,7 @@ syntax highlighting, bracket matching, or LSP diagnostics — those are handled
 by the companion [VS Code extension](../vscode/), which also works in Cursor's
 built-in editor.
 
-What this plugin does: it teaches the **Cursor agent** the Covenant V0.9 language
+What this plugin does: it teaches the **Cursor agent** the Covenant v0.9.5 language
 so that AI-assisted workflows (scaffolding, migration, code review) produce correct
 `.cov` code rather than Solidity-flavored pseudocode that the compiler rejects.
 

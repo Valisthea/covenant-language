@@ -2,6 +2,30 @@
 
 All notable changes to the Covenant Claude Code plugin are documented here.
 
+## [0.9.5] — 2026-07-24
+
+### Changed
+- **Version realigned to the compiler / VS Code line (0.9.5).** The plugin previously
+  carried its own `0.2.0` scheme; it now tracks the shipping Covenant release version
+  (`0.9.5`), matching the compiler and the VS Code extension. Current-release
+  descriptions read "Covenant v0.9.5".
+
+### Added
+- **Knowledge updated for the OMEGA v0.9.5 fail-loud diagnostics.** Added a concise
+  "Compiler diagnostics (fail-loud)" section to `CLAUDE.md` and
+  `skills/covenant-expert/SKILL.md` listing the constructs the compiler now
+  **refuses** to compile (E424 stdlib math builtins, E425 map introspection,
+  E426 `in` operator, E427 map `.argmax`/`.argmin`, E512 >3 indexed event params,
+  E519 divide/modulo by literal zero, E520 missing precompile helper, E521 >32-byte
+  text constant, E522 nested maps) plus W508 (`only caller` allow-all no-op) and the
+  fail-closed guard-principal errors (E516/E517/E518). The compiler is fail-loud: it
+  errors rather than silently miscompiling, so the agent must not generate these
+  constructs and should explain the error when a user hits one.
+
+### Notes
+- The ERC-8228 = **Cryptographic Amnesia** correction is already in place — a
+  `ceremony` correctly cites `-- ERC-8228`. Left intact.
+
 ## [0.2.0] — 2026-06-09
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Covenant — Claude Code Plugin
 
-Agent-side Covenant V0.9 language expertise for [Claude Code](https://claude.ai/code).
+Agent-side Covenant v0.9.5 language expertise for [Claude Code](https://claude.ai/code).
 Teaches the Claude agent how to write, migrate, and defensively review `.cov`
 smart contracts — FHE, ZK, post-quantum, and cryptographic amnesia included.
 
@@ -13,7 +13,7 @@ syntax highlighting, bracket matching, or LSP diagnostics — those are handled 
 the companion [VS Code extension](../vscode/), which also works in Cursor's
 built-in editor.
 
-What this plugin does: it teaches the **Claude Code agent** the Covenant V0.9
+What this plugin does: it teaches the **Claude Code agent** the Covenant v0.9.5
 language so that AI-assisted workflows (scaffolding, migration, code review)
 produce correct `.cov` code rather than Solidity-flavored pseudocode that the
 compiler rejects. It is the Claude Code equivalent of [editors/cursor/](../cursor/)
@@ -25,7 +25,7 @@ for Cursor users — identical agent capabilities, same plugin format.
 
 | Type | Count | Items |
 |------|-------|-------|
-| Skill | 1 | `covenant-expert` — full V0.9 language knowledge |
+| Skill | 1 | `covenant-expert` — full v0.9.5 language knowledge |
 | Guidance | 1 | `CLAUDE.md` — persistent syntax + ERC-822x rules (auto-loaded) |
 | Commands | 3 | `/covenant-new`, `/covenant-migrate`, `/covenant-review` |
 | Subagent | 1 | `reviewer` — structured defensive audit report |

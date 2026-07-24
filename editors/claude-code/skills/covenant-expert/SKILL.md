@@ -1,7 +1,7 @@
 ---
 name: covenant-expert
 description: >-
-  Expert knowledge of the Covenant V0.9 smart-contract language (Kairos Lab).
+  Expert knowledge of the Covenant v0.9.5 smart-contract language (Kairos Lab).
   Activate for any of: Covenant code, .cov files; the 14 top-level constructs
   (record, token, confidential token, ballot, counter, encrypted counter, board,
   market, vault, registry, bridge, ceremony, module, hybrid module); FHE; ZK;
@@ -10,9 +10,9 @@ description: >-
   files.
 ---
 
-# Covenant V0.9 — Language Reference
+# Covenant v0.9.5 — Language Reference
 
-Every syntax claim here is verified against the Covenant V0.9 compiler fixtures.
+Every syntax claim here is verified against the Covenant v0.9.5 compiler fixtures.
 Top-level keyword = architecture decision. Solidity has one `contract`; Covenant
 has 14 specialized constructs — pick the right one and the compiler auto-synthesizes
 the correct ABI surface.
@@ -179,6 +179,32 @@ vault Treasury {
     }
 }
 ```
+
+---
+
+## h) Compiler diagnostics (fail-loud)
+
+The compiler is **fail-loud**: it refuses rather than silently miscompiling. When a
+construct below appears, the compiler **errors** instead of emitting
+plausible-but-wrong bytecode. Do **not** generate these; if a user hits the error,
+explain it and switch to a supported construct. Trust the error.
+
+| Code | Refused construct | Guidance |
+|------|-------------------|----------|
+| **E424** | stdlib math builtins `min` / `max` / `abs` / `pow` / `sqrt` | Not implemented → error. Write the arithmetic explicitly instead. |
+| **E425** | map introspection `.length` / `.keys` / `.values` | Unsupported → error. Track size/keys in a separate field. |
+| **E426** | the `in` membership operator (`given x in list`) | Not implemented → error. Use an explicit lookup / `map` membership. |
+| **E427** | map `.argmax` / `.argmin` | Unsupported → error. (List `.argmax` / `.argmin` **do** work.) |
+| **E512** | a non-anonymous `event` with **>3** `indexed` params | Error — max 3 indexed params. Drop `indexed` or make the event `anonymous`. |
+| **E519** | division / modulo by a **literal** zero | Error. (A non-literal divisor instead gets a runtime guard.) |
+| **E520** | a missing precompile helper method | Error — the referenced precompile helper does not exist. |
+| **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
+| **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
+| **W508** | `only caller` | Warning — allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
+
+Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
+earlier releases): a guard whose principal is unknown errors rather than silently
+allowing the action.
 
 ---
 

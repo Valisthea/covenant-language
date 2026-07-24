@@ -1,7 +1,7 @@
 ---
 name: covenant-expert
 description: >-
-  Expert knowledge of the Covenant V0.9 smart-contract language (Kairos Lab).
+  Expert knowledge of the Covenant v0.9.5 smart-contract language (Kairos Lab).
   Activate for any of: Covenant code, .cov files; the 14 top-level constructs
   (record, token, confidential token, ballot, counter, encrypted counter, board,
   market, vault, registry, bridge, ceremony, module, hybrid module); FHE; ZK;
@@ -10,9 +10,9 @@ description: >-
   files.
 ---
 
-# Covenant V0.9 — Language Reference
+# Covenant v0.9.5 — Language Reference
 
-Every syntax claim here is verified against the Covenant V0.9 compiler fixtures.
+Every syntax claim here is verified against the Covenant v0.9.5 compiler fixtures.
 Top-level keyword = architecture decision. Solidity has one `contract`; Covenant
 has 14 specialized constructs — pick the right one and the compiler auto-synthesizes
 the correct ABI surface.
@@ -195,3 +195,31 @@ vault Treasury {
 
 `now` is typed `time`. Write `now + 7 days`, not `now + 604800`.
 Available durations: `seconds`, `minutes`, `hours`, `days`, `weeks`.
+
+---
+
+## h) Compiler diagnostics (fail-loud)
+
+The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
+plausible-but-wrong bytecode, it refuses and errors. Do **not** generate the
+constructs below; if a user hits one of these, explain the error and pick a
+supported construct.
+
+| Code | Meaning |
+|------|---------|
+| **E424** | stdlib math builtins `min`/`max`/`abs`/`pow`/`sqrt` are not implemented → compile error (don't use them). |
+| **E425** | map introspection `.length`/`.keys`/`.values` is unsupported → error. |
+| **E426** | the `in` membership operator (`given x in list`) is not implemented → error. |
+| **E427** | map `.argmax`/`.argmin` is unsupported → error (list `.argmax`/`.argmin` DO work). |
+| **E512** | a non-anonymous event with >3 `indexed` params → error (max 3 indexed). |
+| **E519** | division/modulo by a literal zero → error (a non-literal divisor gets a runtime guard). |
+| **E520** | a missing precompile helper method → error. |
+| **E521** | a text/string constant longer than 32 bytes → error. |
+| **E522** | nested maps (`map<_, map<_,_>>`) are not yet supported → error (use a struct-valued map or flatten). |
+| **W508** | `only caller` is an allow-all no-op → warning (it guards nothing; use a real principal). |
+
+Guard principals that can't be resolved fail **closed** (E516/E517/E518 from earlier releases).
+
+**Trust the error and pick a supported construct** — the compiler refuses rather
+than silently miscompiling, so a diagnostic here is protecting you from wrong
+bytecode, not blocking working code.
