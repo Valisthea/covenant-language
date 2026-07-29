@@ -1,0 +1,9 @@
+-- ERC-8228: Cryptographic Amnesia Ceremony (Styx Protocol)
+ceremony {{NAME}} {
+    guardians: 3
+    threshold: 2
+
+    on_destroy {
+        destroy(0)
+    }
+}

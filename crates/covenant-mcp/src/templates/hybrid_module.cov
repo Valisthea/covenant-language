@@ -1,0 +1,17 @@
+-- {{NAME}}: mixed plaintext + FHE-encrypted state (Veil layer)
+hybrid module {{NAME}} {
+    field headcount:          amount   -- plaintext
+    field encrypted treasury: amount   -- TFHE ciphertext
+
+    action deposit(value: amount)
+            when value > 0 {
+        headcount += 1
+        treasury  += value
+    }
+
+    view participants returns amount {
+        headcount
+    }
+
+    reveal treasury to owner
+}

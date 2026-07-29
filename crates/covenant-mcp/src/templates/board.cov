@@ -1,0 +1,19 @@
+-- {{NAME}}: append-only message board
+board {{NAME}} {
+    post {
+        author:  address
+        content: hash
+        at:      time
+    }
+
+    action submit(content: hash) {
+        append post {
+            author:  caller
+            content: content
+            at:      now
+        }
+    }
+
+    view count returns amount { posts.length }
+    view get(i: amount) returns post when i < posts.length { posts[i] }
+}

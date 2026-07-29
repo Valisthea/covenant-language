@@ -1,0 +1,6 @@
+-- {{NAME}}: key-value storage with auto-getters
+record {{NAME}} {
+    owner:   address
+    count:   amount
+    enabled: bool
+}

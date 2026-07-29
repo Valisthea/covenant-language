@@ -1,0 +1,20 @@
+-- {{NAME}}: cross-chain escrow bridge
+bridge {{NAME}} anchored_on ["ethereum", "aster"] {
+    field locked: map<address, amount>
+
+    event Locked(who: address, value: amount)
+    event Unlocked(who: address, value: amount)
+
+    action lock(value: amount)
+            when value > 0 {
+        locked[caller] += value
+        emit Locked(caller, value)
+    }
+
+    action unlock(value: amount)
+            when locked[caller] >= value {
+        locked[caller] -= value
+        transfer(value) to caller
+        emit Unlocked(caller, value)
+    }
+}

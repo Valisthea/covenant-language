@@ -1,0 +1,52 @@
+{
+  "manifest_version": "0.3",
+  "name": "covenant",
+  "display_name": "Covenant",
+  "description": "Covenant smart-contract language tools for AI agents: compile, lint, scaffold, migrate Solidity to Covenant, and explain constructs, exposed by the Covenant compiler over MCP.",
+  "long_description": "Gives an agent direct access to the Covenant compiler: compile .cov source to EVM bytecode and ABI, run the security linter, scaffold new constructs, migrate Solidity to Covenant, and explain language features. The compiler is bundled as a self-contained binary, so no Rust toolchain is required. Covenant is testnet-only and its cryptographic primitives are mocked; the compiler refuses to target a mainnet. Project: https://covenant-lang.org",
+  "author": {
+    "name": "Kairos Lab",
+    "url": "https://covenant-lang.org"
+  },
+  "homepage": "https://covenant-lang.org",
+  "documentation": "https://github.com/Valisthea/covenant-language",
+  "license": "Apache-2.0",
+  "icon": "icon.png",
+  "keywords": [
+    "covenant",
+    "smart-contract",
+    "evm",
+    "solidity",
+    "compiler",
+    "privacy",
+    "kairos"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/covenant-mcp.exe",
+    "mcp_config": {
+      "command": "${__dirname}/server/covenant-mcp",
+      "args": [],
+      "env": {},
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/covenant-mcp.exe"
+        }
+      }
+    }
+  },
+  "tools": [
+    { "name": "compile", "description": "Compile Covenant source to EVM bytecode and ABI" },
+    { "name": "check_syntax", "description": "Fast frontend-only validation, no codegen" },
+    { "name": "lint", "description": "Security analysis with finding codes" },
+    { "name": "scaffold", "description": "Generate a new .cov file for a construct" },
+    { "name": "migrate", "description": "Convert Solidity source to Covenant" },
+    { "name": "explain", "description": "Explain a construct, guard, type alias, or ERC standard" },
+    { "name": "list_constructs", "description": "Enumerate all top-level Covenant keywords" }
+  ],
+  "compatibility": {
+    "platforms": [
+      "win32"
+    ]
+  }
+}

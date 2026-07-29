@@ -1,0 +1,16 @@
+-- {{NAME}}: post-quantum key registry (Fortress layer)
+registry {{NAME}} {
+    field keys: map<address, pq_key>
+
+    event KeyRegistered(who: address)
+
+    action register(key: pq_key)
+            only first_time_caller {
+        keys[caller] = key
+        emit KeyRegistered(caller)
+    }
+
+    view key_of(who: address) returns pq_key {
+        keys[who]
+    }
+}

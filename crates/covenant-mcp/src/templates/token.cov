@@ -1,0 +1,7 @@
+-- {{NAME}}: ERC-20 fungible token
+token {{NAME}} {
+    symbol:   "TKN"
+    name:     "{{NAME}}"
+    decimals: 18
+    supply:   1_000_000 to deployer
+}

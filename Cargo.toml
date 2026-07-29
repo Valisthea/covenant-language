@@ -15,6 +15,7 @@ members = [
     "crates/covenant-diag",
     "crates/covenant-driver",
     "crates/covenant-cli",
+    "crates/covenant-mcp",
     "crates/covenant-manifest",
     "crates/covenant-testing",
     "crates/covenant-lsp",

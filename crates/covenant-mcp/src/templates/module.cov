@@ -1,0 +1,15 @@
+-- {{NAME}}: generic module (prefer a specialized construct when possible)
+module {{NAME}} {
+    field owner:  address
+    field active: bool
+
+    action initialize()
+            only deployer {
+        owner  = caller
+        active = true
+    }
+
+    view is_active returns bool {
+        active
+    }
+}

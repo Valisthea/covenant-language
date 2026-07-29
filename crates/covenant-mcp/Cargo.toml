@@ -1,0 +1,38 @@
+[package]
+name = "covenant-mcp"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+# Bundled as a .mcpb, not consumed as a library. Keeping it out of the
+# registry also keeps rmcp out of the published dependency graph.
+publish = false
+description = "MCP server exposing Covenant V0.8 compiler tools to AI agents (Claude Code, Cursor, Claude Desktop)"
+
+[lib]
+name = "covenant_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "covenant-mcp"
+path = "src/main.rs"
+
+[dependencies]
+covenant-driver       = { path = "../covenant-driver" }
+covenant-lint         = { path = "../covenant-lint" }
+covenant-diag         = { path = "../covenant-diag" }
+covenant-evm-backend  = { path = "../covenant-evm-backend" }
+covenant-opt          = { path = "../covenant-opt" }
+covenant-stdlib       = { path = "../covenant-stdlib" }
+rmcp                  = { version = "0.1", features = ["server", "transport-io"] }
+tokio                 = { version = "1", features = ["full"] }
+anyhow                = "1"
+tracing               = "0.1"
+tracing-subscriber    = { version = "0.3", features = ["env-filter"] }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+regex                 = "1"
+
+[dev-dependencies]
+covenant-driver = { path = "../covenant-driver" }

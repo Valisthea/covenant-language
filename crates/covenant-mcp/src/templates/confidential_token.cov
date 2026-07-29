@@ -1,0 +1,7 @@
+-- ERC-8227: Confidential Token Interface (Styx Protocol)
+confidential token {{NAME}} {
+    symbol:   "CTKN"
+    name:     "{{NAME}}"
+    decimals: 18
+    supply:   1_000_000 to deployer
+}

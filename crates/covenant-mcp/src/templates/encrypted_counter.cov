@@ -1,0 +1,10 @@
+-- {{NAME}}: TFHE-encrypted counter (Veil layer)
+encrypted counter {{NAME}} {
+    total: amount
+
+    action bump(by: amount) {
+        total += by
+    }
+
+    reveal total to owner
+}

@@ -1,0 +1,18 @@
+-- {{NAME}}: on-chain vote
+ballot {{NAME}} {
+    field votes: map<address, text>
+    field tally: map<text, amount>
+
+    event Voted(who: address, choice: text)
+
+    action vote(choice: text)
+            only first_time_caller {
+        votes[caller] = choice
+        tally[choice] += 1
+        emit Voted(caller, choice)
+    }
+
+    view result(choice: text) returns amount {
+        tally[choice]
+    }
+}

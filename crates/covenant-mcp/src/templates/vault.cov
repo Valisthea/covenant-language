@@ -1,0 +1,25 @@
+-- {{NAME}}: value custody vault (@non_reentrant by default)
+vault {{NAME}} {
+    field balances: map<address, amount>
+
+    event Deposit(who: address, value: amount)
+    event Withdrawal(who: address, value: amount)
+
+    error InsufficientBalance(required: amount, actual: amount)
+
+    action deposit() {
+        balances[caller] += 1
+        emit Deposit(caller, 1)
+    }
+
+    action withdraw(value: amount)
+            when balances[caller] >= value {
+        balances[caller] -= value
+        transfer(value) to caller
+        emit Withdrawal(caller, value)
+    }
+
+    view balance_of(who: address) returns amount {
+        balances[who]
+    }
+}

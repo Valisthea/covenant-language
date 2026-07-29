@@ -1,0 +1,15 @@
+-- {{NAME}}: simple incrementing counter
+counter {{NAME}} {
+    field total: amount
+
+    event Incremented(by: address, new_total: amount)
+
+    action increment() {
+        total += 1
+        emit Incremented(caller, total)
+    }
+
+    view value returns amount {
+        total
+    }
+}

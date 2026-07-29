@@ -1,0 +1,12 @@
+-- {{NAME}}: order-book scaffold. The priority_queue is read-only: .top_key,
+-- .top_value and .length exist, enqueue and dequeue do not, so this cannot
+-- accept orders yet.
+market {{NAME}} {
+    field asks: priority_queue<amount, address, min>
+    field bids: priority_queue<amount, address, max>
+
+    view best_ask returns amount { asks.top_key }
+    view best_bid returns amount { bids.top_key }
+    view ask_depth returns amount { asks.length }
+    view bid_depth returns amount { bids.length }
+}

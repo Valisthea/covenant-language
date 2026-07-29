@@ -12,3 +12,6 @@ deployment/artifacts/*.private
 deployment/.env
 # Default `covenant build` output dir.
 /build/
+
+# Bundle output from crates/covenant-mcp/mcpb/pack.py
+crates/covenant-mcp/dist/
