@@ -86,7 +86,7 @@ vault <Name> {
     action withdraw(value: amount)
             when balances[caller] >= value {
         balances[caller] -= value
-        transfer(value, to: caller)
+        transfer(value) to caller
         emit Withdrawal(caller, value)
     }
 
@@ -254,7 +254,7 @@ bridge <Name> anchored_on ["ethereum", "aster"] {
     action unlock(value: amount)
             when locked[caller] >= value {
         locked[caller] -= value
-        transfer(value, to: caller)
+        transfer(value) to caller
         emit Unlocked(caller, value)
     }
 }

@@ -1,8 +1,8 @@
 # Covenant Language Support
 
-**Covenant** is a privacy-first smart contract language that compiles to EVM bytecode. Its compile-time access control and privacy type system are real; the cryptographic primitives (FHE, ZK, post-quantum, cryptographic amnesia) are **testnet-only mocked stubs with no security yet** — see [STATUS](https://github.com/Valisthea/covenant-language/blob/main/STATUS.md). Write privacy-typed contracts without Solidity.
+**Covenant** is a privacy-first smart contract language that compiles to EVM bytecode. Its compile-time access control and privacy type system are real; the cryptographic primitives (FHE, ZK, post-quantum, cryptographic amnesia) are **testnet-only mocked stubs with no security yet**, see [STATUS](https://github.com/Valisthea/covenant-language/blob/main/STATUS.md). Write privacy-typed contracts without Solidity.
 
-> **Continuously audited** — OMEGA V4 through V6 by Kairos Lab Security Research. Latest cycle (OMEGA V6, 5 July 2026): 6 Critical / 6 High / 5 Medium, all fixed the same day. Public report →
+> **Continuously audited**, OMEGA V4 through V6 by Kairos Lab Security Research. Latest cycle (OMEGA V6, 5 July 2026): 6 Critical / 6 High / 5 Medium, all fixed the same day. Public report →
 
 ---
 
@@ -12,15 +12,15 @@
 
 Full TextMate grammar covering every Covenant construct:
 
-- **Top-level constructs** — `module`, `record`, `token`, `ballot`, `counter`, `board`, `market`, `vault`, `registry`, `bridge`, `ceremony`
-- **Privacy qualifiers** — `public`, `private`, `encrypted`, `sealed`, `hybrid`, `confidential`
-- **Access control** — `only`, `when`, `given`
-- **Types** — `amount`, `time`, `duration`, `hash`, `text`, `address`, `bool`, `ciphertext`, `map`, `shares`, `pq_key`, …
-- **Control flow** — `match`, `let`, `return`, `if`, `else`, `for`, `each`, `try_action`, `catch`, `revert_with`
-- **Annotations** — `@slot`, `@version`, `@selective_disclosure`, …
-- **Comments** — `--` line comments
-- **Operators** — full arithmetic, comparison, bitwise, assignment
-- **Literals** — integers, hex (`0x…`), text strings, duration literals (`30 days`, `1 week`)
+- **Top-level constructs**: `module`, `record`, `token`, `ballot`, `counter`, `board`, `market`, `vault`, `registry`, `bridge`, `ceremony`
+- **Privacy qualifiers**: `public`, `private`, `encrypted`, `sealed`, `hybrid`, `confidential`
+- **Access control**: `only`, `when`, `given`
+- **Types**: `amount`, `time`, `duration`, `hash`, `text`, `address`, `bool`, `ciphertext`, `map`, `shares`, `pq_key`, …
+- **Control flow**: `match`, `let`, `return`, `if`, `else`, `for`, `each`, `try_action`, `catch`, `revert_with`
+- **Annotations**: `@slot`, `@version`, `@selective_disclosure`, …
+- **Comments**: `--` line comments
+- **Operators**: full arithmetic, comparison, bitwise, assignment
+- **Literals**: integers, hex (`0x…`), text strings, duration literals (`30 days`, `1 week`)
 
 ### Diagnostics
 
@@ -38,14 +38,14 @@ Hover over any identifier to see its type, visibility, and declaration site. Wor
 
 ### Document Symbols
 
-Full outline support — every `record`, `token`, `action`, `view`, `event`, and `field` appears in the VS Code Outline panel and breadcrumb.
+Full outline support, every `record`, `token`, `action`, `view`, `event`, and `field` appears in the VS Code Outline panel and breadcrumb.
 
 ### Language Configuration
 
-- **Comment toggle** (`Ctrl+/` / `Cmd+/`) — adds/removes `--` prefix
-- **Auto-close** — `{`, `[`, `(`, `"` close automatically
-- **Smart indentation** — increases inside `{` blocks, decreases on `}`
-- **Code folding** — collapse any `{ }` block
+- **Comment toggle** (`Ctrl+/` / `Cmd+/`), adds/removes `--` prefix
+- **Auto-close**: `{`, `[`, `(`, `"` close automatically
+- **Smart indentation**: increases inside `{` blocks, decreases on `}`
+- **Code folding**: collapse any `{ }` block
 
 ---
 
@@ -59,7 +59,7 @@ cd covenant-language
 cargo build --release --bin covenant-lsp   # then add target/release to PATH
 ```
 
-> **Coming soon** — the hosted install channels below are not live yet:
+> **Coming soon**, the hosted install channels below are not live yet:
 > ```sh
 > curl -sSL https://install.covenant-lang.org | sh   # coming soon
 > cargo install covenant-cli                          # coming soon (crates.io)
@@ -73,7 +73,7 @@ The extension automatically discovers `covenant-lsp` from your `PATH`. No manual
 
 1. Install the extension and the Covenant toolchain
 2. Open or create a `.cov` file
-3. Start writing — diagnostics, hover, and symbols activate immediately
+3. Start writing, diagnostics, hover, and symbols activate immediately
 
 ```
 -- hello.cov
@@ -207,7 +207,7 @@ Covenant is continuously audited by **Kairos Lab Security Research** using the O
 
 Key fixes: access control no-op (KSR-CVN-011), stale-memory precompile forgery (KSR-CVN-014), proxy initializer hijack (KSR-CVN-012), ceremony phase transition bypass (KSR-CVN-001).
 
-**Latest cycle — OMEGA V6 (5 July 2026, compiler V0.9.3):** a fresh breadth-first sweep across the compiler, stdlib, and produced-contract surfaces found 6 Critical, 6 High, and 5 Medium severity defects — the largest single-cycle count since the V0.6 launch audit, including a `for each` loop that never actually iterated and an unbounded-recursion crash reachable from any `.cov` file this extension's language server opens. All 17 findings were fixed the same day, each with a new regression test. Full write-up: covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2.
+**Latest cycle, OMEGA V6 (5 July 2026, compiler V0.9.3):** a fresh breadth-first sweep across the compiler, stdlib, and produced-contract surfaces found 6 Critical, 6 High, and 5 Medium severity defects, the largest single-cycle count since the V0.6 launch audit, including a `for each` loop that never actually iterated and an unbounded-recursion crash reachable from any `.cov` file this extension's language server opens. All 17 findings were fixed the same day, each with a new regression test. Full write-up: covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2.
 
 Full public report index: github.com/Valisthea/covenant-security-reviews
 
@@ -227,4 +227,4 @@ Full public report index: github.com/Valisthea/covenant-security-reviews
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE)
+Apache-2.0, see [LICENSE](LICENSE)

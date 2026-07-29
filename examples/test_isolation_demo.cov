@@ -12,8 +12,8 @@
 --   test test_isolation_n_starts_zero_again ... ok
 --   test result: 3 passed; 0 failed
 --
--- Test pattern (V0.9.0 — pre-stdlib-test-API):
---   `action test_X() when <condition> {}` — empty body.
+-- Test pattern (V0.9.0, pre-stdlib-test-API):
+--   `action test_X() when <condition> {}`, empty body.
 --   The `when` guard is the assertion : if it holds, action returns Ok
 --   = test passes. If it fails, action reverts = test fails. Empty
 --   body avoids side effects mid-assertion. V0.9.x will add a richer

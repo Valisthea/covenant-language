@@ -1,7 +1,7 @@
 # covenant-testing
 
 End-to-end test harness for the Covenant compiler. This crate is the
-Phase 10 deliverable — it exercises the full pipeline
+Phase 10 deliverable, it exercises the full pipeline
 (source → lex → parse → resolve → typecheck → privacy → IR → stdlib → optimize
 → EVM bytecode) against a mock in-process EVM and deterministic precompiles.
 
@@ -38,7 +38,7 @@ Deterministic stand-ins for the Styx suite (see `src/precompiles.rs`):
 | PQ (8231)| `0x150..0x154` | `verify_*` succeeds unless `state.pq_force_fail` is set     |
 
 > **Note** : the FHE / Amnesia / ZK address groups map to the Styx
-> Protocol draft standards authored by Kairos Lab — ERC-8227 (Encrypted
+> Protocol draft standards authored by Kairos Lab, ERC-8227 (Encrypted
 > Token / FHE), **ERC-8228 (Cryptographic Amnesia)**, and ERC-8229 (FHE
 > Computation Verification / ZK). ERC-8228 is the amnesia ceremony
 > standard (see
@@ -52,13 +52,13 @@ Deterministic stand-ins for the Styx suite (see `src/precompiles.rs`):
 
 Per-example scenarios live under `tests/`:
 
-* `hello.rs` — minimal record deploys, dispatches, rejects unknown selectors
-* `coin.rs` — ERC-20 conformance (14 scenarios)
-* `open_ballot.rs` — ballot deploys, selector surface, warp-assisted
+* `hello.rs`: minimal record deploys, dispatches, rejects unknown selectors
+* `coin.rs`: ERC-20 conformance (14 scenarios)
+* `open_ballot.rs`: ballot deploys, selector surface, warp-assisted
   `when` evaluation scaffolding
-* `shielded_counter.rs` — bump path routes through the mocked FHE `add`
+* `shielded_counter.rs`: bump path routes through the mocked FHE `add`
   precompile; handle table grows monotonically
-* `quantum_board.rs` — post/verify selectors present; `pq_force_fail`
+* `quantum_board.rs`: post/verify selectors present; `pq_force_fail`
   propagates through the dispatch layer
 
 The `smoke.rs` file also deploys every Basics example to guard against
@@ -69,7 +69,7 @@ codegen regressions.
 A few compiler paths are still stubs. Tests document where this matters:
 
 * calldata is not copied into function parameter slots yet, so
-  `transfer(to, value)` reads `to = 0` and `value = 0` — round-trip state
+  `transfer(to, value)` reads `to = 0` and `value = 0`, round-trip state
   assertions (e.g. "approve 555 ; allowance == 555") are intentionally
   rewritten to validate dispatch/return behavior instead;
 * the genesis mint for `supply: N to deployer` is deferred to V0.2, so

@@ -19,7 +19,7 @@ adjacent to the construct.
 
 ---
 
-## ERC-8227 — Confidential Token Interface
+## ERC-8227: Confidential Token Interface
 
 **Trigger:** `confidential token` construct.
 
@@ -46,12 +46,12 @@ comment, flag it as an `erc-822x` rule violation.
 
 ---
 
-## ERC-8228 — Cryptographic Amnesia
+## ERC-8228: Cryptographic Amnesia
 
 **Trigger:** `ceremony` construct, or any use of `destroy()` / `on_destroy { }`.
 
 > **Numbering note:** the amnesia ceremony maps to **ERC-8228 (Cryptographic
-> Amnesia)** — the Oblivion construct of the Styx Protocol
+> Amnesia)**, the Oblivion construct of the Styx Protocol
 > (`Valisthea/styx-erc-cryptographic-amnesia`). A `ceremony` SHOULD carry an
 > `-- ERC-8228` citation comment, exactly like a `confidential token` carries
 > `-- ERC-8227`.
@@ -92,7 +92,7 @@ Cryptographic Amnesia).
 
 ---
 
-## ERC-8229 — FHE Computation Verification
+## ERC-8229: FHE Computation Verification
 
 **Trigger:** `verified_by(zk_proof)` guard qualifier on an action.
 
@@ -114,7 +114,7 @@ flag it as an `erc-822x` rule violation.
 
 ---
 
-## ERC-8231 — Post-Quantum Signature Verification
+## ERC-8231: Post-Quantum Signature Verification
 
 **Trigger:** `pq_signed(content, sig, key)` guard qualifier on an action.
 

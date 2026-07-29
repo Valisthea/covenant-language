@@ -1,6 +1,6 @@
 -- 08_view_purity.cov
 --
--- AUDIT FIXTURE — View vs action separation (purity boundary).
+-- AUDIT FIXTURE, View vs action separation (purity boundary).
 --
 -- Purpose : verify that `view` declarations compile to STATICCALL-safe
 -- functions (no state mutation, no event emission, no revert_with side
@@ -9,7 +9,7 @@
 -- Auditor checklist :
 --   - `view` functions appear in the ABI with `stateMutability: "view"`.
 --   - Compiler rejects ANY state mutation inside a `view` body
---     (assignment to a field, push to a list, etc.) — should fail
+--     (assignment to a field, push to a list, etc.), should fail
 --     compilation with a clear diagnostic.
 --   - Compiler rejects `emit` inside a `view` body.
 --   - Compiler ALLOWS reading state and computing return values.
@@ -20,7 +20,7 @@
 -- action context, where mutation is allowed.
 --
 -- EXPECTED LINT FINDINGS (this fixture intentionally trips them) :
---   * C100 — missing access guard on `increment`. The linter flags
+--   * C100, missing access guard on `increment`. The linter flags
 --     every action without `only(...)` as critical. For this fixture
 --     the action is intentionally public (auditors should observe :
 --     anyone can call it). Suppress with `@allow(C100)` if intentional.

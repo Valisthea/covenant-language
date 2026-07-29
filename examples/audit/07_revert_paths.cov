@@ -1,6 +1,6 @@
 -- 07_revert_paths.cov
 --
--- AUDIT FIXTURE — Custom error revert paths.
+-- AUDIT FIXTURE, Custom error revert paths.
 --
 -- Purpose : exercise the typed-error revert path. Covenant compiles
 -- `revert_with ErrorName(args)` to `REVERT` with the 4-byte error

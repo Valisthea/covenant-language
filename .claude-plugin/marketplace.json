@@ -5,13 +5,13 @@
     "url": "https://github.com/Valisthea"
   },
   "metadata": {
-    "description": "Covenant smart contract language tooling — write, review, and migrate Solidity to Covenant, with native FHE / ZK / post-quantum / cryptographic-amnesia primitives and the compiler's fail-loud diagnostics baked into the agent."
+    "description": "Covenant smart contract language tooling, write, review, and migrate Solidity to Covenant, with native FHE / ZK / post-quantum / cryptographic-amnesia primitives and the compiler's fail-loud diagnostics baked into the agent."
   },
   "plugins": [
     {
       "name": "covenant",
       "source": "./editors/claude-code",
-      "description": "Agent-side expertise for Covenant v0.9.5 — FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, defensive code review, and the compiler's fail-loud diagnostics.",
+      "description": "Agent-side expertise for Covenant v0.9.5, FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, defensive code review, and the compiler's fail-loud diagnostics.",
       "version": "0.9.5",
       "homepage": "https://github.com/Valisthea/covenant-language/tree/main/editors/claude-code",
       "category": "languages"

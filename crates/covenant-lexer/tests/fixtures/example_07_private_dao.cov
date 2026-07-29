@@ -1,5 +1,5 @@
 -- PrivateDAO.cov · an FHE-tally governance contract.
--- All vote tallies are stored as TFHE ciphertexts — no individual vote is
+-- All vote tallies are stored as TFHE ciphertexts, no individual vote is
 -- visible on-chain. The final result is revealed only through a threshold
 -- decrypt, requiring validator consensus. This prevents front-running and
 -- coercion during active voting periods.

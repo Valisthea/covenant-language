@@ -6,13 +6,13 @@
 
 **A declarative smart-contract language that makes cryptographic guarantees first-class.**
 
-Write `token`, `nft`, `registry`, `ceremony` — the compiler synthesizes the audited-shape surface and lowers it to EVM bytecode. No inheritance. Guards live in the signature. A privacy type system tracks secrets at compile time.
+Write `token`, `nft`, `registry`, `ceremony`, the compiler synthesizes the audited-shape surface and lowers it to EVM bytecode. No inheritance. Guards live in the signature. A privacy type system tracks secrets at compile time.
 
 <br>
 
-[![version](https://img.shields.io/badge/version-0.9.4-7C3AED?style=flat-square)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.9.5-7C3AED?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml/badge.svg)](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-1%2C080%2B%20passing-3FB950?style=flat-square)](#testing)
+[![tests](https://img.shields.io/badge/tests-1%2C105%20passing-3FB950?style=flat-square)](#testing)
 [![license](https://img.shields.io/badge/license-Apache--2.0-3B82F6?style=flat-square)](LICENSE)
 <br>
 [![status](https://img.shields.io/badge/status-testnet--only-F59E0B?style=flat-square)](STATUS.md)
@@ -31,7 +31,7 @@ Write `token`, `nft`, `registry`, `ceremony` — the compiler synthesizes the au
 
 > [!WARNING]
 > **Testnet only. The cryptographic primitives are MOCKED.**
-> FHE / post-quantum / ZK / VDF / Shamir are **deterministic stubs**, testnet-gated. They provide **zero** confidentiality and **zero** cryptographic security — "encrypted" values are readable from chain state, and the PQ / ZK verifiers accept forged proofs. **Do not deploy to mainnet or place real value at risk.** Real cryptography plus an external audit are a separate, later release. See **[STATUS.md](STATUS.md)** for the full, honest breakdown.
+> FHE / post-quantum / ZK / VDF / Shamir are **deterministic stubs**, testnet-gated. They provide **zero** confidentiality and **zero** cryptographic security, "encrypted" values are readable from chain state, and the PQ / ZK verifiers accept forged proofs. **Do not deploy to mainnet or place real value at risk.** Real cryptography plus an external audit are a separate, later release. See **[STATUS.md](STATUS.md)** for the full, honest breakdown.
 
 ## Why Covenant
 
@@ -40,11 +40,11 @@ Solidity gives you a low-level machine and asks you to assemble a safe contract 
 |  | Solidity | Covenant |
 |---|---|---|
 | **Model** | imperative; inherit `ERC20`, override carefully | declarative; `token X { … }` synthesizes the surface |
-| **Guards** | `modifier onlyOwner` you can forget to attach | `only deployer, given bps <= 500` — part of the signature |
+| **Guards** | `modifier onlyOwner` you can forget to attach | `only deployer, given bps <= 500`, part of the signature |
 | **Privacy** | none at the type level | a **compile-time privacy / key-identity type system** tracks secrets and refuses to leak them |
 | **Tests** | separate framework | in the source: `covenant test`, stripped from release builds |
 
-The privacy type system is the genuinely novel part — and it is **real, today, without any cryptography running.**
+The privacy type system is the genuinely novel part, and it is **real, today, without any cryptography running.**
 
 ## A token in five lines
 
@@ -57,7 +57,7 @@ token KairosCoin {
 }
 ```
 
-That compiles to a full, conformant ERC-20 — `transfer` / `approve` / `transferFrom` / `balanceOf` / `allowance` / `totalSupply`, the `Transfer` / `Approval` events with canonical topic hashes, and standard 4-byte selectors — indistinguishable to wallets, explorers and indexers from a hand-written Solidity token. Add `burn`, an opt-in transfer fee, or any custom action inline; the `nft`, `registry` and `ceremony` keywords work the same way.
+That compiles to a full, conformant ERC-20, `transfer` / `approve` / `transferFrom` / `balanceOf` / `allowance` / `totalSupply`, the `Transfer` / `Approval` events with canonical topic hashes, and standard 4-byte selectors, indistinguishable to wallets, explorers and indexers from a hand-written Solidity token. Add `burn`, an opt-in transfer fee, or any custom action inline; the `nft`, `registry` and `ceremony` keywords work the same way.
 
 ## How it compiles
 
@@ -69,7 +69,7 @@ flowchart LR
     PRIV -. enforces .-> P1{{no secret<br/>reaches plaintext}}
 ```
 
-Twenty-one Rust crates, one deterministic pipeline. Same source, same bytes — verified: two independent builds and the on-chain runtime of the milestone token all hash to the same SHA-256.
+Twenty-one Rust crates, one deterministic pipeline. Same source, same bytes, verified: two independent builds and the on-chain runtime of the milestone token all hash to the same SHA-256.
 
 ## What's real vs what's mocked
 
@@ -78,18 +78,18 @@ The whole point of the honest-status discipline is that this table is never buri
 | Layer | State today |
 |---|---|
 | ✅ **Compiler** (lex → parse → resolve → type-check → privacy → IR → EVM) | real, tested, deterministic |
-| ✅ **Compile-time privacy / key-identity types** | real — the novel core, true without crypto |
+| ✅ **Compile-time privacy / key-identity types** | real, the novel core, true without crypto |
 | ✅ **Auto-synth** ERC-20 / ERC-721 / PQ-registry from ~5 lines | real, deployed & exercised on-chain |
 | ✅ **Ceremony state machine** (`CeremonyHelper`) | real 4-phase lifecycle |
-| ✅ **Tooling** — CLI, LSP, linter, editor plugins | real |
+| ✅ **Tooling**, CLI, LSP, linter, editor plugins | real |
 | 🔴 **FHE** (`MockedFHEHelper`) | plaintext store; "encrypted" values readable on-chain |
-| 🔴 **Post-quantum** (`MockedPQVerifier`) | parity check — accepts ~50% of forgeries |
+| 🔴 **Post-quantum** (`MockedPQVerifier`) | parity check, accepts ~50% of forgeries |
 | 🔴 **ZK** (`MockedZKVerifier`) | coin-flip; verifies nothing |
 | 🔴 **VDF / Shamir** | keccak commitment / share-count only |
 
-Every mock carries a `PLACEHOLDER` banner and an `onlyTestnet` modifier. Real implementations are the **V2.0 — Cryptography** track.
+Every mock carries a `PLACEHOLDER` banner and an `onlyTestnet` modifier. Real implementations are the **V2.0, Cryptography** track.
 
-## Milestones — externally verifiable
+## Milestones: externally verifiable
 
 Not a proof of concept. Real contracts, real transactions, on two independent public chains ([full record](MILESTONES.md)).
 
@@ -123,7 +123,7 @@ covenant lint  <file>     # 21-detector security linter
 covenant doctor           # environment probes
 ```
 
-Prefer the browser? The **[playground](https://playground.covenant-lang.org)** runs the compiler as WASM — edit, compile, simulate on an in-tab EVM, or deploy to a testnet with MetaMask.
+Prefer the browser? The **[playground](https://playground.covenant-lang.org)** runs the compiler as WASM, edit, compile, simulate on an in-tab EVM, or deploy to a testnet with MetaMask.
 
 ## Architecture
 
@@ -138,12 +138,12 @@ Tooling     cli · lsp · lint · diag · driver · manifest · testing · circu
 Runtime     evm-runtime (mini-EVM for tests) · wasm-bindings (playground)
 ```
 
-`nft` / `token` / `registry` / `ceremony` and friends are compiler keywords, not imported libraries — the synthesis happens at compile time, so there is no base contract to forget or override wrong.
+`nft` / `token` / `registry` / `ceremony` and friends are compiler keywords, not imported libraries, the synthesis happens at compile time, so there is no base contract to forget or override wrong.
 
 ## Security & audits
 
-- **Self-audited, not third-party.** OMEGA V4 / V5 / V6 are Kairos-Lab internal adversarial audits. The unqualified word *"audited"* is deliberately **not** used — an external firm audit is the gate for V1.0.
-- **The audits keep finding things, which is the honest signal.** V0.9.2 fixed a **Critical** ERC-721 authorization bypass (anyone could move any NFT). V0.9.3 (OMEGA V6) fixed **6 Critical + 6 High + 5 Medium**. V0.9.4 is a **fail-loud pass**: seven classes of *silent miscompile* — `max(a,b)` returning `a+b`, `x/0` returning `0`, test actions shipping on-chain, field defaults dropped — now error or work correctly. **One was found by the fuzzer.** ([CHANGELOG](CHANGELOG.md) · audit writeups (coming soon))
+- **Self-audited, not third-party.** OMEGA V4 / V5 / V6 are Kairos-Lab internal adversarial audits. The unqualified word *"audited"* is deliberately **not** used, an external firm audit is the gate for V1.0.
+- **The audits keep finding things, which is the honest signal.** V0.9.2 fixed a **Critical** ERC-721 authorization bypass (anyone could move any NFT). V0.9.3 (OMEGA V6) fixed **6 Critical + 6 High + 5 Medium**. V0.9.4 is a **fail-loud pass**: seven classes of *silent miscompile*, `max(a,b)` returning `a+b`, `x/0` returning `0`, test actions shipping on-chain, field defaults dropped, now error or work correctly. **One was found by the fuzzer.** ([CHANGELOG](CHANGELOG.md) · [review archive](https://github.com/Valisthea/covenant-security-reviews))
 - **Continuous fuzzing** (`cargo-fuzz`) on the compile pipeline; every crash it finds is checked into the corpus as a permanent regression seed.
 
 Found something? See [SECURITY.md](SECURITY.md).
@@ -154,22 +154,22 @@ Semantic-ish versioning; pre-release tags for research milestones. Full detail i
 
 | Version | Theme |
 |---|---|
-| [**0.9.4**](CHANGELOG.md) | **Fail-loud pass** — silent miscompiles error or work; live LSP diagnostics; green CI |
-| [0.9.3](CHANGELOG.md) | OMEGA V6 self-audit — 6 Critical + 6 High + 5 Medium |
-| [0.9.2](CHANGELOG.md) | Full-audit resolutions — Critical ERC-721 auth fix + High codegen defects |
+| [**0.9.4**](CHANGELOG.md) | **Fail-loud pass**, silent miscompiles error or work; live LSP diagnostics; green CI |
+| [0.9.3](CHANGELOG.md) | OMEGA V6 self-audit, 6 Critical + 6 High + 5 Medium |
+| [0.9.2](CHANGELOG.md) | Full-audit resolutions, Critical ERC-721 auth fix + High codegen defects |
 | [0.9.0](CHANGELOG.md) | Helper-contract bridge live on Sepolia · `nft` / `registry` / `interface` |
-| [0.8.0](CHANGELOG.md) | GA — WASM backend · amnesia ceremony · cross-chain bridge |
-| [0.7.0](CHANGELOG.md) | GA — spec frozen · OMEGA V4 audit (41 findings) |
+| [0.8.0](CHANGELOG.md) | GA, WASM backend · amnesia ceremony · cross-chain bridge |
+| [0.7.0](CHANGELOG.md) | GA, spec frozen · OMEGA V4 audit (41 findings) |
 
 ## Roadmap
 
-Three axes, deliberately decoupled — see [STATUS.md](STATUS.md).
+Three axes, deliberately decoupled, see [STATUS.md](STATUS.md).
 
 | Milestone | Meaning | Horizon |
 |---|---|---|
 | **Public launch** | open-source, honest, **testnet-only** language & compiler | current |
-| **V1.0** | + external third-party audit of compiler + `CeremonyHelper` | +3–5 months |
-| **V2.0 — Cryptography** | real FHE / PQ / ZK / VDF / Shamir + a crypto audit | 12–24 months |
+| **V1.0** | + external third-party audit of compiler + `CeremonyHelper` | +3 to 5 months |
+| **V2.0, Cryptography** | real FHE / PQ / ZK / VDF / Shamir + a crypto audit | 12 to 24 months |
 
 ## Standards
 
@@ -180,11 +180,11 @@ The Styx Protocol ERC specs are **Draft standards authored by Kairos Lab**: **ER
 | What | License |
 |---|---|
 | Compiler & tooling (all `crates/`, helpers) | [Apache-2.0](LICENSE) |
-| Specifications & example `.cov` | [CC0-1.0](examples/LICENSE) — public domain |
+| Specifications & example `.cov` | [CC0-1.0](examples/LICENSE), public domain |
 
 Full component split, SPDX identifiers, and trademark terms in **[LICENSING.md](LICENSING.md)**.
 
-**On FHE technology:** Covenant is a *language* — FHE operations are delegated to chain-side precompiles. It **does not implement, depend on, or bundle any FHE library** (neither Zama's `tfhe-rs` nor any other); the architecture is scheme-agnostic. Full IP position and deployment guidance in [LICENSE_CLARIFICATION.md](LICENSE_CLARIFICATION.md).
+**On FHE technology:** Covenant is a *language*, FHE operations are delegated to chain-side precompiles. It **does not implement, depend on, or bundle any FHE library** (neither Zama's `tfhe-rs` nor any other); the architecture is scheme-agnostic. Full IP position and deployment guidance in [LICENSE_CLARIFICATION.md](LICENSE_CLARIFICATION.md).
 
 ---
 

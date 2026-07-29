@@ -61,7 +61,7 @@ Always write:
 - Inside `record`: bare `name: type` (no `field` keyword)
 - Remove all Solidity visibility modifiers (`public`, `private`, `internal`, `external`)
 
-## vault — reentrancy default
+## vault: reentrancy default
 
 `vault` is `@non_reentrant` by default. Do **not** add `@non_reentrant` manually;
 the compiler will warn. Write:
@@ -74,7 +74,7 @@ vault MyVault {
     action withdraw(value: amount)
             when balances[caller] >= value {
         balances[caller] -= value
-        transfer(value, to: caller)
+        transfer(value) to caller
     }
 }
 ```
@@ -96,7 +96,7 @@ vault MyVault {
 - `now` is typed `time`, not `amount`. You cannot add a bare number to `now`.
 - Write `now + 7 days` (produces `time`). Available duration literals:
   `seconds`, `minutes`, `hours`, `days`, `weeks`.
-- Do not cast `now` to `amount` — use a separate `time` field if comparison is needed.
+- Do not cast `now` to `amount`, use a separate `time` field if comparison is needed.
 
 ## Events and errors
 
@@ -134,6 +134,6 @@ supported construct.
 
 Guard principals that can't be resolved fail **closed** (E516/E517/E518 from earlier releases).
 
-**Trust the error and pick a supported construct** — the compiler refuses rather
+**Trust the error and pick a supported construct**: the compiler refuses rather
 than silently miscompiling, so a diagnostic here is protecting you from wrong
 bytecode, not blocking working code.

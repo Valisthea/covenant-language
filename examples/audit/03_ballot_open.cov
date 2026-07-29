@@ -1,6 +1,6 @@
 -- 03_ballot_open.cov
 --
--- AUDIT FIXTURE — Open public ballot with deadline + first-time-caller guard.
+-- AUDIT FIXTURE, Open public ballot with deadline + first-time-caller guard.
 --
 -- Purpose : exercise the `ballot` synthesis path AND the `when` /
 -- `only` / `given` guard composition that auditors most often ask
@@ -8,14 +8,14 @@
 --
 -- Synthesized surface (auditors should verify) :
 --   Fields :   tally: map<choice, amount>, opened_at: timestamp, options
---   Actions :  cast(pick: choice)        — guarded by when/only/given
---   Reveals :  deadline returns time      — only after deadline (the real
+--   Actions :  cast(pick: choice), guarded by when/only/given
+--   Reveals :  deadline returns time, only after deadline (the real
 --                                          `winner` reveal awaits map .argmax)
 --   Events :   Cast(caller, pick)
 --
 -- Guard semantics (CRITICAL audit point) :
---   `when now < opened_at + duration` — deadline check ; reverts if past.
---   `only first_time_caller`           — replay protection ; reverts if
+--   `when now < opened_at + duration`, deadline check ; reverts if past.
+--   `only first_time_caller`, replay protection ; reverts if
 --                                        caller already voted.
 --   Both are evaluated BEFORE the body executes. Failure = revert,
 --   no state change, no event.
@@ -31,7 +31,7 @@
 --   - Reveal before deadline → expect revert.
 --
 -- EXPECTED LINT FINDINGS (this fixture intentionally trips them) :
---   * C200 — timestamp drift via `now`. The linter flags every use of
+--   * C200, timestamp drift via `now`. The linter flags every use of
 --     `now` because miners can shift block.timestamp by ~15 seconds.
 --     For a 7-day ballot this drift is irrelevant ; suppress with
 --     `@allow(C200)` if the ballot logic tolerates it. Fixture left

@@ -1,15 +1,15 @@
-# Covenant — Cursor Plugin
+# Covenant: Cursor Plugin
 
 Agent-side Covenant v0.9.5 language expertise for [Cursor](https://cursor.sh).
 Teaches the Cursor agent how to write, migrate, and defensively review `.cov`
-smart contracts — FHE, ZK, post-quantum, and cryptographic amnesia included.
+smart contracts, FHE, ZK, post-quantum, and cryptographic amnesia included.
 
 ---
 
 ## What this plugin is
 
 This is a **Cursor AI plugin**, not an editor extension. It does not provide
-syntax highlighting, bracket matching, or LSP diagnostics — those are handled
+syntax highlighting, bracket matching, or LSP diagnostics, those are handled
 by the companion [VS Code extension](../vscode/), which also works in Cursor's
 built-in editor.
 
@@ -23,10 +23,10 @@ so that AI-assisted workflows (scaffolding, migration, code review) produce corr
 
 | Type | Count | Items |
 |------|-------|-------|
-| Skill | 1 | `covenant-expert` — full V0.9 language knowledge |
+| Skill | 1 | `covenant-expert`, full V0.9 language knowledge |
 | Rules | 2 | `covenant-syntax`, `erc-822x` |
 | Commands | 3 | `/covenant-new`, `/covenant-migrate`, `/covenant-review` |
-| Subagent | 1 | `reviewer` — structured defensive audit report |
+| Subagent | 1 | `reviewer`, structured defensive audit report |
 
 ---
 
@@ -34,7 +34,7 @@ so that AI-assisted workflows (scaffolding, migration, code review) produce corr
 
 **Cursor Marketplace** (once approved):
 
-Search for "Covenant" in the Cursor plugin marketplace and click Install. *(Coming soon — not yet published; use local development below in the meantime.)*
+Search for "Covenant" in the Cursor plugin marketplace and click Install. *(Coming soon, not yet published; use local development below in the meantime.)*
 
 **Local development / before marketplace approval:**
 
@@ -43,7 +43,7 @@ mkdir -p ~/.cursor/plugins/covenant
 cp -r editors/cursor/. ~/.cursor/plugins/covenant/
 ```
 
-Restart Cursor, then open any `.cov` file — the `covenant-expert` skill activates
+Restart Cursor, then open any `.cov` file, the `covenant-expert` skill activates
 automatically. The three slash commands become available in all chats.
 
 ---
@@ -54,7 +54,7 @@ automatically. The three slash commands become available in all chats.
 |---------|--------------|
 | `/covenant-new <construct>` | Scaffold a minimally-compiling `.cov` file for the named construct |
 | `/covenant-migrate [file.sol]` | Migrate a Solidity file to Covenant, applying the 11 anti-pattern fixes |
-| `/covenant-review [file.cov]` | Defensive review — findings by severity with suggested patches |
+| `/covenant-review [file.cov]` | Defensive review, findings by severity with suggested patches |
 
 Construct options for `/covenant-new`:
 `token` · `confidential token` · `vault` · `record` · `ballot` · `counter` ·
@@ -70,15 +70,15 @@ Install both for the full experience.
 
 | Concern | VS Code extension | Cursor plugin |
 |---------|:-----------------:|:-------------:|
-| Syntax highlighting (TextMate grammar) | ✓ | — |
-| LSP diagnostics (`covenant-lsp`) | ✓ | — |
-| Hover documentation | ✓ | — |
-| Agent: scaffold new contract | — | ✓ `/covenant-new` |
-| Agent: migrate from Solidity | — | ✓ `/covenant-migrate` |
-| Agent: defensive review | — | ✓ `/covenant-review` |
-| Persistent syntax rules (`.mdc`) | — | ✓ `covenant-syntax` |
-| ERC-822x conformance rules (`.mdc`) | — | ✓ `erc-822x` |
-| Structured audit subagent | — | ✓ `reviewer` |
+| Syntax highlighting (TextMate grammar) | ✓ |, |
+| LSP diagnostics (`covenant-lsp`) | ✓ |, |
+| Hover documentation | ✓ |, |
+| Agent: scaffold new contract |, | ✓ `/covenant-new` |
+| Agent: migrate from Solidity |, | ✓ `/covenant-migrate` |
+| Agent: defensive review |, | ✓ `/covenant-review` |
+| Persistent syntax rules (`.mdc`) |, | ✓ `covenant-syntax` |
+| ERC-822x conformance rules (`.mdc`) |, | ✓ `erc-822x` |
+| Structured audit subagent |, | ✓ `reviewer` |
 
 The extension handles the editor surface; the plugin handles AI assistance.
 
@@ -89,7 +89,7 @@ The extension handles the editor surface; the plugin handles AI assistance.
 Licensed under [Apache-2.0](LICENSE).
 
 Covenant is **self-audited** by Kairos Lab's internal OMEGA adversarial review
-(V4/V5/V6) — **not** third-party audited; an external firm audit is the gate for V1.0.
+(V4/V5/V6), **not** third-party audited; an external firm audit is the gate for V1.0.
 The internal self-audit findings below are all resolved. See
 [STATUS.md](../../STATUS.md) for the honest security posture.
 
@@ -108,7 +108,7 @@ Full self-audit reports: covenant-security-reviews.
 
 ## Roadmap
 
-- **Testnet MCP server** — direct deploy-to-Robinhood-Chain / Sepolia workflow
-- **Formatter integration** — `/covenant-format` command wrapping `covenant fmt`
-- **Expanded migrate patterns** — ERC-721, ERC-1155, Governor, Timelock → Covenant equivalents
-- **Sealed ballot** — `/covenant-new sealed ballot` once V0.9 ships the construct
+- **Testnet MCP server**: direct deploy-to-Robinhood-Chain / Sepolia workflow
+- **Formatter integration**: `/covenant-format` command wrapping `covenant fmt`
+- **Expanded migrate patterns**: ERC-721, ERC-1155, Governor, Timelock → Covenant equivalents
+- **Sealed ballot**: `/covenant-new sealed ballot` once V0.9 ships the construct

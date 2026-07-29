@@ -57,7 +57,7 @@
           "match": "@(non_reentrant|proxy_compatible|batch_up_to|precompute|slot|deprecated|prove_offchain|verify_at_compile_time|selective_disclosure|version|audit|invariant)\\b"
         },
         {
-          "comment": "Generic annotations — fallback",
+          "comment": "Generic annotations, fallback",
           "name": "entity.other.attribute-name.covenant",
           "match": "@[A-Za-z_][A-Za-z0-9_]*"
         }

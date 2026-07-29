@@ -20,11 +20,11 @@ If no argument is given, operate on the currently selected code in the editor.
 
 ## Behavior
 
-### Step 1 — Read
+### Step 1: Read
 
 Read the `.sol` source in full (file or selection). Do not truncate.
 
-### Step 2 — Classify: pick the most specialized Covenant construct
+### Step 2, Classify: pick the most specialized Covenant construct
 
 | Solidity pattern | Covenant construct |
 |------------------|--------------------|
@@ -42,7 +42,7 @@ Read the `.sol` source in full (file or selection). Do not truncate.
 
 Do **not** default to `module` if a more specific keyword fits.
 
-### Step 3 — Apply the 11 anti-pattern transformations
+### Step 3: Apply the 11 anti-pattern transformations
 
 Apply each transformation throughout the migrated output:
 
@@ -62,13 +62,13 @@ Apply each transformation throughout the migrated output:
 
 Additionally:
 - `string` → `text`
-- `payable` → (remove everywhere — all actions are implicitly payable)
-- `import "...";` → (remove — stdlib is auto-available in V0.9)
-- `nonReentrant` modifier → (remove from `vault` — it is the default; remove from others and note)
+- `payable` → (remove everywhere, all actions are implicitly payable)
+- `import "...";` → (remove, stdlib is auto-available in V0.9)
+- `nonReentrant` modifier → (remove from `vault`, it is the default; remove from others and note)
 - `emit Transfer(...)` syntax is identical; ensure the `event Transfer(...)` declaration uses Covenant arg syntax
 - `revert "msg"` / `require(false, "msg")` → `revert_with ErrorName(args)` (define typed `error`)
 
-### Step 4 — Preserve logic fidelity
+### Step 4: Preserve logic fidelity
 
 Every state mutation, event emission, and error condition in the original must
 appear in the output. If a pattern has no direct equivalent (e.g., `int256`,
@@ -80,7 +80,7 @@ V0.9 idiom:
   for FHE branches; add `-- TODO(migrate): in-body if/else is V0.9` if restructure
   is not straightforward
 
-### Step 5 — Output
+### Step 5: Output
 
 - Write the result to `<original-stem>.cov` alongside the source file.
   Example: `contracts/Vault.sol` → `contracts/Vault.cov`
@@ -88,14 +88,14 @@ V0.9 idiom:
 - Print the path written and a one-line summary:
   ```
   Wrote contracts/Vault.cov
-  Construct: vault (selected over module — ETH custody + nonReentrant pattern)
+  Construct: vault (selected over module, ETH custody + nonReentrant pattern)
   Anti-patterns applied: 11/11
   TODOs: 0
   ```
 
 ## Notes
 
-- `vault` is `@non_reentrant` by default — never add it explicitly.
+- `vault` is `@non_reentrant` by default, never add it explicitly.
 - `payable` does not exist in Covenant; remove all occurrences.
 - `import` is unsupported in V0.9; remove all import statements.
 - `time` and `amount` are distinct types; `block.timestamp` → `now` (type `time`).

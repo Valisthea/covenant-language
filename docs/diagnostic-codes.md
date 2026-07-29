@@ -7,25 +7,25 @@ and the scope doc referenced below both cross-check against this inventory.*
 
 Prefix conventions:
 
-- `E` — **E**rror (hard fail, blocks compilation)
-- `W` — **W**arning (non-blocking advisory)
-- `I` — **I**nfo (hint; lowest severity)
-- `C` — **C**ritical lint (lint-only class; critical severity)
+- `E`: **E**rror (hard fail, blocks compilation)
+- `W`: **W**arning (non-blocking advisory)
+- `I`: **I**nfo (hint; lowest severity)
+- `C`: **C**ritical lint (lint-only class; critical severity)
 
 ## Frontend (lexer, parser, resolver, typecheck, privacy)
 
 | Code | Crate | Meaning |
 |---|---|---|
-| E001–E099 | covenant-lexer | Lexer failures (unterminated string, bad escape, …). |
-| E100–E199 | covenant-parser | Parser failures (unexpected token, missing delimiter, …). |
-| E200–E299 | covenant-resolver | Name resolution (unknown identifier, double binding, …). |
-| E300–E399 | covenant-types | Type checker (arity mismatch, cast to non-compatible, …). |
-| E380–E389 | covenant-privacy | Privacy taint / domain violations. |
+| E001 to E099 | covenant-lexer | Lexer failures (unterminated string, bad escape, …). |
+| E100 to E199 | covenant-parser | Parser failures (unexpected token, missing delimiter, …). |
+| E200 to E299 | covenant-resolver | Name resolution (unknown identifier, double binding, …). |
+| E300 to E399 | covenant-types | Type checker (arity mismatch, cast to non-compatible, …). |
+| E380 to E389 | covenant-privacy | Privacy taint / domain violations. |
 
 Frontend codes pre-date this inventory and are considered stable; changes
 require a Covenant-SPEC-level update.
 
-## IR builder (E401–E420 + extensions)
+## IR builder (E401 to E420 + extensions)
 
 | Code | Meaning |
 |---|---|
@@ -54,24 +54,24 @@ require a Covenant-SPEC-level update.
 | E423_SLOT_ANNOTATION_CONFLICT | Two fields assigned to the same slot. |
 | W850_UNKNOWN_ANNOTATION | Unknown annotation name (KSR-CVN-030). |
 
-## EVM backend (E501–E515, W501–W506, …)
+## EVM backend (E501 to E515, W501 to W506, …)
 
 See `crates/covenant-evm-backend/src/diag.rs`. Summary:
 
 | Range | Meaning |
 |---|---|
-| E501–E510 | Stack depth, unknown opcodes, precompile unset, storage overflow. |
-| E511–E515 | AssertEncrypted shape, event topic limits, unresolved jump label. |
-| W501–W506 | Large memory / storage / runtime, selector near-collision. |
+| E501 to E510 | Stack depth, unknown opcodes, precompile unset, storage overflow. |
+| E511 to E515 | AssertEncrypted shape, event topic limits, unresolved jump label. |
+| W501 to W506 | Large memory / storage / runtime, selector near-collision. |
 
-## Linter — detector codes (category prefixes)
+## Linter: detector codes (category prefixes)
 
 Each lint detector has a code composed of a prefix (`C` / `W` / `I`) and a
 numeric class. See `crates/covenant-lint/src/detectors/`. **Adding a new
 detector requires a new row here AND registration in `registry.rs`; the
 registry's self-test will fail otherwise.**
 
-### REE — Reentrancy
+### REE: Reentrancy
 
 | Code | Severity | Name |
 |---|---|---|
@@ -80,7 +80,7 @@ registry's self-test will fail otherwise.**
 | W003 | Warning  | Action with external call but no `@non_reentrant`. |
 | I004  | Info     | Transfer inside initializer/constructor. |
 
-### ACC — Access Control
+### ACC: Access Control
 
 | Code | Severity | Name |
 |---|---|---|
@@ -90,7 +90,7 @@ registry's self-test will fail otherwise.**
 | W103 | Warning  | Owner-zero deployment risk. |
 | I104  | Info     | Single-step ownership transfer. |
 
-### EXT — External Calls
+### EXT: External Calls
 
 | Code | Severity | Name |
 |---|---|---|
@@ -100,7 +100,7 @@ registry's self-test will fail otherwise.**
 | W303 | Warning  | No `ensure` before transfer. |
 | I304  | Info     | Transfer without event emission. |
 
-### GAS — Gas / DOS
+### GAS: Gas / DOS
 
 | Code | Severity | Name |
 |---|---|---|
@@ -109,7 +109,7 @@ registry's self-test will fail otherwise.**
 | W1102 | Warning  | Storage write inside a loop. |
 | I1103 | Info     | Very high instruction count. |
 
-### TIM — Timestamp
+### TIM: Timestamp
 
 | Code | Severity | Name |
 |---|---|---|
@@ -117,13 +117,13 @@ registry's self-test will fail otherwise.**
 | W1201 | Warning | Block number in a branch condition. |
 | I1202 | Info    | Timestamp dependency. |
 
-### PQ — Post-Quantum (Session 2 — KSR-CVN-024)
+### PQ: Post-Quantum (Session 2, KSR-CVN-024)
 
 | Code | Severity | Name |
 |---|---|---|
 | C700 | Critical | `PqVerifyDilithium` without a chain-bound nonce. |
 
-### AMN — Amnesia Ceremony (Session 2 — KSR-CVN-025)
+### AMN: Amnesia Ceremony (Session 2, KSR-CVN-025)
 
 | Code | Severity | Name |
 |---|---|---|
@@ -138,10 +138,10 @@ inventing a new one.
 
 | Range | Category | Status |
 |---|---|---|
-| C600 | Privacy domain escape | Reserved — not yet implemented. |
-| E820–W826 | Privacy diagnostics (P7) | Reserved — phase-7 follow-up. |
-| E830–W836 | Proxy / upgradeability | Reserved — blocked on proxy infra. |
-| E831 | Proxy slot collision | Reserved — blocked on proxy infra. |
+| C600 | Privacy domain escape | Reserved, not yet implemented. |
+| E820 to W826 | Privacy diagnostics (P7) | Reserved, phase-7 follow-up. |
+| E830 to W836 | Proxy / upgradeability | Reserved, blocked on proxy infra. |
+| E831 | Proxy slot collision | Reserved, blocked on proxy infra. |
 
 When any of these codes lands, move its row from this "reserved" table into
 the relevant active-detector table above and add it to the registry
@@ -149,6 +149,6 @@ self-test's `required` list.
 
 ## Audit trail
 
-- 2026-04-22 — KSR-CVN-004 introduced this inventory.
-- 2026-04-22 — KSR-CVN-005 bound it to the registry via a self-test.
-- 2026-04-22 — KSR-CVN-030 added `W850_UNKNOWN_ANNOTATION`.
+- 2026-04-22, KSR-CVN-004 introduced this inventory.
+- 2026-04-22, KSR-CVN-005 bound it to the registry via a self-test.
+- 2026-04-22, KSR-CVN-030 added `W850_UNKNOWN_ANNOTATION`.

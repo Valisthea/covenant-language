@@ -1,6 +1,6 @@
 -- 02_ceremony_lifecycle.cov
 --
--- AUDIT FIXTURE — Amnesia ceremony lifecycle.
+-- AUDIT FIXTURE, Amnesia ceremony lifecycle.
 --
 -- Purpose : end-to-end exercise of the CeremonyHelper bridge.
 --   This is the SAME contract pattern that produced the M1 milestone
@@ -8,10 +8,10 @@
 --   see MILESTONES.md). It is the highest-value audit fixture.
 --
 -- Lifecycle stages :
---   1. Setup (constructor) — emits SetupComplete(session_id)
---   2. Active — guardians submit shares ; phase() returns 1
---   3. Finalized — organizer calls finalize() ; phase() returns 2
---   4. Destroyed — destroy() emits irrevocable destruction proof ;
+--   1. Setup (constructor), emits SetupComplete(session_id)
+--   2. Active, guardians submit shares ; phase() returns 1
+--   3. Finalized, organizer calls finalize() ; phase() returns 2
+--   4. Destroyed, destroy() emits irrevocable destruction proof ;
 --                  storage of shares wiped ; phase() returns 3
 --
 -- Helper-contract call chain :

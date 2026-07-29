@@ -14,7 +14,7 @@
 --
 -- V0.9.0 limitations:
 --   - `update_key(new_pk, sig)` (PQ-signed key rotation) is reserved
---     in the synthesizer's name conflict list but not yet emitted —
+--     in the synthesizer's name conflict list but not yet emitted,
 --     Sprint 35.c will add it once `pq_signed` guards integrate with
 --     stdlib synthesis.
 --   - `algorithm_id()` returns 1 (Dilithium-5 per FIPS 204). V1.0 may

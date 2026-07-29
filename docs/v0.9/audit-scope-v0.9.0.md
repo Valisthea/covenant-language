@@ -1,4 +1,4 @@
-# Covenant V0.9.0 — External Audit Scope
+# Covenant V0.9.0: External Audit Scope
 
 > **Status** : Audit-ready as of Sprint 44 (V0.9 master plan).
 > **Target audit firm** : OMEGA V5 (Sprint 46) for compiler ; external
@@ -42,7 +42,7 @@
 
 ## What an audit should verify (priority order)
 
-### P0 — Mandatory before V1.0 mainnet
+### P0: Mandatory before V1.0 mainnet
 
   1. **EVM codegen soundness.** Every IR opcode lowers to the documented
      bytecode pattern. No implicit gas refunds, no unguarded SELFDESTRUCT,
@@ -58,7 +58,7 @@
      `mainnet` / `ethereum`. Defense in depth : helpers also revert at
      runtime if `block.chainid == 1`.
 
-### P1 — Mandatory before V1.0 release
+### P1: Mandatory before V1.0 release
 
   5. **Storage layout stability.** `covenant layout` diff catches breaking
      changes. Generation deterministic across rebuilds.
@@ -69,7 +69,7 @@
   8. **CLI surface.** No path traversal in `--manifest`, `--out`,
      `inspect <target>`. Process exit codes documented and stable.
 
-### P2 — Nice to have
+### P2: Nice to have
 
   9. LSP server hardening : large-document handling, malformed URIs,
      concurrent edit storms.
@@ -105,7 +105,7 @@ covenant doctor
 Expected results :
   - Build : clean.
   - Tests : 100% pass (lib tier ; integration tests may need linker-quiet
-    Windows env — see Sprint 41 notes).
+    Windows env, see Sprint 41 notes).
   - Clippy : zero warnings under `-D warnings`.
   - Audit : 1 known accepted advisory (`RUSTSEC-2024-0421`, see
     `docs/v0.9/known-acceptable-risks.md`).
@@ -118,7 +118,7 @@ Expected results :
 Two clean builds from the same git SHA produce :
   - **Identical** bytecode for every `examples/*.cov` (CI-checked when
     `--release` flag is added in V0.9.x).
-  - **Identical** ABI JSON (modulo field ordering — sort keys for diff).
+  - **Identical** ABI JSON (modulo field ordering, sort keys for diff).
   - **Identical** storage-layout sidecar.
 
 Non-determinism in any of the above is a **High severity bug**.
@@ -145,16 +145,16 @@ expectations and helper-side reality could drift silently.
 
 ## Out-of-band artifacts available to auditors
 
-  - `MILESTONES.md` — M0/M1 deploy records with txhashes and Etherscan links
-  - `DEBT.md` — known limitations and tech debt
-  - `LESSONS.md` — postmortem of significant decisions
-  - `BLOG_POST_AUDITING_OWN_COMPILER.md` — meta-context on the
+  - `MILESTONES.md`: M0/M1 deploy records with txhashes and Etherscan links
+  - `DEBT.md`: known limitations and tech debt
+  - `LESSONS.md`: postmortem of significant decisions
+  - `BLOG_POST_AUDITING_OWN_COMPILER.md`: meta-context on the
     self-audit philosophy applied across V0.9
-  - `docs/trust-boundaries.md` — precompile/helper boundary normative spec
-  - `docs/v0.9/helper-source-audit-checklist.md` — per-helper status grid
-  - `docs/v0.9/precompile-bridge-architecture.md` — V0.9 helper-bridge design
-  - `docs/v0.9/threat-model-v0.9.0.md` — STRIDE-style threat model
-  - `docs/v0.9/known-acceptable-risks.md` — accepted residual risks
+  - `docs/trust-boundaries.md`: precompile/helper boundary normative spec
+  - `docs/v0.9/helper-source-audit-checklist.md`: per-helper status grid
+  - `docs/v0.9/precompile-bridge-architecture.md`: V0.9 helper-bridge design
+  - `docs/v0.9/threat-model-v0.9.0.md`: STRIDE-style threat model
+  - `docs/v0.9/known-acceptable-risks.md`: accepted residual risks
 
 ## Contact
 

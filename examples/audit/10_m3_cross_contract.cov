@@ -1,6 +1,6 @@
 -- 10_m3_cross_contract.cov
 --
--- M3 MILESTONE FIXTURE — first cross-contract Covenant call on Sepolia.
+-- M3 MILESTONE FIXTURE, first cross-contract Covenant call on Sepolia.
 -- Unblocked by V0.9.1 resolver fix (registers external_contracts in
 -- the construct scope so `IFoo.at(addr).method(...)` chains type-check).
 --

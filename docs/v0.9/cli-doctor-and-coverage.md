@@ -26,8 +26,8 @@ $ covenant doctor
   ✓ helpers/foundry.toml                 found at ...
 
 Action items :
-  1. SEPOLIA_RPC_URL — needed for Sepolia deploy / verify; export SEPOLIA_RPC_URL=...
-  2. ETHERSCAN_API_KEY — needed for Sepolia deploy / verify; export ETHERSCAN_API_KEY=...
+  1. SEPOLIA_RPC_URL, needed for Sepolia deploy / verify; export SEPOLIA_RPC_URL=...
+  2. ETHERSCAN_API_KEY, needed for Sepolia deploy / verify; export ETHERSCAN_API_KEY=...
 ```
 
 ### Output (`--json`, for tooling)
@@ -35,8 +35,7 @@ Action items :
 ```json
 {
   "probes": [
-    {"name": "covenant", "status": "ok", "detail": "0.9.0", "fix": null},
-    ...
+    {"name": "covenant", "status": "ok", "detail": "0.9.0", "fix": null}...
   ]
 }
 ```
@@ -57,7 +56,7 @@ Action items :
 
 ### Exit code
 
-`covenant doctor` always exits 0 — it is **diagnostic**, not gating. A
+`covenant doctor` always exits 0, it is **diagnostic**, not gating. A
 future `--strict` flag could exit non-zero on any probe in `Failed` state
 (useful for CI gates).
 
@@ -102,7 +101,7 @@ test test_reset_brings_n_to_zero() ... ok
 
 test result: 2 passed; 0 failed
 
-coverage: 2 / 3 actions covered (67%) — name-heuristic
+coverage: 2 / 3 actions covered (67%), name-heuristic
 uncovered actions:
   - increment
 ```
@@ -143,5 +142,5 @@ Sprint 40 hardened `covenant test` (per-test isolation) and `covenant fmt`
 you fix a failing test, you want to know (a) "is my env still healthy ?"
 (`doctor`) and (b) "did I leave any new actions untested ?" (`--coverage`).
 
-Both are intentionally lightweight V0.9.0 implementations — a real CI gate
+Both are intentionally lightweight V0.9.0 implementations, a real CI gate
 will land in V0.9.x once `--strict` and `--min-pct` ship.

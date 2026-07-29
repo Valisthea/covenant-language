@@ -1,4 +1,4 @@
-# License Clarification — FHE Technology & IP Position
+# License Clarification: FHE Technology & IP Position
 
 **Last updated** : 2026-04-23
 **Applies to** : Covenant compiler V0.7.0+
@@ -10,13 +10,13 @@
 
 Covenant is a language and a compiler. It does **not** implement FHE, and it does **not** depend on any FHE library (neither Zama's `tfhe-rs`, nor Microsoft SEAL, nor OpenFHE, nor any other). The compiler emits bytecode that calls FHE precompiles provided by the target chain.
 
-When Covenant references "TFHE", we refer to the **academic TFHE scheme** (Chillotti, Gama, Georgieva, Izabachène — ASIACRYPT 2016 best-paper award, published in Journal of Cryptology 33(1)), which is a public-domain cryptographic scheme. We do **not** reference nor use Zama's commercial variants of TFHE (`tfhe-rs`, `concrete`, `fhEVM`), which are subject to Zama's patent licensing.
+When Covenant references "TFHE", we refer to the **academic TFHE scheme** (Chillotti, Gama, Georgieva, Izabachène, ASIACRYPT 2016 best-paper award, published in Journal of Cryptology 33(1)), which is a public-domain cryptographic scheme. We do **not** reference nor use Zama's commercial variants of TFHE (`tfhe-rs`, `concrete`, `fhEVM`), which are subject to Zama's patent licensing.
 
 **Covenant does not require, and has never required, a Zama commercial patent license.**
 
 ---
 
-## Section 1 — What Covenant Actually Is
+## Section 1: What Covenant Actually Is
 
 Covenant is a declarative smart contract language with a Rust-based compiler. The compilation pipeline is:
 
@@ -33,23 +33,23 @@ This is exactly analogous to Solidity's relationship with `keccak256`. Solidity 
 
 ---
 
-## Section 2 — What Covenant Does NOT Include
+## Section 2: What Covenant Does NOT Include
 
-### 2.1 — No Zama code
+### 2.1: No Zama code
 
 Verification performed on 2026-04-23:
 
 ```bash
 $ grep -r "tfhe\|zama" --include="Cargo.toml" covenant/
-(no output — 0 matches)
+(no output, 0 matches)
 
 $ grep -r "use tfhe\|use zama" --include="*.rs" covenant/
-(no output — 0 matches)
+(no output, 0 matches)
 ```
 
 No crate in the Covenant workspace depends on `tfhe`, `tfhe-rs`, `concrete`, `fhevm`, or any Zama library. No source file imports any Zama module. There is no Zama binary, source, or derivative work bundled with Covenant.
 
-### 2.2 — No FHE implementation
+### 2.2: No FHE implementation
 
 Covenant does not contain any implementation of any FHE scheme. We do not have code that performs:
 - TFHE bootstrapping
@@ -60,11 +60,11 @@ Covenant does not contain any implementation of any FHE scheme. We do not have c
 
 All of these are operations that Covenant's compiler **delegates to chain-side precompiles**. The compiler emits the instruction `STATICCALL <precompile_address>`, and whatever runs at that address is not part of Covenant.
 
-### 2.3 — No binding to a specific FHE library
+### 2.3: No binding to a specific FHE library
 
 Covenant is **scheme-agnostic by design**. The whitepaper states this explicitly (doc1-whitepaper.md §4.7):
 
-> "A conforming Covenant implementation MAY substitute schemes of equivalent or superior security and performance — but the developer-visible surface and the ABI contracts remain the same. Switching between TFHE and BGV-with-bootstrapping at the implementation level changes gas costs but does not break contract source."
+> "A conforming Covenant implementation MAY substitute schemes of equivalent or superior security and performance, but the developer-visible surface and the ABI contracts remain the same. Switching between TFHE and BGV-with-bootstrapping at the implementation level changes gas costs but does not break contract source."
 
 This means a chain may implement Covenant's FHE precompiles using:
 - The original TFHE reference implementation (Apache 2.0, `github.com/tfhe/tfhe`)
@@ -77,21 +77,21 @@ Covenant does not require any of these. It requires that the precompile produces
 
 ---
 
-## Section 3 — The TFHE Scheme vs. Zama's TFHE Variant
+## Section 3: The TFHE Scheme vs. Zama's TFHE Variant
 
 There is a common confusion between "TFHE" as a scheme and "TFHE" as marketed by Zama. Covenant only references the former.
 
-### 3.1 — The academic TFHE scheme (public domain)
+### 3.1: The academic TFHE scheme (public domain)
 
 - **Authors** : Ilaria Chillotti, Nicolas Gama, Mariya Georgieva, Malika Izabachène
-- **Initial publication** : ASIACRYPT 2016 — best paper award. Reference [11] in Covenant whitepaper.
+- **Initial publication** : ASIACRYPT 2016, best paper award. Reference [11] in Covenant whitepaper.
 - **Extended publication** : Journal of Cryptology 33(1), 2020.
-- **Implementation** : `github.com/tfhe/tfhe` — Apache 2.0 license, maintained by the original authors and community.
+- **Implementation** : `github.com/tfhe/tfhe`, Apache 2.0 license, maintained by the original authors and community.
 - **IP status** : The mathematical scheme is academic publication (Asiacrypt 2016). It is in the public domain in the sense that anyone may implement it; no patent holder prevents implementation or commercial use. The original `github.com/tfhe/tfhe` is Apache 2.0, which explicitly grants commercial use rights.
 
 Covenant's documentation cites this academic work. Covenant's compilation pipeline allows (and expects) chains to implement precompiles based on this scheme if they choose.
 
-### 3.2 — Zama's TFHE variants (proprietary, patented)
+### 3.2: Zama's TFHE variants (proprietary, patented)
 
 - **Libraries** : `tfhe-rs`, `concrete`, `fhEVM`
 - **License** : BSD-3-Clause-Clear (explicitly disclaiming any patent grants)
@@ -100,7 +100,7 @@ Covenant's documentation cites this academic work. Covenant's compilation pipeli
 
 Covenant does not reference, depend on, or reproduce any part of these Zama variants.
 
-### 3.3 — Summary
+### 3.3: Summary
 
 | Artifact | License | Covenant relationship |
 |---|---|---|
@@ -112,7 +112,7 @@ Covenant does not reference, depend on, or reproduce any part of these Zama vari
 
 ---
 
-## Section 4 — Current Position on Zama Patent License
+## Section 4: Current Position on Zama Patent License
 
 **Covenant does not have, does not need, and does not seek a Zama commercial patent license.**
 
@@ -120,32 +120,32 @@ The reasons are direct:
 
 1. **We do not use Zama's patented technology.** The patents cover specific optimizations to their variant of TFHE; we don't implement any of it.
 
-2. **Our architecture doesn't require it.** Covenant is scheme-agnostic — a compiler of STATICCALL-emitting bytecode. No patented cryptographic operations happen inside Covenant.
+2. **Our architecture doesn't require it.** Covenant is scheme-agnostic, a compiler of STATICCALL-emitting bytecode. No patented cryptographic operations happen inside Covenant.
 
 3. **Users are not required to use Zama-licensed chains.** A user who deploys Covenant contracts on a chain using (for example) Microsoft SEAL or the original `tfhe` library has no Zama licensing obligation whatsoever.
 
-4. **For users deploying on chains that use Zama technology** — that is the chain's licensing obligation, not Covenant's. Chains like Fhenix and Inco Network have their own licensing relationships with Zama; users benefit from those relationships when deploying on those chains.
+4. **For users deploying on chains that use Zama technology**: that is the chain's licensing obligation, not Covenant's. Chains like Fhenix and Inco Network have their own licensing relationships with Zama; users benefit from those relationships when deploying on those chains.
 
 This is not an adversarial posture toward Zama. We respect their work (it is cited in our whitepaper). We simply occupy a different layer of the stack.
 
 ---
 
-## Section 5 — Commercial Deployment Guidance for Users
+## Section 5: Commercial Deployment Guidance for Users
 
 If you are deploying Covenant contracts commercially, here is how to think about FHE licensing:
 
-### Step 1 — Which chain are you deploying to?
+### Step 1: Which chain are you deploying to?
 
 Your FHE licensing situation is determined by **the chain you deploy to**, not by Covenant.
 
-### Step 2 — Check the chain's FHE implementation
+### Step 2: Check the chain's FHE implementation
 
 Ask the chain:
 - "What FHE implementation do your precompiles use?"
 - "If it is Zama's variant (tfhe-rs, concrete, fhEVM), do you have a commercial Zama license that extends protection to your users?"
 - "If it is a non-Zama implementation (OpenFHE, SEAL, Lattigo, original TFHE), can you document the license?"
 
-### Step 3 — Act accordingly
+### Step 3: Act accordingly
 
 | Situation | What you should do |
 |---|---|
@@ -154,17 +154,17 @@ Ask the chain:
 | Chain uses non-Zama FHE (Apache 2.0, MIT, etc.) | Deploy freely; verify the chain's specific license terms match your use case |
 | Chain publishes no information | Ask them; do not deploy without answer |
 
-### Step 4 — For Aster Chain (Covenant's primary target)
+### Step 4: For Aster Chain (Covenant's primary target)
 
 Aster Chain is Covenant's primary target. As of V0.7 GA (April 2026), **Aster's FHE precompile implementation is pending**. When Aster publishes their precompile specification and licensing status, we will update this document.
 
-### Step 5 — For Ethereum mainnet
+### Step 5: For Ethereum mainnet
 
 There is no native FHE precompile in Ethereum mainnet. Covenant contracts using FHE primitives cannot be deployed to Ethereum mainnet directly. They can only be deployed on chains that have added FHE precompiles.
 
 ---
 
-## Section 6 — Covenant's Policy Toward Zama
+## Section 6: Covenant's Policy Toward Zama
 
 To be explicit and prevent any ambiguity:
 
@@ -187,7 +187,7 @@ This policy preserves Covenant's scheme-agnostic architecture and keeps our user
 
 ---
 
-## Section 7 — Frequently Asked Questions
+## Section 7: Frequently Asked Questions
 
 **Q: If the academic TFHE scheme is public, why does Zama have patents?**
 
@@ -199,7 +199,7 @@ A: For the same reason a language spec cites the EVM spec. We describe the crypt
 
 **Q: Would you accept a Zama license if they offered one for free?**
 
-A: We have no need for one. Covenant does not use their code. A license grants rights we don't need. We would, however, welcome collaboration on technical specifications — e.g., ensuring Covenant's FHE precompile ABI is compatible with chains built on Zama's stack.
+A: We have no need for one. Covenant does not use their code. A license grants rights we don't need. We would, however, welcome collaboration on technical specifications, e.g., ensuring Covenant's FHE precompile ABI is compatible with chains built on Zama's stack.
 
 **Q: What if I want to build a Covenant chain using tfhe-rs?**
 
@@ -215,7 +215,7 @@ A: We welcome clarification from Zama and have emailed them to confirm our under
 
 ---
 
-## Section 8 — Verification Instructions
+## Section 8: Verification Instructions
 
 Anyone can verify the claims in this document:
 
@@ -248,13 +248,13 @@ Read `doc1-whitepaper.md` reference [11]. It cites the ASIACRYPT 2016 paper (Chi
 
 ---
 
-## Section 9 — Scheme-agnostic positioning
+## Section 9: Scheme-agnostic positioning
 
-Covenant's position is that it requires no FHE-library license: it is a compiler that emits `STATICCALL` instructions to chain-configured precompiles and implements no cryptographic scheme itself (verifiable per Sections 7–8). This positioning is proactive and independent of any single FHE vendor — the choice of precompile implementation, and any licensing that choice entails, rests with the target chain, not with Covenant.
+Covenant's position is that it requires no FHE-library license: it is a compiler that emits `STATICCALL` instructions to chain-configured precompiles and implements no cryptographic scheme itself (verifiable per Sections 7 to 8). This positioning is proactive and independent of any single FHE vendor, the choice of precompile implementation, and any licensing that choice entails, rests with the target chain, not with Covenant.
 
 ---
 
-## Section 10 — Legal Notice
+## Section 10: Legal Notice
 
 This document reflects Covenant's architectural posture and licensing analysis. It is provided for transparency and to help users make informed deployment decisions.
 
@@ -268,7 +268,7 @@ This document reflects Covenant's architectural posture and licensing analysis. 
 
 ## Changelog
 
-- **2026-04-23** — Initial publication, concurrent with V0.7.0 GA launch.
+- **2026-04-23**: Initial publication, concurrent with V0.7.0 GA launch.
 
 ---
 

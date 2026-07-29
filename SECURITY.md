@@ -82,9 +82,9 @@ The following are tracked but accepted for V0.9.x ; see
 [`docs/v0.9/known-acceptable-risks.md`](docs/v0.9/known-acceptable-risks.md)
 for the rationale of each.
 
-  - `RUSTSEC-2024-0421` (idna) — transitive via `tower-lsp` ; LSP only
+  - `RUSTSEC-2024-0421` (idna), transitive via `tower-lsp` ; LSP only
     handles `file://` URIs, no IDN path.
-  - `Mocked*` helper contracts — real state machines, mocked
+  - `Mocked*` helper contracts, real state machines, mocked
     cryptography ; mainnet deploy blocked in source (`onlyTestnet`
     modifier) and at compile time (`Target::parse` rejects `mainnet`).
 
@@ -94,7 +94,7 @@ for the rationale of each.
     `error[ICE]` bugs ; please file as normal issues).
   - `cargo doctor` / `covenant doctor` warnings about missing optional
     env vars (`SEPOLIA_RPC_URL`, etc.).
-  - Helper contract calls reverting on **mainnet chain ID** — this is
+  - Helper contract calls reverting on **mainnet chain ID**, this is
     the intended `onlyTestnet` defense-in-depth, not a bug.
   - Comments not preserved through `covenant fmt` (V0.9.0 limitation,
     documented).

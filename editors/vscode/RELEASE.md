@@ -1,4 +1,4 @@
-# Covenant VS Code Extension — Release Process
+# Covenant VS Code Extension: Release Process
 
 ## Prerequisites (one-time)
 
@@ -14,7 +14,7 @@ You also need `curl` available in your shell (pre-installed on macOS/Linux/Win11
 
 ## Releasing a new version
 
-### Step 1 — Bump versions and tag
+### Step 1: Bump versions and tag
 
 ```bash
 # In the repo root, bump Cargo workspace version (e.g. 0.7.1)
@@ -40,7 +40,7 @@ This triggers `.github/workflows/release.yml`, which:
 
 ---
 
-### Step 2 — Package per platform
+### Step 2: Package per platform
 
 ```bash
 cd editors/vscode
@@ -57,7 +57,7 @@ Output: `covenant-lang-<platform>-<version>.vsix` for each platform.
 
 ---
 
-### Step 3 — Publish to Marketplace
+### Step 3: Publish to Marketplace
 
 ```bash
 # Get a PAT at https://dev.azure.com/<org>/_usersSettings/tokens
@@ -72,7 +72,7 @@ node scripts/publish-vsix.js --platform=win32-x64
 
 ---
 
-### Step 4 — Verify
+### Step 4: Verify
 
 Visit:
 ```
@@ -132,6 +132,6 @@ to inspect the archive contents.
 
 ## Platform-specific extension size
 
-Each .vsix contains the TypeScript bundle (~4 KB) + the platform binary (~8–25 MB).
-Total: ~10–27 MB per platform. Comparable to rust-analyzer (15–20 MB) and
+Each .vsix contains the TypeScript bundle (~4 KB) + the platform binary (~8 to 25 MB).
+Total: ~10 to 27 MB per platform. Comparable to rust-analyzer (15 to 20 MB) and
 the Solidity extension (30 MB+).

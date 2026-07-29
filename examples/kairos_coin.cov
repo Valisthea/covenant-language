@@ -1,9 +1,9 @@
--- PRODUCTION BUILD — no test actions.
+-- PRODUCTION BUILD, no test actions.
 --
 -- Covenant V0.9 has no `#[cfg(test)]` equivalent: a test is a plain
 -- `action test_X() when <assert> {}`, so it compiles into the deployed
 -- contract as a public function. Keeping tests here would ship them
--- on-chain (this is exactly what M6's first deployment revealed — see
+-- on-chain (this is exactly what M6's first deployment revealed, see
 -- DEBT.md "Test actions ship in the deployed contract").
 --
 -- So the tests live in kairos_coin.test.cov, which is this same contract
@@ -11,11 +11,11 @@
 -- feature; delete it once release-mode test stripping lands.
 --
 -- KairosCoin.cov · an ERC-20 with burn, a configurable transfer fee, and
--- on-chain accounting — written in Covenant, deployed on Robinhood Chain testnet.
+-- on-chain accounting, written in Covenant, deployed on Robinhood Chain testnet.
 --
 -- DESIGN NOTE (deliberate, not a limitation):
 -- The standard `transfer` / `approve` / `transfer_from` are left untouched, so
--- they stay 100% ERC-20 conformant — DEXes, wallets and indexers behave normally.
+-- they stay 100% ERC-20 conformant, DEXes, wallets and indexers behave normally.
 -- Fee-on-transfer tokens are notoriously incompatible with routers; instead the
 -- fee lives in an explicit, opt-in `transfer_with_fee` action. You choose to pay.
 --
@@ -29,7 +29,7 @@ token KairosCoin {
     decimals: 18
     -- 1,000,000 whole tokens. `supply:` mints RAW base units (verified by
     -- test below), so with decimals: 18 the literal must be pre-scaled by
-    -- 10^18 — writing `1_000_000` here would mint 0.000000000001 KRC.
+    -- 10^18, writing `1_000_000` here would mint 0.000000000001 KRC.
     supply:   1_000_000_000_000_000_000_000_000 to deployer
 
     -- Standard ERC-20 state, declared so custom actions can reference it.
@@ -39,7 +39,7 @@ token KairosCoin {
     -- Fee configuration. Basis points; set_fee hard-caps it at 500 (5%).
     --
     -- ⚠ No `= 100` default here on purpose. VERIFIED ON-CHAIN (anvil, V0.9.3):
-    -- a source-level non-zero field default is silently DROPPED — the literal
+    -- a source-level non-zero field default is silently DROPPED, the literal
     -- is emitted into the deploy bytecode but never SSTOREd, so the field
     -- reads 0 after deploy. Writing `= 100` would be a lie in the source.
     -- Consequence: fee_bps is 0 until set_fee runs, so the fee is 0% (safe
@@ -55,7 +55,7 @@ token KairosCoin {
     -- addresses + a non-indexed amount) so the custom actions can emit real
     -- ERC-20 Transfer events and keep explorers and indexers in sync.
     -- NOTE: `from` / `to` are reserved keywords in Covenant, so the params are
-    -- named sender/recipient. This is cosmetic only — an event's ABI signature
+    -- named sender/recipient. This is cosmetic only, an event's ABI signature
     -- is `Transfer(address,address,uint256)` either way, so topic0 and the
     -- indexed layout are byte-identical to canonical ERC-20.
     event Transfer(sender: address indexed, recipient: address indexed, value: amount)
@@ -88,7 +88,7 @@ token KairosCoin {
     }
 
     -- Only the deployer can configure the fee, and never above 5% (500 bps).
-    -- The `when` guard is the enforcement — a caller asking for 501 reverts.
+    -- The `when` guard is the enforcement, a caller asking for 501 reverts.
     action set_fee(recipient: address, bps: amount)
             only deployer,
             given bps <= 500 {

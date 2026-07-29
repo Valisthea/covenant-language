@@ -1,6 +1,6 @@
 -- 05_registry_pq.cov
 --
--- AUDIT FIXTURE — ERC-8231 post-quantum key registry via `registry` keyword.
+-- AUDIT FIXTURE, ERC-8231 post-quantum key registry via `registry` keyword.
 --
 -- Purpose : verify ERC-8231 surface synthesis (Sprint 35.b).
 --
@@ -11,15 +11,15 @@
 -- Auto-synthesized views :
 --   is_registered(account) returns bool
 --   key_of(account) returns pq_key
---   algorithm_id() returns uint256        — returns 1 = Dilithium-5 (FIPS 204)
+--   algorithm_id() returns uint256, returns 1 = Dilithium-5 (FIPS 204)
 --
 -- Auto-synthesized actions :
---   register(pk: pq_key)        — open-access ; caller registers their own key
---   revoke()                    — caller clears their own slot only
+--   register(pk: pq_key), open-access ; caller registers their own key
+--   revoke(), caller clears their own slot only
 --
 -- Auto-synthesized events :
 --   KeyRegistered(indexed account, pq_key)
---   KeyUpdated(indexed account, pq_key)   — reserved for Sprint 35.c
+--   KeyUpdated(indexed account, pq_key), reserved for Sprint 35.c
 --   KeyRevoked(indexed account)
 --
 -- Auto-synthesized errors :
@@ -31,13 +31,13 @@
 --     35.c will add it once `pq_signed` guards integrate with stdlib
 --     synthesis. Auditors should NOT expect this method on V0.9.0 ABIs.
 --   * `register` is open-access. The caller registers their OWN address.
---     There is no "register on behalf of" path — by design.
+--     There is no "register on behalf of" path, by design.
 --   * `revoke` clears the caller's own slot only. There is no admin
---     override — by design (matches ERC-8231 spec).
+--     override, by design (matches ERC-8231 spec).
 --
 -- Helper-contract bridge :
 --   `pq_key` operations dispatch to MockedPQVerifier on Sepolia/Aster.
---   The Mocked* helper does NOT perform real Dilithium verification —
+--   The Mocked* helper does NOT perform real Dilithium verification,
 --   it returns a deterministic dummy proof. See
 --   docs/v0.9/known-acceptable-risks.md.
 

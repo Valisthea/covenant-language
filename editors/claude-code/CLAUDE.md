@@ -1,4 +1,4 @@
-# Covenant — Persistent Agent Guidance
+# Covenant: Persistent Agent Guidance
 
 This file is loaded automatically by Claude Code whenever the plugin is active.
 It merges both rule sets from the Cursor plugin into a single guidance document.
@@ -59,7 +59,7 @@ Always write:
 - Inside `record`: bare `name: type` (no `field` keyword)
 - Remove all Solidity visibility modifiers (`public`, `private`, `internal`, `external`)
 
-### vault — reentrancy default
+### vault: reentrancy default
 
 `vault` is `@non_reentrant` by default. Do **not** add `@non_reentrant` manually;
 the compiler will warn. Write:
@@ -72,7 +72,7 @@ vault MyVault {
     action withdraw(value: amount)
             when balances[caller] >= value {
         balances[caller] -= value
-        transfer(value, to: caller)
+        transfer(value) to caller
     }
 }
 ```
@@ -94,7 +94,7 @@ vault MyVault {
 - `now` is typed `time`, not `amount`. You cannot add a bare number to `now`.
 - Write `now + 7 days` (produces `time`). Available duration literals:
   `seconds`, `minutes`, `hours`, `days`, `weeks`.
-- Do not cast `now` to `amount` — use a separate `time` field if comparison is needed.
+- Do not cast `now` to `amount`, use a separate `time` field if comparison is needed.
 
 ### Events and errors
 
@@ -115,7 +115,7 @@ revert_with InsufficientBalance(needed, balances[caller])
 
 The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
 plausible-but-wrong bytecode, it **refuses and errors**. Do **not** generate the
-constructs below — they will not compile. If a user hits one of these, explain the
+constructs below, they will not compile. If a user hits one of these, explain the
 error and pick a supported construct instead. Trust the error.
 
 | Code | Refused construct | Guidance |
@@ -130,10 +130,10 @@ error and pick a supported construct instead. Trust the error.
 | **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
 | **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
 | **E523** | `transfer <amt> from <src> to <dst>` | No faithful lowering → error. A native transfer compiles to a `CALL`, which spends the *contract's own* balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
-| **W508** | `only caller` | Warning — it is an allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
+| **W508** | `only caller` | Warning, it is an allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
 
 Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
-earlier releases) — a guard whose principal is unknown errors rather than silently
+earlier releases), a guard whose principal is unknown errors rather than silently
 allowing the action.
 
 ---
@@ -144,7 +144,7 @@ When generating or reviewing Covenant code that uses any of the following
 primitives, verify ERC conformance and cite the ERC number in a `--` comment
 adjacent to the construct.
 
-### ERC-8227 — Confidential Token Interface
+### ERC-8227: Confidential Token Interface
 
 **Trigger:** `confidential token` construct.
 
@@ -169,12 +169,12 @@ confidential token PrivateCoin {
 If `confidential token` is present without the ERC-8227 citation comment, flag it
 as a compliance gap in any review output.
 
-### ERC-8228 — Cryptographic Amnesia (Amnesia Ceremony)
+### ERC-8228: Cryptographic Amnesia (Amnesia Ceremony)
 
 **Trigger:** `ceremony` construct, or any use of `destroy()` / `on_destroy { }`.
 
 > **Numbering note:** the amnesia ceremony maps to **ERC-8228 (Cryptographic
-> Amnesia)** — a Draft standard authored by Kairos Lab as the Styx Protocol
+> Amnesia)**, a Draft standard authored by Kairos Lab as the Styx Protocol
 > (`Valisthea/styx-erc-cryptographic-amnesia`). ERC-8227 is the separate
 > Encrypted Token Standard (`Valisthea/styx-erc-encrypted-token`). A `ceremony`
 > **should** carry an `-- ERC-8228` citation, exactly as a `confidential token`
@@ -211,9 +211,9 @@ ceremony AuditTrail {
 
 If `ceremony` is present without the ERC-8228 citation comment, flag it as a
 compliance gap in any review output. A `ceremony` that cites `ERC-8228`
-(Cryptographic Amnesia) is correct — do not flag it.
+(Cryptographic Amnesia) is correct, do not flag it.
 
-### ERC-8229 — FHE Computation Verification
+### ERC-8229: FHE Computation Verification
 
 **Trigger:** `verified_by(zk_proof)` guard qualifier on an action.
 
@@ -233,7 +233,7 @@ action settle(proof: proof_payload, result: encrypted amount)
 If `verified_by` is present without the ERC-8229 citation comment, flag it as a
 compliance gap in any review output.
 
-### ERC-8231 — Post-Quantum Signature Verification
+### ERC-8231: Post-Quantum Signature Verification
 
 **Trigger:** `pq_signed(content, sig, key)` guard qualifier on an action.
 

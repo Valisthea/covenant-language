@@ -3,18 +3,18 @@
 Foundry sub-project that ships the four helper contracts the V0.9 compiler
 emits CALL into for cryptographic primitives. See:
 
-- `../docs/v0.9/precompile-bridge-architecture.md` — why these exist
-- `../docs/v0.9/helper-interfaces.md` — interface specs
-- `../docs/v0.9/address-resolution.md` — how the compiler routes to them
-- `../config/helper-addresses-v0.9.0.json` — deployed address registry
+- `../docs/v0.9/precompile-bridge-architecture.md`: why these exist
+- `../docs/v0.9/helper-interfaces.md`: interface specs
+- `../docs/v0.9/address-resolution.md`: how the compiler routes to them
+- `../config/helper-addresses-v0.9.0.json`: deployed address registry
 
 ## Contracts
 
 | Contract | V0.9 status | V1.0 path |
 |---|---|---|
 | `CeremonyHelper` | **Real** state machine + destruction commitment | Wesolowski VDF added |
-| `MockedFHEHelper` | **Mocked** — plaintext stored under handle | Real Zama TFHE |
-| `MockedPQVerifier` | **Mocked** — parity check, not Dilithium | Solady PQ verifier |
+| `MockedFHEHelper` | **Mocked**, plaintext stored under handle | Real Zama TFHE |
+| `MockedPQVerifier` | **Mocked**, parity check, not Dilithium | Solady PQ verifier |
 | `MockedZKVerifier` | `verify` mocked, `nullifier` real | Real Halo2 verifier |
 
 Mocked contracts revert on `block.chainid == 1` (Ethereum mainnet).
@@ -83,7 +83,7 @@ the registry version bumps too.
   in `MockedPQVerifier.pqKeygenFromSeed`)
 - All errors are typed custom errors; no plain string reverts
 - All mutations emit events
-- Reentrancy: not applicable — helpers make no external calls
+- Reentrancy: not applicable, helpers make no external calls
 
 ## License
 

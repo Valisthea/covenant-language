@@ -1,7 +1,7 @@
 {
   "name": "covenant-lang",
   "displayName": "Covenant",
-  "description": "Covenant smart contract language — syntax highlighting, diagnostics, hover, and symbols via covenant-lsp. Now surfaces the compiler's fail-loud diagnostics (E424/E425/E519/E521) live. OMEGA V4/V5/V6-audited + OMEGA adversarial bounty pass, V0.9.5.",
+  "description": "Covenant smart contract language, syntax highlighting, diagnostics, hover, and symbols via covenant-lsp. Now surfaces the compiler's fail-loud diagnostics (E424/E425/E519/E521) live. OMEGA V4/V5/V6-audited + OMEGA adversarial bounty pass, V0.9.5.",
   "version": "0.9.5",
   "publisher": "kairos-lab",
   "icon": "icon.png",

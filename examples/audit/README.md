@@ -1,4 +1,4 @@
-# Covenant V0.9.0 — Audit Fixture Pack
+# Covenant V0.9.0: Audit Fixture Pack
 
 Curated `.cov` fixtures for external audit reviewers (OMEGA V5, Sprint
 46 ; external firm V1.0). Each fixture exercises a specific surface of
@@ -15,7 +15,7 @@ hit every important code path.
 | 03 | `03_ballot_open.cov` | `ballot` | `when` / `only` / `given` guard composition + deadline + first-time-caller |
 | 04 | `04_nft_minimal.cov` | `nft` | ERC-721 surface synthesis (Sprint 35.b) |
 | 05 | `05_registry_pq.cov` | `registry` | ERC-8231 PQ key registry surface synthesis |
-| 06 | `06_auth_only_deployer.cov` | `record` | Access control — `only deployer` clause |
+| 06 | `06_auth_only_deployer.cov` | `record` | Access control, `only deployer` clause |
 | 07 | `07_revert_paths.cov` | `record` | Custom error reverts (selector + ABI-encoded args) |
 | 08 | `08_view_purity.cov` | `record` | View vs action separation, STATICCALL safety |
 | 09 | `09_synthesis_conflict_negative.cov` | (doc-only) | E601 detector (test-suite-exercised, not surface-buildable in V0.9.0) |
@@ -61,16 +61,16 @@ All other fixtures lint clean.
 ## What's NOT in the pack (and why)
 
   - **Encrypted constructs** (`example_04_shielded_counter`, `_06_secret_coin`,
-    `_07_private_dao`) — exercise `MockedFHEHelper`, which is documented
+    `_07_private_dao`), exercise `MockedFHEHelper`, which is documented
     as audit-out-of-scope (cryptography mocked). The
     `02_ceremony_lifecycle` fixture is the canonical helper-bridge
     exercise ; the FHE helpers are tested via the lexer fixture suite
     (`crates/covenant-lexer/tests/fixtures/`) but not duplicated here.
   - **Cross-chain modules** (`example_09_encrypted_bridge`,
-    `_10_hybrid_state`) — exercise the `module` construct, which is V0.9
+    `_10_hybrid_state`), exercise the `module` construct, which is V0.9
     stable but not the audit-priority surface. Reference fixture in the
     lexer suite.
-  - **Stress / fuzz fixtures** — V0.9.x will add a `examples/fuzz/`
+  - **Stress / fuzz fixtures**: V0.9.x will add a `examples/fuzz/`
     pack ; for V0.9.0 the regression suite is the existing per-crate
     `tests/` directory.
 
@@ -94,7 +94,7 @@ deployed the first end-to-end Covenant ceremony on Sepolia
      - `amnesiaFinalize(uint256)` = `0x4ef88c73`
      - `amnesiaDestroy(uint256)` = `0x7688304b`
   3. Cross-check selector table against
-     `config/helper-addresses-v0.9.0.json` — these MUST match.
+     `config/helper-addresses-v0.9.0.json`: these MUST match.
   4. Read the helper deep-dive :
      `docs/v0.9/helper-deep-dive-ceremony.md`.
 
@@ -128,7 +128,7 @@ Two clean builds of any fixture in this pack should produce :
   - **Identical storage-layout sidecar**.
 
 If any of these differ across two clean builds from the same git SHA,
-the build is non-deterministic — that is a **High severity bug** per
+the build is non-deterministic, that is a **High severity bug** per
 `docs/v0.9/audit-scope-v0.9.0.md`.
 
 ## Reporting findings

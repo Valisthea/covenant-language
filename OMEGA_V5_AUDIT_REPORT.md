@@ -1,9 +1,9 @@
-# OMEGA V5 — V0.9.0 Self-Audit Report
+# OMEGA V5: V0.9.0 Self-Audit Report
 
 > **Audit gate** : Sprint 46 of the V0.9 master plan.
 > **Date** : 2026-04-26.
-> **Auditor** : Kairos Lab internal — OMEGA adversarial review.
-> **Methodology** : OMEGA V5 — empirical-loop-driven self-audit. Every
+> **Auditor** : Kairos Lab internal, OMEGA adversarial review.
+> **Methodology** : OMEGA V5, empirical-loop-driven self-audit. Every
 > claim in this report is grounded in a runnable command whose output
 > we have observed in this session.
 >
@@ -115,7 +115,7 @@ for f in examples/audit/*.cov; do covenant check "$f"; done
 Spot-checked Sepolia build of the highest-priority fixture :
 ```
 covenant build examples/audit/02_ceremony_lifecycle.cov --target-chain=sepolia
-  → ok: AuditCeremony — deploy 904 bytes, runtime 877 bytes
+  → ok: AuditCeremony, deploy 904 bytes, runtime 877 bytes
 ```
 
 **Verdict** : GREEN. The fixture pack handed off to external auditors
@@ -158,7 +158,7 @@ validated on a real EVM testnet.
 **Verdict** : GREEN. Documentation surface is comprehensive and
 internally cross-referenced.
 
-### V-008 ✅ Bug : `covenant lint` ICE — caught & fixed during Sprint 45
+### V-008 ✅ Bug : `covenant lint` ICE, caught & fixed during Sprint 45
 
 While smoke-testing the audit fixture pack (Sprint 45), `covenant lint`
 ICE'd on every fixture with a clap arg-type-mismatch panic. Root cause :
@@ -286,7 +286,7 @@ These are tracked in DEBT.md and re-stated in
   4. **SBOM + Sigstore attestation** on `--release` builds.
   5. **Full surface fuzz** via OSS-Fuzz (continuous fuzzing).
 
-## Methodology — why this is honest
+## Methodology: why this is honest
 
 This report follows the same OMEGA V5 discipline that caught the
 Sprint 31.b bugs (M1) and the Sprint 45 lint ICE (audit pack smoke

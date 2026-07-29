@@ -37,7 +37,7 @@ errors, and guards.
 ### 3. Check ERC conformance (`rules/erc-822x.mdc`)
 
 - `confidential token` present → ERC-8227 `--` comment present?
-- `ceremony` or `on_destroy` present → ERC-8228 (Cryptographic Amnesia) `--` comment present? (a `ceremony` correctly cites `-- ERC-8228` — do not flag it)
+- `ceremony` or `on_destroy` present → ERC-8228 (Cryptographic Amnesia) `--` comment present? (a `ceremony` correctly cites `-- ERC-8228`, do not flag it)
 - `verified_by(...)` guard present → ERC-8229 `--` comment present?
 - `pq_signed(...)` guard present → ERC-8231 `--` comment present?
 
@@ -86,9 +86,9 @@ Date:       <ISO date>
 ## Findings
 
 ### [HIGH-001] <Title>
-Lines:   <start>–<end>
+Lines:   <start>, <end>
 Rule:    <rule-id or diagnostic code>
-Issue:   <one paragraph — what is wrong and why it matters defensively>
+Issue:   <one paragraph, what is wrong and why it matters defensively>
 Patch:
 ```covenant
 -- before

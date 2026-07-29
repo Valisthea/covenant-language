@@ -2,7 +2,7 @@
 --
 -- V0.9 Sprint 35.b: the `nft` keyword is now fully wired with ERC-721
 -- auto-synthesis. The 4 lines below produce a deployable NFT contract
--- with the full ERC-721 surface — same metadata-only declaration model
+-- with the full ERC-721 surface, same metadata-only declaration model
 -- as `token` (ERC-20) and `confidential token` (ERC-8227).
 --
 -- Auto-synthesized:
@@ -19,7 +19,7 @@
 -- V0.9.0 limitations:
 --   - `mint` is open-access. Add `only deployer` (or other guard) in
 --     source if you need access control.
---   - `tokenURI(id)` returns `base_uri` verbatim — id concatenation
+--   - `tokenURI(id)` returns `base_uri` verbatim, id concatenation
 --     lands in V1.0 alongside text-interpolation primitives.
 --   - `safeTransferFrom` (with receiver-hook callback) is V0.9.x +
 --     deferred to keep the V0.9.0 audit surface minimal.

@@ -1,7 +1,7 @@
 # Helper Source Audit Checklist & V0.9 → V1.0 Path
 
 > **Sprint** : 30 (Phase 30.7 deliverable)
-> **Status** : Living checklist — tracks each Mocked* helper's V1.0 swap-in plan
+> **Status** : Living checklist, tracks each Mocked* helper's V1.0 swap-in plan
 > **Owner** : Kairos Lab
 > **Audit reference** : OMEGA V5 (Sprint 46) and external audit (V1.0)
 
@@ -42,7 +42,7 @@ changes between V0.9 minor releases, append a row.
 1. Add `WesolowskiVDF` library that accepts a (sessionId, shares, time) tuple and produces a verifiable VDF output
 2. Modify `amnesiaDestroy` to compute the VDF, embed in destructionProof
 3. Publish off-chain Python verifier (`tools/verify_destruction_proof_v1.py`) that decodes the new proof shape
-4. Update destructionProof ABI to be `abi.encode(uint256 sessionId, bytes32 commitment, bytes32 vdfOutput, uint256 vdfIterations)` — backward-compatible decoders read first 64 bytes only
+4. Update destructionProof ABI to be `abi.encode(uint256 sessionId, bytes32 commitment, bytes32 vdfOutput, uint256 vdfIterations)`, backward-compatible decoders read first 64 bytes only
 5. Bump `helper-addresses-v1.0.0.json` and re-deploy via CREATE2
 
 ---
@@ -67,7 +67,7 @@ contract-replacement, not interface-redesign.
 1. Wait for Zama fhEVM mainnet-grade pricing (target: <500k gas per `add`)
 2. Implement `FHEHelper` (no `Mocked` prefix) that delegates to fhEVM precompiles
 3. Same external selectors as `MockedFHEHelper` so existing Covenant bytecode
-   continues to work — only the address changes
+   continues to work, only the address changes
 4. Deploy V1.0 helpers at NEW CREATE2 salts (`covenant-v1.0.0-fhe`)
 5. Old V0.9 contracts continue to call `MockedFHEHelper`; new V1.0 compiles call
    `FHEHelper`. No forced migration.
@@ -118,7 +118,7 @@ documented.
 | Gas cost | <50k (mocked verify) | 250-400k (real Halo2) |
 
 **Note**: `nullifier` is real even in V0.9. Suitable for double-spend
-prevention TODAY because the nullifier doesn't depend on proof verification —
+prevention TODAY because the nullifier doesn't depend on proof verification,
 it depends only on the secret being unique. So a Covenant contract that uses
 `nullifier(secret)` to prevent double-spend works in V0.9 as long as the secret
 is generated correctly off-chain.
@@ -139,17 +139,17 @@ deferred if so.
 
 These apply to all Mocked* helpers when they swap in V1.0:
 
-1. **Remove `notMainnet` modifier** — once verified by external audit, the
+1. **Remove `notMainnet` modifier**: once verified by external audit, the
    helpers ARE production-grade and mainnet-deployable. The modifier was
    defense-in-depth for the V0.9 placeholder period.
-2. **Drop `Mocked*` prefix from contract names** — `FHEHelper`, `PQVerifier`,
+2. **Drop `Mocked*` prefix from contract names**, `FHEHelper`, `PQVerifier`,
    `ZKVerifier` (no prefix). Same external interface = drop-in swap for the
    compiler routing layer.
 3. **Drop `_status: "PREDICTED"`** field from `helper-addresses-v1.0.0.json`
    once V1.0 deployment is live.
 4. **Add `external_audit` block** to each target entry pointing to the audit
    firm + report URL.
-5. **Drop `MockedHelperUsed` event** — production helpers don't emit it. Old
+5. **Drop `MockedHelperUsed` event**: production helpers don't emit it. Old
    V0.9 contracts still emit it because they call old helpers; that's expected.
 
 ---
@@ -164,8 +164,8 @@ When Sprint 30 is complete (Phase 30.6 verify):
 - [x] Predicted addresses calculated via Arachnid CREATE2 factory
 - [ ] Slither runs clean on each helper (Sprint 30 phase 30.5 follow-up)
 - [ ] Mythril runs clean on each helper (Sprint 30 phase 30.5 follow-up)
-- [ ] Sepolia deployment succeeds at predicted addresses (Sprint 30 phase 30.5 — needs operator)
-- [ ] Etherscan verification succeeds for all 4 (Sprint 30 phase 30.6 — needs operator)
+- [ ] Sepolia deployment succeeds at predicted addresses (Sprint 30 phase 30.5, needs operator)
+- [ ] Etherscan verification succeeds for all 4 (Sprint 30 phase 30.6, needs operator)
 - [ ] One end-to-end manual test against deployed CeremonyHelper (Sprint 30 §8 acceptance)
 
 The unchecked items require credentials (Sepolia RPC, deployer key, Etherscan

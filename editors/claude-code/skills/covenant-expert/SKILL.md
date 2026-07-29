@@ -2,7 +2,7 @@
 name: covenant-expert
 description: >-
   Expert knowledge of the Covenant v0.9.5 smart-contract language (Kairos Lab).
-  Activate for any of: Covenant code, .cov files; the 14 top-level constructs
+  Activate for any of: Covenant code.cov files; the 14 top-level constructs
   (record, token, confidential token, ballot, counter, encrypted counter, board,
   market, vault, registry, bridge, ceremony, module, hybrid module); FHE; ZK;
   post-quantum; cryptographic amnesia; ERC-8227; ERC-8228; ERC-8229; ERC-8231;
@@ -10,11 +10,11 @@ description: >-
   files.
 ---
 
-# Covenant v0.9.5 — Language Reference
+# Covenant v0.9.5: Language Reference
 
 Every syntax claim here is verified against the Covenant v0.9.5 compiler fixtures.
 Top-level keyword = architecture decision. Solidity has one `contract`; Covenant
-has 14 specialized constructs — pick the right one and the compiler auto-synthesizes
+has 14 specialized constructs, pick the right one and the compiler auto-synthesizes
 the correct ABI surface.
 
 ---
@@ -23,20 +23,26 @@ the correct ABI surface.
 
 | Construct | Auto-synthesizes | Pick when… |
 |-----------|-----------------|------------|
-| `record C { }` | Per-field auto-getters | Key-value storage, simple state bag |
+| `record C { }` | Per-field auto-getters (from the ABI layer, not the stdlib synthesizer) | Key-value storage, simple state bag |
 | `token C { }` | Full ERC-20 surface (`transfer`, `approve`, `balanceOf`, `Transfer`, `Approval`) | Standard fungible token |
 | `confidential token C { }` | ERC-8227 surface (`transferEncrypted`, `balanceOfEncrypted`, `approveEncrypted`) | FHE-encrypted token balances |
-| `ballot C { }` | Tally management, voting actions | On-chain voting / polls |
-| `counter C { }` | `increment` / `decrement` actions | Single-value counter |
-| `encrypted counter C { }` | TFHE counter operations (homomorphic `+=` / `-=`) | Privacy-preserving counter |
-| `board C { post { } }` | Append-only post storage (`posts` array, `append`) | Message board / append-only log |
-| `market C { }` | Order-book / matching primitives | Marketplace, DEX order book |
-| `vault C { }` | Reentrancy-safe value custody (`@non_reentrant` by default) | Funds vault, escrow |
-| `registry C { }` | Identity / key registration with PQ randomness | Identity registry, key directory |
-| `bridge C anchored_on ["a","b"] { }` | Cross-chain escrow primitives | Multi-chain bridge |
+| `ballot C { }` | **Nothing yet** (emits `W606`, synthesis not implemented). Write the actions yourself | On-chain voting / polls |
+| `counter C { }` | **Nothing.** Write the actions yourself | Single-value counter |
+| `encrypted counter C { }` | **Nothing.** The `encrypted` qualifier is real; there is no generated surface | Privacy-preserving counter |
+| `board C { post { } }` | **Nothing.** Write the actions yourself | Message board / append-only log |
+| `market C { }` | **Nothing.** `priority_queue` fields are read-only in this release | Marketplace, DEX order book |
+| `vault C { }` | `@non_reentrant` by default, which is real. **No generated surface** (emits `W606`) | Funds vault, escrow |
+| `registry C { }` | ERC-8231 surface, but the construct **does not compile** in this release (`E505`) | Identity registry, key directory |
+| `bridge C anchored_on ["a","b"] { }` | **Nothing yet** (emits `W606`, synthesis not implemented). Write the actions yourself | Multi-chain bridge |
 | `ceremony C { guardians: N threshold: M }` | Full amnesia-ceremony lifecycle (`setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`) | Cryptographic amnesia / secret-sharing ceremonies |
-| `module C { }` | Nothing — generic escape hatch | Generic logic when no specialized keyword fits |
+| `module C { }` | Nothing, generic escape hatch | Generic logic when no specialized keyword fits |
 | `hybrid module C { }` | Nothing, but allows per-field privacy qualifiers | Mixed plaintext + encrypted state |
+
+
+Only `token`, `nft`, `confidential token` and `ceremony` have a real stdlib
+synthesizer today. The other constructs give you the right shape, defaults and
+privacy qualifiers, but you write the actions. Where a construct is listed as
+emitting `W606`, the compiler says so out loud rather than pretending.
 
 ---
 
@@ -51,7 +57,7 @@ the correct ABI surface.
 ```
 
 `//` and `/* */` are **rejected** by the compiler with a dedicated diagnostic.
-This is intentional — the syntax break signals a different mental model.
+This is intentional, the syntax break signals a different mental model.
 
 ---
 
@@ -67,9 +73,9 @@ This is intentional — the syntax break signals a different mental model.
 | `uint256` | `amount` | Replace `uint256` with `amount` throughout |
 | `modifier onlyOwner() { _; }` | `only owner` | Inline as `only owner` guard on each action |
 | `msg.sender` | `caller` | Replace `msg.sender` with `caller` |
-| `public` / `external` visibility | (remove) | Delete visibility modifiers — actions are accessible by default |
+| `public` / `external` visibility | (remove) | Delete visibility modifiers, actions are accessible by default |
 | `constructor(...) { }` | `action initialize(...)` or `supply: N to deployer` | Rename to `initialize` or use token metadata block |
-| `emit Transfer(a, b, v);` | `emit Transfer(a, b, v)` — identical syntax, but ensure `event Transfer(…)` is declared | Declare the event with Covenant-style arg syntax |
+| `emit Transfer(a, b, v);` | `emit Transfer(a, b, v)`, identical syntax, but ensure `event Transfer(…)` is declared | Declare the event with Covenant-style arg syntax |
 
 ---
 
@@ -133,12 +139,12 @@ Multiple guards are comma-separated, **not** joined with `&&`.
 
 | ERC | Covenant trigger | Auto-synthesized surface |
 |-----|-----------------|--------------------------|
-| **ERC-8227** — Confidential Token Interface | `confidential token C { }` | `transferEncrypted`, `balanceOfEncrypted`, `approveEncrypted` |
-| **Amnesia Ceremony** (ERC-8228 — Cryptographic Amnesia, Styx Protocol) | `ceremony C { }` with `on_destroy` / `destroy()` | `setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`, `session_id`, `owner` — lifecycle: Setup → Active → Finalized → Destroyed |
-| **ERC-8229** — FHE Computation Verification | `verified_by(zk_proof)` guard on an action | Halo2 SNARK + Nova IVC proof verification at action entry |
-| **ERC-8231** — Post-Quantum Signature Verification | `pq_signed(content, sig, key)` guard on an action | Dilithium-5 signature check at action entry |
+| **ERC-8227**, Confidential Token Interface | `confidential token C { }` | `transferEncrypted`, `balanceOfEncrypted`, `approveEncrypted` |
+| **Amnesia Ceremony** (ERC-8228, Cryptographic Amnesia, Styx Protocol) | `ceremony C { }` with `on_destroy` / `destroy()` | `setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`, `session_id`, `owner`, lifecycle: Setup → Active → Finalized → Destroyed |
+| **ERC-8229**, FHE Computation Verification | `verified_by(zk_proof)` guard on an action | Halo2 SNARK + Nova IVC proof verification at action entry |
+| **ERC-8231**, Post-Quantum Signature Verification | `pq_signed(content, sig, key)` guard on an action | Dilithium-5 signature check at action entry |
 
-Cite the ERC number in a `--` comment near the construct — the `erc-822x` rule
+Cite the ERC number in a `--` comment near the construct, the `erc-822x` rule
 enforces this. Example:
 
 ```covenant
@@ -155,7 +161,7 @@ confidential token PrivateCoin {
 
 ## g) `vault` and `@non_reentrant`
 
-`vault` includes reentrancy protection **by default** — the compiler inserts the
+`vault` includes reentrancy protection **by default**, the compiler inserts the
 equivalent of `@non_reentrant` automatically. Do **not** add it manually; doing so
 produces a compiler warning.
 
@@ -171,7 +177,7 @@ vault Treasury {
     action withdraw(value: amount)
             when balances[caller] >= value {
         balances[caller] -= value
-        transfer(value, to: caller)
+        transfer(value) to caller
     }
 
     view balance_of(who: address) returns amount {
@@ -195,13 +201,13 @@ explain it and switch to a supported construct. Trust the error.
 | **E425** | map introspection `.length` / `.keys` / `.values` | Unsupported → error. Track size/keys in a separate field. |
 | **E426** | the `in` membership operator (`given x in list`) | Not implemented → error. Use an explicit lookup / `map` membership. |
 | **E427** | map `.argmax` / `.argmin` | Unsupported → error. (List `.argmax` / `.argmin` **do** work.) |
-| **E512** | a non-anonymous `event` with **>3** `indexed` params | Error — max 3 indexed params. Drop `indexed` or make the event `anonymous`. |
+| **E512** | a non-anonymous `event` with **>3** `indexed` params | Error, max 3 indexed params. Drop `indexed` or make the event `anonymous`. |
 | **E519** | division / modulo by a **literal** zero | Error. (A non-literal divisor instead gets a runtime guard.) |
-| **E520** | a missing precompile helper method | Error — the referenced precompile helper does not exist. |
+| **E520** | a missing precompile helper method | Error, the referenced precompile helper does not exist. |
 | **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
 | **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
 | **E523** | `transfer <amt> from <src> to <dst>` | No faithful lowering → error. A native transfer compiles to a `CALL`, which spends the *contract's own* balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
-| **W508** | `only caller` | Warning — allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
+| **W508** | `only caller` | Warning, allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
 
 Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
 earlier releases): a guard whose principal is unknown errors rather than silently

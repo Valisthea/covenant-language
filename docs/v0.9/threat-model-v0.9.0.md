@@ -1,4 +1,4 @@
-# Covenant V0.9.0 — Threat Model
+# Covenant V0.9.0: Threat Model
 
 > STRIDE-aligned threat model for the Covenant compiler + helper-contract
 > bridge. Companion to `docs/v0.9/audit-scope-v0.9.0.md` and
@@ -57,7 +57,7 @@ Trust assumptions :
   1. **Source author is potentially malicious.** Compiler must reject
      unsafe constructs at compile time, NOT rely on runtime checks alone.
   2. **Compiler operator is trusted.** No multi-tenant compilation
-     hardening (sandboxing, resource limits) — the user runs the compiler
+     hardening (sandboxing, resource limits), the user runs the compiler
      on their own machine. Future SaaS compile would re-evaluate this.
   3. **Helper contracts are trusted as deployed.** Their bytecode hash is
      pinned in `config/helper-addresses-v0.9.0.json`. CI consistency test
@@ -69,49 +69,49 @@ Trust assumptions :
 
 ## STRIDE catalog
 
-### S — Spoofing
+### S: Spoofing
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
-| S-01 | Attacker submits source claiming to use the standard ERC-20 interface but providing a custom incompatible `transfer` | `strict_conflict_detection: true` (default) — synthesizer aborts on conflict (E601) | ✅ Sprint 27 (PRELIM-005) |
+| S-01 | Attacker submits source claiming to use the standard ERC-20 interface but providing a custom incompatible `transfer` | `strict_conflict_detection: true` (default), synthesizer aborts on conflict (E601) | ✅ Sprint 27 (PRELIM-005) |
 | S-02 | Attacker spoofs Helper address by deploying a fake contract at a similar-looking address | Compiler emits PUSH20 with full 20-byte address constant, not a runtime lookup | ✅ V0.9 codegen |
 | S-03 | LSP server processes a `did_open` for a `file://` URI pointing outside the workspace | LSP only reads files the editor sends ; no FS traversal in our path | ✅ tower-lsp default |
 
-### T — Tampering
+### T: Tampering
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
-| T-01 | Attacker modifies bytecode between compile and deploy to swap a helper address | User responsibility ; encourage `covenant build --release` reproducible build (V0.9.x) | ⚠️ Partial — release flag exists but no SBOM yet |
+| T-01 | Attacker modifies bytecode between compile and deploy to swap a helper address | User responsibility ; encourage `covenant build --release` reproducible build (V0.9.x) | ⚠️ Partial, release flag exists but no SBOM yet |
 | T-02 | Attacker modifies storage layout sidecar to bypass `covenant layout` upgrade-safety check | Sidecar diff checked at deploy ; sidecar generation deterministic | ✅ V0.7 |
 | T-03 | Helper contract bytecode swapped at the same address (via factory taking different init code) | Init code hash pinned in config ; CREATE2 salt + factory deterministic ; CI consistency test | ✅ Sprint 31 |
 | T-04 | Compiler emits wrong selector → helper executes a different function than intended | Translation table reviewed in code AND in `config/helper-addresses-v0.9.0.json` ; consistency test cross-checks | ✅ Sprint 31.b (4 bugs caught empirically in M1) |
 
-### R — Repudiation
+### R: Repudiation
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
 | R-01 | Helper-contract action (e.g. ceremony finalize) executed without on-chain trace | All helper state mutations emit events ; CeremonyHelper has typed events for every transition | ✅ Sprint 30 |
 | R-02 | Compiler operator denies producing a given bytecode | `covenant build --release` deterministic ; SBOM in V0.9.x | ⚠️ Partial |
 
-### I — Information disclosure
+### I: Information disclosure
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
-| I-01 | Diagnostic message includes absolute filesystem path → leaks deployer machine identity | Diagnostics use relative paths or `<workspace>/...` placeholder; review checklist | ⚠️ Partial — covered for build/check, not all subcommands |
+| I-01 | Diagnostic message includes absolute filesystem path → leaks deployer machine identity | Diagnostics use relative paths or `<workspace>/...` placeholder; review checklist | ⚠️ Partial, covered for build/check, not all subcommands |
 | I-02 | LSP server logs document content to stderr | tower-lsp default : only error-level logs ; no source-text dumps | ✅ Default |
 | I-03 | `covenant explain` reproduces large copyrighted content | Each Explanation body is original prose < 200 words ; reviewed in PR | ✅ Sprint 38 |
 | I-04 | FHE helper leaks plaintext via a side channel (timing, error code) | Out of scope (helper crypto out-of-tree). `Mocked*` helpers should NOT be used for real privacy claims (banner in NatSpec) | ✅ Sprint 30 |
 
-### D — Denial of service
+### D: Denial of service
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
 | D-01 | Pathological source file (e.g. 1MB of nested parens) hangs the parser | Lexer is `logos`-based, linear time. Parser uses bounded recursion | ✅ Linear by construction |
 | D-02 | Malicious .cov triggers exponential type-resolution explosion | No higher-kinded types ; resolver is `O(n*m)` worst case (decls × references). Test fuzz fixtures in V0.9.x | ⚠️ No fuzz suite yet |
-| D-03 | LSP server pinned 100% CPU on large document | `did_change` debounced ? — currently NOT, full re-parse on every keystroke. **Open issue.** | ❌ Tracked in DEBT.md |
+| D-03 | LSP server pinned 100% CPU on large document | `did_change` debounced ?, currently NOT, full re-parse on every keystroke. **Open issue.** | ❌ Tracked in DEBT.md |
 | D-04 | Deployed contract callable in a way that exhausts gas | User responsibility per language semantics ; `covenant lint` flags unbounded loops | ✅ Linter rule L007 (V0.9.x backlog) |
 
-### E — Elevation of privilege
+### E: Elevation of privilege
 
 | ID | Threat | Mitigation | Status |
 |---|---|---|---|
@@ -165,7 +165,7 @@ surface (file format, network protocol, IPC channel, chain interaction)
 and then mapped STRIDE categories onto each. We did NOT start from
 boilerplate and try to fit Covenant into it. As a result, some STRIDE
 buckets are sparse (e.g. R, since most Covenant operations are on-chain
-and inherently logged) — that's accurate, not an oversight.
+and inherently logged), that's accurate, not an oversight.
 
 External auditors are encouraged to challenge the trust assumptions
 above : if any of {1..5} is wrong, the threat model needs revision.

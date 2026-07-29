@@ -86,9 +86,9 @@ Date:       <ISO date>
 ## Findings
 
 ### [HIGH-001] <Title>
-Lines:   <start>–<end>
+Lines:   <start>, <end>
 Rule:    <rule-id or diagnostic code>
-Issue:   <one paragraph — what is wrong and why it matters defensively>
+Issue:   <one paragraph, what is wrong and why it matters defensively>
 Patch:
 ```covenant
 -- before

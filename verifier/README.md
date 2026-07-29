@@ -1,4 +1,4 @@
-# covenant-verify — source verification for Covenant contracts
+# covenant-verify: source verification for Covenant contracts
 
 Recompile a `.cov` source and prove it produces the bytecode deployed at an
 address. Usable as a CLI, as an HTTP microservice, or as a library.
@@ -6,7 +6,7 @@ address. Usable as a CLI, as an HTTP microservice, or as a library.
 **Why this exists.** Every public explorer verifies contracts by recompiling
 Solidity or Vyper. Blockscout ships 8 verification methods; none of them knows
 what Covenant is. Until an explorer integrates Covenant, a deployed Covenant
-contract's source cannot be checked by anyone but its author — so we ship the
+contract's source cannot be checked by anyone but its author, so we ship the
 verifier ourselves, and we ship it in a shape an explorer can adopt.
 
 ## The guarantee, and its one precondition
@@ -16,7 +16,7 @@ Verification reduces to a single claim:
 > Compiling **this source** with **this compiler version** produces bytecode
 > byte-identical to the runtime code at **this address**.
 
-That is only meaningful if the compiler is **deterministic**. Covenant is —
+That is only meaningful if the compiler is **deterministic**. Covenant is,
 demonstrated, not assumed:
 
 ```
@@ -108,7 +108,7 @@ used. Every Covenant artifact records its version in `metadata.json`
 (`covenantVersion`), and released compilers are published per version, so the
 correct binary is always addressable.
 
-We are not asking anyone to trust us — that is the point of the design. Run the
+We are not asking anyone to trust us, that is the point of the design. Run the
 compiler yourself and compare the hash. The verifier is not an authority; it is
 a convenience wrapped around a comparison anyone can repeat.
 

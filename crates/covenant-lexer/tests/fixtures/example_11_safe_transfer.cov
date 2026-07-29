@@ -1,7 +1,7 @@
 -- SafeTransfer.cov · typed errors and safe withdrawal pattern.
 --
 -- Demonstrates:
---   - `error TypeName(field: type, ...)` declarations with fields
+--   - `error TypeName(field: type...)` declarations with fields
 --   - `revert_with ErrorName(args)` for ABI-encoded typed reverts
 --   - `when` guards as an alternative to explicit revert_with
 --
@@ -36,17 +36,17 @@ module SafeTransfer {
         emit Withdrawn(caller, value)
     }
 
-    -- Always reverts with InsufficientBalance — used to test error encoding.
+    -- Always reverts with InsufficientBalance, used to test error encoding.
     action force_insufficient(required: amount, actual: amount) {
         revert_with InsufficientBalance(required, actual)
     }
 
-    -- Always reverts with Unauthorized(caller) — tests address-typed error arg.
+    -- Always reverts with Unauthorized(caller), tests address-typed error arg.
     action force_unauthorized() {
         revert_with Unauthorized(caller)
     }
 
-    -- Always reverts with ZeroAmount() — zero-argument error.
+    -- Always reverts with ZeroAmount(), zero-argument error.
     action force_zero_amount() {
         revert_with ZeroAmount()
     }

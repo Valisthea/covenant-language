@@ -8,14 +8,14 @@ licensed how.
 
 | Component | Path | License |
 |---|---|---|
-| **Compiler & tooling** | all `crates/`, the CLI, LSP, linter, test runner, helper bridge (`helpers/src/`) | **Apache-2.0** — see [LICENSE](LICENSE) |
+| **Compiler & tooling** | all `crates/`, the CLI, LSP, linter, test runner, helper bridge (`helpers/src/`) | **Apache-2.0**, see [LICENSE](LICENSE) |
 | **Language specifications** | the Styx privacy / PQ / ZK ERC drafts (in `docs/`) | **CC0-1.0** (public domain) |
-| **Example contracts** | `examples/*.cov` | **CC0-1.0** (public domain) — see [examples/LICENSE](examples/LICENSE) |
+| **Example contracts** | `examples/*.cov` | **CC0-1.0** (public domain), see [examples/LICENSE](examples/LICENSE) |
 
 Why the split: the **compiler** is Apache-2.0 so it carries an explicit patent grant and a
 trademark reservation while staying permissive enough for anyone to embed. The **specs and
 examples** are CC0 so the language standard and its reference snippets can be copied, quoted,
-re-implemented, and taught with zero friction — a standard nobody can freely reproduce is not a
+re-implemented, and taught with zero friction, a standard nobody can freely reproduce is not a
 standard.
 
 ## SPDX identifiers
@@ -30,7 +30,7 @@ document and the component's directory govern.
 
 Vendored dependencies keep their own licenses and are **not** relicensed by this repository:
 
-- `helpers/lib/forge-std/` — Foundry standard library, MIT / Apache-2.0 (upstream).
+- `helpers/lib/forge-std/`: Foundry standard library, MIT / Apache-2.0 (upstream).
 
 These paths are marked `linguist-vendored` in [.gitattributes](.gitattributes) so they do not
 skew language statistics or the repository's detected license.
@@ -40,13 +40,13 @@ skew language statistics or the repository's detected license.
 "Covenant", "Covenant Language", "Covenant Lang", and the associated logos are trademarks of
 Kairos Lab. **Apache-2.0 does not grant any right to use these marks** (Apache-2.0, Section 6).
 You may state, factually, that your work uses or is compatible with Covenant. You may **not** use
-the name or logo in a way that implies endorsement by, or official status from, Kairos Lab —
+the name or logo in a way that implies endorsement by, or official status from, Kairos Lab,
 including naming a fork "Covenant" or presenting it as the official implementation.
 
 ## Future cryptography (V2.0)
 
 The cryptographic primitives in this repository (FHE / post-quantum / ZK / VDF / Shamir) are
-**mocked, testnet-only stubs with no security** — see [STATUS.md](STATUS.md). The real,
+**mocked, testnet-only stubs with no security**: see [STATUS.md](STATUS.md). The real,
 externally-audited cryptography runtime is a **separate, later release** and will ship from a
 **separate repository under a separately-chosen license**. Nothing in this repository grants any
 right to, or forecasts the license of, that future cryptographic implementation.

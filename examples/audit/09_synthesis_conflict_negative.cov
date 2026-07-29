@@ -1,6 +1,6 @@
 -- 09_synthesis_conflict_negative.cov
 --
--- AUDIT FIXTURE — DOCUMENTATION-ONLY (not buildable via surface syntax).
+-- AUDIT FIXTURE, DOCUMENTATION-ONLY (not buildable via surface syntax).
 --
 -- Purpose : explain why the E601 detector exists and how it is exercised.
 --
@@ -11,7 +11,7 @@
 -- so that the synthesizer aborts with E601 on conflict.
 --
 -- HOWEVER, in V0.9.0 surface syntax, `token` / `nft` / `registry` blocks
--- are metadata-only — they do NOT allow inline action / event / error
+-- are metadata-only, they do NOT allow inline action / event / error
 -- declarations. So the conflict path CANNOT be triggered from a .cov
 -- source file alone in V0.9.0.
 --

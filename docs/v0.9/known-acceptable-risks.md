@@ -1,4 +1,4 @@
-# Known Acceptable Risks — V0.9.0
+# Known Acceptable Risks: V0.9.0
 
 This is the audit-prep ledger of issues that `cargo audit` / `cargo
 clippy` / manual review identifies, but that we have evaluated and
@@ -10,7 +10,7 @@ fails until we either fix it or add it here with rationale.
 
 ---
 
-## RUSTSEC-2024-0421 — `idna` 0.4.0 (transitive)
+## RUSTSEC-2024-0421: `idna` 0.4.0 (transitive)
 
 **Finding (cargo audit, 2026-04-26)**
 > `idna` accepts Punycode labels that do not produce any non-ASCII when
@@ -32,7 +32,7 @@ idna 0.4.0
      domain name, never call `Url::host()`, never accept a URL from a
      non-trusted source. The vulnerability is a confused-deputy in
      IDN→ASCII handling that requires the attacker to control a hostname
-     that gets compared as ASCII somewhere — a path that does not exist
+     that gets compared as ASCII somewhere, a path that does not exist
      in our LSP server.
   2. **No upstream fix path available.** `tower-lsp 0.20.0` is the
      latest stable release on crates.io as of 2026-04-26. The next
@@ -41,7 +41,7 @@ idna 0.4.0
   3. **Affected blast radius would be the editor host, not deployed
      contracts.** Even hypothetically exploited, this would not affect
      bytecode generation, helper contract dispatch, or any
-     mainnet-touchable surface — it would at worst confuse the LSP about
+     mainnet-touchable surface, it would at worst confuse the LSP about
      which URI maps to which open document.
 
 **Remediation plan**
@@ -148,7 +148,7 @@ edits.
 **Finding (corrected 2026-07-05, OMEGA V6 self-audit MED-002)** : a
 `cargo-fuzz` harness DOES exist (`crates/covenant-wasm-bindings/fuzz/
 fuzz_targets/compile_pipeline.rs` + `check_only.rs`), but its `corpus/`
-and `artifacts/` directories are both empty — it has never actually been
+and `artifacts/` directories are both empty, it has never actually been
 run against this codebase. The previous version of this entry claimed no
 fuzz suite existed at all, which was itself stale/inaccurate.
 
@@ -170,7 +170,7 @@ is therefore now true for the whole front end, not aspirational.
   - Lexer is `logos`-based (linear). Parser, resolver, and typechecker
     each bound their own recursion depth (OMEGA V6 HGH-029 fix).
   - **No production-incident motivated the original acceptance of this
-    risk** — it was prudence, not response. HGH-029 shows that prudence
+    risk**, it was prudence, not response. HGH-029 shows that prudence
     was warranted: the class of bug this entry warned about was real.
 
 **Remediation plan**

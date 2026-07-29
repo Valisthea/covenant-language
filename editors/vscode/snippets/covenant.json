@@ -54,7 +54,7 @@
       "\t}",
       "}"
     ],
-    "description": "Encrypted token (ERC-8227) — FHE balances, value hashes in events"
+    "description": "Encrypted token (ERC-8227), FHE balances, value hashes in events"
   },
 
   "Vault Construct": {
@@ -116,13 +116,13 @@
       "\t}",
       "}"
     ],
-    "description": "Cross-chain asset escrow module — lock/unlock pattern (compiles with V0.9)"
+    "description": "Cross-chain asset escrow module, lock/unlock pattern (compiles with V0.9)"
   },
 
   "Ceremony Construct": {
     "prefix": "ceremony",
     "body": [
-      "-- ERC-8228: Cryptographic Amnesia (Styx Protocol) — Shamir-based key destruction.",
+      "-- ERC-8228: Cryptographic Amnesia (Styx Protocol), Shamir-based key destruction.",
       "-- Synthesizes: setup(), submit_share(bytes32), finalize(), destroy(), phase(), is_destroyed()",
       "ceremony ${1:CeremonyName} {",
       "\tguardians: ${2:3}",
@@ -134,7 +134,7 @@
       "\t}",
       "}"
     ],
-    "description": "Amnesia ceremony (Covenant construct) — guardians/threshold/on_destroy (compiles with V0.9)"
+    "description": "Amnesia ceremony (Covenant construct), guardians/threshold/on_destroy (compiles with V0.9)"
   },
 
   "Batch Up To Annotation": {
@@ -227,7 +227,7 @@
       "\t${2:collection}.argmax_by_address",
       "}"
     ],
-    "description": "View function using .argmax_by_address aggregate — returns address of max value holder"
+    "description": "View function using .argmax_by_address aggregate, returns address of max value holder"
   },
 
   "Shares Field (SSS)": {

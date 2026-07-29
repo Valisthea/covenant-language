@@ -25,7 +25,7 @@ are silently ignored.
 
 A test **passes** when its action call returns successfully (no revert).
 A test **fails** when the action :
-  - reverts (any reason — guard fail, `revert_with`, panic)
+  - reverts (any reason, guard fail, `revert_with`, panic)
   - aborts (compiler bug, EVM internal error)
 
 ### Assertion pattern (V0.9.0)
@@ -67,7 +67,7 @@ The runner :
      - Discards the harness.
 
 Cost : one redeploy per test (~50ms for typical fixtures). Worth it
-for the determinism guarantee — no test order dependency.
+for the determinism guarantee, no test order dependency.
 
 If you want to opt out (e.g. for performance benchmarks), V0.9.x will
 add a `@shared_state` annotation. For V0.9.0, isolation is mandatory.
@@ -79,7 +79,7 @@ add a `@shared_state` annotation. For V0.9.0, isolation is mandatory.
 | `--filter <pattern>` | Run only tests whose name matches the substring (case-insensitive) |
 | `--list` | List all discovered tests without running them |
 | `--no-fail-fast` | Continue running after the first failure (default : stop) |
-| `--gas-report` | Print per-test gas usage (V0.9.0 stub — gas not yet metered) |
+| `--gas-report` | Print per-test gas usage (V0.9.0 stub, gas not yet metered) |
 
 ### Example
 
@@ -100,7 +100,7 @@ pass demonstrates the isolation guarantee empirically.
 
 ### Style
 
-Single canonical style (Rust `rustfmt` philosophy — no config). Driven
+Single canonical style (Rust `rustfmt` philosophy, no config). Driven
 by `covenant_parser::printer`.
 
   - 4-space indent
@@ -129,7 +129,7 @@ by `covenant_parser::printer`.
 ```bash
 $ covenant fmt --check src/
 would reformat: src/main.cov
-error: source file(s) are not formatted — run `covenant fmt` to fix
+error: source file(s) are not formatted, run `covenant fmt` to fix
 ```
 
 Exit code 1 → CI job fails. Same pattern as `cargo fmt -- --check`.
@@ -140,7 +140,7 @@ Exit code 1 → CI job fails. Same pattern as `cargo fmt -- --check`.
     per-view coverage reporting (uses the existing IR instrumentation).
   - **Stdlib testing API** : `assert!`, `assert_reverts!`, `assert_emits!`
     macros + chain helpers (`set_balance`, `advance_time`, `snapshot`,
-    `revert_to`). Sprint 40.b — pending grammar work for the macro DSL.
+    `revert_to`). Sprint 40.b, pending grammar work for the macro DSL.
   - **`covenant fmt` comment preservation** : requires lexer to retain
     trivia tokens. Mid-V0.9.x.
   - **`covenant test --watch`** : file-watcher mode, recompile + rerun

@@ -1,6 +1,6 @@
 -- 06_auth_only_deployer.cov
 --
--- AUDIT FIXTURE — Authorization boundary (only deployer pattern).
+-- AUDIT FIXTURE, Authorization boundary (only deployer pattern).
 --
 -- Purpose : exercise the most common access-control pattern. The
 -- `only deployer` clause should compile to a runtime check that reverts

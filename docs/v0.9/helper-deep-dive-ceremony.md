@@ -1,4 +1,4 @@
-# CeremonyHelper — Audit Deep Dive
+# CeremonyHelper: Audit Deep Dive
 
 > **Scope** : `helpers/src/CeremonyHelper.sol` (V0.9.1, deployed at
 > `0x627f1Ff6Dc93AEba050c242FD9E26961E8F6c6F0` on Sepolia).
@@ -9,13 +9,13 @@
 
 ## Why this helper matters
 
-CeremonyHelper is the only V0.9 helper with a **real state machine** —
+CeremonyHelper is the only V0.9 helper with a **real state machine**,
 the others return deterministic stub values. It is exercised by every
 contract that uses the `ceremony` keyword (including the M1 milestone
 contract on Sepolia, see `MILESTONES.md`).
 
-If the state machine is wrong — e.g. allows skipping phases, allows
-double-finalize, allows post-destruction submits — every Covenant
+If the state machine is wrong, e.g. allows skipping phases, allows
+double-finalize, allows post-destruction submits, every Covenant
 ceremony contract is broken. This is the highest-leverage helper to
 audit carefully.
 
@@ -63,7 +63,7 @@ or `keccak(msg.sender, seed)` (verify in source). Sets phase = Setup,
 records organizer, initializes guardian list (empty).
 
 **Audit checklist** :
-  - [ ] No collision possible if two callers use the same seed —
+  - [ ] No collision possible if two callers use the same seed,
         sessions must be disambiguated by msg.sender as well.
   - [ ] Returns the new session_id for use in subsequent calls.
   - [ ] Emits `SetupComplete(session_id, organizer, timestamp)`.
@@ -91,9 +91,9 @@ the per-guardian submission count.
         (one-share-per-guardian rule).
   - [ ] Emits `ShareSubmitted(session, guardian, share_index)`.
   - [ ] Does NOT reveal the share value in the event (commitment-only
-        if PRELIM-018 hardening was applied — verify in source).
+        if PRELIM-018 hardening was applied, verify in source).
   - [ ] Storage write is bounded (per-session list cannot grow without
-        bound — DoS surface).
+        bound, DoS surface).
 
 ### `amnesiaFinalize(uint256 session)`
 
@@ -120,7 +120,7 @@ collection (no further `submitShare` accepted).
   - [ ] Reverts if `msg.sender != session.organizer`.
   - [ ] Reverts if phase != Finalized (cannot destroy directly from
         Active).
-  - [ ] Wipes share storage (verify with `cast storage` post-call —
+  - [ ] Wipes share storage (verify with `cast storage` post-call,
         slots returning to zero).
   - [ ] Emits `Destroyed(session, organizer, timestamp,
         destruction_proof)`. The `destruction_proof` is the
@@ -144,14 +144,14 @@ not exploitable.
 claimed `submit_share` was protected by "the per-guardian submission
 counter" ensuring one submission per address. No such counter existed
 anywhere in the shipped source (`CeremonyHelper.sol` nor the synthesized
-Covenant contract) — a single address could call `submit_share` repeatedly
+Covenant contract), a single address could call `submit_share` repeatedly
 with garbage data and single-handedly satisfy any threshold, and
 `finalize` had no on-chain check that any real shares had been submitted
 at all. As of this fix, the **synthesized Covenant contract** (not this
 Solidity helper) tracks distinct submitters via a `ceremony_submitted`
 map and a `ceremony_submitter_count` field, and `finalize` now asserts
 `submitter_count >= threshold` before trusting the precompile. This is a
-distinct-CALLER count, not a pre-registered guardian-ADDRESS allowlist —
+distinct-CALLER count, not a pre-registered guardian-ADDRESS allowlist,
 Covenant's `ceremony` construct has no language-level way to declare a
 specific set of guardian addresses today (only a guardian *count* via
 `guardians: N`), so it cannot yet verify a caller is one of the *intended*
@@ -162,7 +162,7 @@ Two-tier model (current, corrected) :
   1. **Organizer-only** : finalize, destroy. Enforced via `require(msg.sender == organizer)`
      (Solidity helper) / `Assert(caller == deployer)` (synthesized contract).
   2. **Guardian-only** : submit_share. The Solidity helper (`CeremonyHelper.sol`)
-     still has NO per-caller dedup or guardian-identity check of its own —
+     still has NO per-caller dedup or guardian-identity check of its own,
      the fix above lives entirely in the synthesized Covenant contract's own
      storage, one layer above this helper. Fixing `CeremonyHelper.sol`
      itself (and threading a real guardian-address list through, not just a
@@ -171,7 +171,7 @@ Two-tier model (current, corrected) :
 There is **no** admin role, **no** pausing mechanism, **no** upgrade
 hook. The contract is functionally immutable post-deploy.
 
-### Defense in depth — `onlyTestnet` modifier
+### Defense in depth: `onlyTestnet` modifier
 
 CeremonyHelper does NOT carry the `onlyTestnet` modifier (unlike the
 Mocked* helpers) because its state machine is real and could in
@@ -202,7 +202,7 @@ be loggable. Auditors should verify :
 
   - Every `amnesia*` method emits at least one event on success.
   - No method emits an event on failure (revert MUST roll back the
-    log too — this is EVM-guaranteed but worth re-verifying).
+    log too, this is EVM-guaranteed but worth re-verifying).
   - Event signatures match what `ethers.js` and the playground
     `event-decoder.ts` expect.
 

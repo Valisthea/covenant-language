@@ -1,6 +1,6 @@
 -- 01_token_basic.cov
 --
--- AUDIT FIXTURE — ERC-20 surface via the `token` keyword.
+-- AUDIT FIXTURE, ERC-20 surface via the `token` keyword.
 --
 -- Purpose : verify that the stdlib synthesizer produces an ERC-20-conformant
 -- ABI from a 4-line declaration. Auditors should check :

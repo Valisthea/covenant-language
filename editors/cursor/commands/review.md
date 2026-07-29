@@ -21,12 +21,12 @@ If no argument is given, operate on the currently selected code in the editor.
 ## Behavior
 
 1. **Read** the `.cov` source in full.
-2. **Check `rules/covenant-syntax.mdc`** — flag all violations.
-3. **Check `docs/diagnostic-codes.md`** — match patterns against the full lint catalog;
+2. **Check `rules/covenant-syntax.mdc`**: flag all violations.
+3. **Check `docs/diagnostic-codes.md`**: match patterns against the full lint catalog;
    cite the diagnostic code (e.g., `E0421`) in each finding where applicable.
-4. **Check `rules/erc-822x.mdc`** — verify ERC-8227/8228/8229/8231 citation conformance (note: a `ceremony` maps to ERC-8228 — Cryptographic Amnesia, Styx Protocol)
+4. **Check `rules/erc-822x.mdc`**: verify ERC-8227/8228/8229/8231 citation conformance (note: a `ceremony` maps to ERC-8228, Cryptographic Amnesia, Styx Protocol)
    wherever the corresponding constructs or guards appear.
-5. **Output structured findings** — one block per issue, then a summary table.
+5. **Output structured findings**: one block per issue, then a summary table.
 
 ## Output format
 
@@ -37,7 +37,7 @@ Construct:  <top-level keyword and name>
 FINDINGS
 ────────────────────────────────────────────────────────────────────
 [HIGH-001]  <Title>
-  Lines:     <start>–<end>
+  Lines:     <start>, <end>
   Rule:      <rule-id or diagnostic code>
   Violation: <one sentence>
   Fix:       <concrete suggested replacement>

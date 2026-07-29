@@ -1,8 +1,8 @@
 # Compiler Routing & Address Resolution (V0.9)
 
 > **Sprint** : 29 (Phases 29.3 + 29.4)
-> **Status** : Design — Sprint 31 implements against it
-> **Architecture** : See [precompile-bridge-architecture.md](./precompile-bridge-architecture.md) — Option A (compile-time injection)
+> **Status** : Design, Sprint 31 implements against it
+> **Architecture** : See [precompile-bridge-architecture.md](./precompile-bridge-architecture.md), Option A (compile-time injection)
 > **Interfaces** : See [helper-interfaces.md](./helper-interfaces.md)
 > **Author** : Kairos Lab
 
@@ -135,7 +135,7 @@ pub enum TargetParseError {
 The `MainnetForbidden` error is the **compiler's** mainnet block, complementing
 the helper contracts' runtime `notMainnet` modifier (see
 [helper-interfaces.md §7](./helper-interfaces.md#7-mainnet-hard-revert)). Two
-independent gates — defense in depth.
+independent gates, defense in depth.
 
 ---
 
@@ -318,11 +318,11 @@ release ships its own version of this file. The file is **typed** by JSON Schema
 }
 ```
 
-- `version` — the registry's own version. Compiler refuses a registry with a
+- `version`: the registry's own version. Compiler refuses a registry with a
   major.minor mismatch (`0.9.x` registry only loadable by `0.9.x` compiler).
-- `compiler_version_required` — semver range. Belt + suspenders for the
+- `compiler_version_required`: semver range. Belt + suspenders for the
   version field.
-- `release_date` — ISO 8601 date the helpers were deployed. Informational.
+- `release_date`: ISO 8601 date the helpers were deployed. Informational.
 
 ### 4.2 Per-target structure
 
@@ -500,7 +500,7 @@ End users don't touch `helper-addresses-*.json` directly. They configure target
 in `covenant.toml` :
 
 ```toml
-# covenant.toml — project manifest
+# covenant.toml: project manifest
 
 [package]
 name = "my-contract"
@@ -551,7 +551,7 @@ Those contracts are :
 
 - Deployed on **MockChain** : keep working unchanged. V0.9 MockChain target
   emits the same addresses.
-- Deployed on **Sepolia** : already broken (KSR-CVN-005 — calls to empty
+- Deployed on **Sepolia** : already broken (KSR-CVN-005, calls to empty
   addresses). V0.9 fixes this for *new* compiles only. Old V0.8-compiled
   Sepolia contracts stay broken; users have to rebuild and redeploy.
 
@@ -569,12 +569,12 @@ Migration note for the V0.9 release notes :
 
 Three test layers :
 
-1. **Unit** — `PrecompileMap::for_target(MockChain, "0.9.0")` returns the V0.8
+1. **Unit**: `PrecompileMap::for_target(MockChain, "0.9.0")` returns the V0.8
    layout exactly. Existing fixture tests pass unchanged.
-2. **Integration** — `PrecompileMap::for_target(Sepolia, "0.9.0")` loads the
+2. **Integration**: `PrecompileMap::for_target(Sepolia, "0.9.0")` loads the
    committed JSON, every field is populated with the address-shaped value
    from the registry. No address is `0x0`.
-3. **End-to-end** (Sprint 32) — compile a fixture for `--target=sepolia`,
+3. **End-to-end** (Sprint 32), compile a fixture for `--target=sepolia`,
    inspect the bytecode, confirm the embedded address matches the JSON.
 
 The unit + integration tests live in `covenant-codegen/src/` next to the
@@ -587,7 +587,7 @@ implementation. The E2E test belongs in Sprint 32's verification harness.
 1. **Bundling the registry.** Should `helper-addresses-v0.9.0.json` be
    `include_str!`'d into the compiler binary or read from disk? Disk is
    easier to update per-release; `include_str!` removes a runtime dep. Sprint
-   31 should pick — recommendation : `include_str!` for the default registry,
+   31 should pick, recommendation : `include_str!` for the default registry,
    disk read for the `helper_registry = "/path/..."` override.
 2. **Per-version path search.** Sprint 31 must implement the 3-step path
    resolution in `HelperRegistry::registry_path` (see §4.5). Decide the

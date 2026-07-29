@@ -6,8 +6,8 @@ and `crates/covenant-evm-backend/src/artifact.rs` (`PRECOMPILE_ABI_VERSION`).*
 
 ## Scope
 
-Covenant's advertised cryptographic primitives — Dilithium-5, Kyber-1024, TFHE,
-Nova/Halo2, Shamir SSS, Wesolowski VDF — are **not implemented in this
+Covenant's advertised cryptographic primitives, Dilithium-5, Kyber-1024, TFHE,
+Nova/Halo2, Shamir SSS, Wesolowski VDF, are **not implemented in this
 repository**. They are exposed as IR opcodes that the EVM backend lowers to
 STATICCALL / CALL against fixed precompile addresses (see table below). The
 correctness and security of every Covenant contract therefore depends on a set
@@ -32,9 +32,9 @@ addresses or an equivalent address set configured through `EvmConfig`.
 |---|---|---|
 | `FheEncryptTrivial` | `0x101` | Wrap plaintext in a ciphertext with zero noise (public encrypt). |
 | `FheEncryptFresh` | `0x102` | Fresh encrypt under a published key. |
-| `FheAdd` | `0x103` | Homomorphic add — consumes per-op noise budget. |
+| `FheAdd` | `0x103` | Homomorphic add, consumes per-op noise budget. |
 | `FheSub` | `0x104` | Homomorphic subtract. |
-| `FheMul` | `0x105` | Homomorphic multiply — dominant noise consumer. |
+| `FheMul` | `0x105` | Homomorphic multiply, dominant noise consumer. |
 | `FheCmpEq` | `0x106` | Homomorphic equality → ciphertext<bool>. |
 | `FheCmpNe` | `0x113` | Homomorphic inequality. |
 | `FheCmpLt` | `0x107` | Homomorphic less-than. |
@@ -129,6 +129,6 @@ Before accepting Covenant-compiled bytecode on a new chain:
 
 ## Audit trail
 
-- 2026-04-22 — KSR-CVN-010 introduced this document requirement.
-- 2026-04-22 — KSR-CVN-029 added `PRECOMPILE_ABI_VERSION = 1` and its
+- 2026-04-22, KSR-CVN-010 introduced this document requirement.
+- 2026-04-22, KSR-CVN-029 added `PRECOMPILE_ABI_VERSION = 1` and its
   constructor marker.

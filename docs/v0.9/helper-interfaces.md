@@ -1,18 +1,18 @@
 # Helper Contract Interfaces (V0.9)
 
 > **Sprint** : 29 (Phase 29.2)
-> **Status** : Design — interfaces frozen for Sprint 30 implementation
-> **Architecture** : See [precompile-bridge-architecture.md](./precompile-bridge-architecture.md) — Option A
+> **Status** : Design, interfaces frozen for Sprint 30 implementation
+> **Architecture** : See [precompile-bridge-architecture.md](./precompile-bridge-architecture.md), Option A
 > **Author** : Kairos Lab
 
 This document specifies the **external interface** of the four helper contracts
-that V0.9 introduces. The interfaces are frozen — Sprint 30 implements
+that V0.9 introduces. The interfaces are frozen, Sprint 30 implements
 them as written here. Any Sprint 30 deviation must come back and amend this
 document, not silently diverge.
 
 ---
 
-## 0. Naming convention — read this first
+## 0. Naming convention: read this first
 
 The Sprint 30 spec proposed names like `FHEHelper`, `PQHelper`, `ZKHelper`.
 **Sprint 29 changes these to make the trust boundary explicit at the contract
@@ -32,7 +32,7 @@ on the mainnet helpers would be much worse. A user reading
 production-grade FHE primitive. A user reading `FHEHelper.add(a, b)` *can*.
 
 The non-mocked `CeremonyHelper` keeps its plain name because its logic is
-real (state machine, share collection, destruction proof emission) — the
+real (state machine, share collection, destruction proof emission), the
 underlying VDF in V0.9 is a keccak-bound stand-in for Wesolowski, which is
 honest about being "destruction commitment" without being "Wesolowski VDF" in
 the name.
@@ -41,7 +41,7 @@ In addition to the rename, every mocked helper :
 
 1. Has a NatSpec `@notice` block at the top of the contract that screams
    "MOCKED, NOT FOR PRODUCTION SECRETS" (verbatim wording in §6 below)
-2. Reverts hard if `block.chainid == 1` (Ethereum mainnet) — see §7
+2. Reverts hard if `block.chainid == 1` (Ethereum mainnet), see §7
 3. Emits an `MockedHelperUsed(bytes4 selector, address caller)` event on every
    call so off-chain observers can flag mainnet-equivalent usage in dashboards
 
@@ -159,7 +159,7 @@ interface ICeremonyHelper {
 5. The `destructionProof` returned/event-emitted is deterministic given the same
    inputs (no oracle, no randomness in the proof itself).
 6. `amnesiaSetup` is reentrancy-safe : it sets phase to Active *after* recording
-   the session — no external calls during state setup.
+   the session, no external calls during state setup.
 
 **Gas budget** (target, Sprint 30 must verify with Foundry gas reports) :
 
@@ -179,7 +179,7 @@ Phase A.1 risk.
 
 ## 2. MockedFHEHelper (mocked)
 
-**Replaces** : precompiles `0x101`–`0x10F`.
+**Replaces** : precompiles `0x101`, `0x10F`.
 
 **V0.9 reality** : not real FHE. Each "ciphertext handle" is a `bytes32` keyed
 into a `mapping(bytes32 => uint256)` that stores the actual plaintext.
@@ -243,7 +243,7 @@ interface IMockedFHEHelper {
 - All mutating ops emit `HandleMinted` so a user inspecting chain history can
   see every plaintext-bearing handle they created (audit trail).
 - `decrypt` is a `view` function (no state mutation, no event) but takes
-  `requester` as an argument — included so future versions with real access
+  `requester` as an argument, included so future versions with real access
   control have the parameter in the ABI from day one.
 - No batch operations. Sprint 30 may add `addBatch` etc. as a gas optimization
   but only if Sprint 32 measures show it's needed.
@@ -258,7 +258,7 @@ interface.
 
 ## 3. MockedPQVerifier (mocked)
 
-**Replaces** : precompiles `0x150`–`0x154`.
+**Replaces** : precompiles `0x150`, `0x154`.
 
 **V0.9 reality** : signature verification is a length-check + modular parity.
 Cryptographically meaningless. The interface matches what real Dilithium-5
@@ -302,15 +302,15 @@ interface IMockedPQVerifier {
 ```
 
 **Sprint 30 gas budget for `pqVerify`** : ≤ 30k (it's a parity check).
-V1.0 with real Dilithium will be 150k–300k.
+V1.0 with real Dilithium will be 150k to 300k.
 
 ---
 
 ## 4. MockedZKVerifier (mocked)
 
-**Replaces** : precompiles `0x130`–`0x133`.
+**Replaces** : precompiles `0x130`, `0x133`.
 
-**V0.9 reality** : same shape as PQ — interface-correct, semantically meaningless.
+**V0.9 reality** : same shape as PQ, interface-correct, semantically meaningless.
 
 ```solidity
 // SPDX-License-Identifier: Apache-2.0
@@ -323,7 +323,7 @@ interface IMockedZKVerifier {
     /// @param proof         Serialized proof (>= 256 bytes).
     /// @return ok           True if the proof verifies.
     /// @dev V0.9 = parity check. V1.0 = real Halo2 verifier
-    ///      (~250–400k gas).
+    ///      (~250 to 400k gas).
     function verify(
         bytes32 vk,
         bytes calldata publicInputs,
@@ -347,7 +347,7 @@ interface IMockedZKVerifier {
 }
 ```
 
-**Note** : `nullifier` is *not* mocked — it's a deterministic hash used to
+**Note** : `nullifier` is *not* mocked, it's a deterministic hash used to
 prevent ZK proof double-spend. Even in V0.9 it must be cryptographically sound
 (keccak256 is fine). Marking it correctly here so Sprint 30 doesn't accidentally
 weaken it under "mocked" framing.
@@ -390,13 +390,13 @@ to `helper-addresses-v0.9.0.json` alongside the addresses (see
 
 ## 6. NatSpec banner (mandatory verbatim text)
 
-Every mocked helper contract must open with this exact banner — it's part of
+Every mocked helper contract must open with this exact banner, it's part of
 the contract's source. Etherscan displays NatSpec, which means anyone reading
 the contract sees this immediately.
 
 ```solidity
 /**
- * ⚠ V0.9 PLACEHOLDER — NOT FOR PRODUCTION SECRETS ⚠
+ * ⚠ V0.9 PLACEHOLDER, NOT FOR PRODUCTION SECRETS ⚠
  *
  * This contract implements the Covenant V0.9 [FHE / PQ / ZK] helper interface
  * with MOCKED logic. It is suitable ONLY for:
@@ -434,7 +434,7 @@ modifier notMainnet() {
 }
 ```
 
-The check is on `block.chainid == 1` specifically — not "any non-testnet" —
+The check is on `block.chainid == 1` specifically, not "any non-testnet",
 because L2s and sidechains may reasonably want to deploy testnet-equivalent
 helpers. Sepolia (11155111), Aster (1996), Goerli (5), Holesky (17000) all
 allowed.
@@ -448,7 +448,7 @@ unblocked.
 
 ## 8. Open questions for Sprint 30 to resolve
 
-These are decisions the implementation sprint inherits — they're not blocked
+These are decisions the implementation sprint inherits, they're not blocked
 by Sprint 29 design but should be revisited before Sprint 30 deploy :
 
 1. **CeremonyHelper sessionId collision risk.** The current scheme is
@@ -463,7 +463,7 @@ by Sprint 29 design but should be revisited before Sprint 30 deploy :
    evaluate whether to add an opt-in private mode that suppresses the event.
 3. **Gas-optimization vs audit clarity.** Sprint 30 should default to
    audit-clear code over gas-tight code. If Sprint 32 measurements are within
-   the ceilings in §1–§4, leave the code unoptimized for OMEGA V5 ease.
+   the ceilings in §1, §4, leave the code unoptimized for OMEGA V5 ease.
 4. **Library reuse.** The PQ verifier interface assumes Solady (or equivalent)
    provides a real Dilithium verifier in V1.0. Sprint 30 should add a TODO
    comment in `MockedPQVerifier.pqVerify` pointing to the chosen library
@@ -477,7 +477,7 @@ These four interfaces are frozen for Sprint 30 to implement.
 
 If Sprint 30 needs to change an interface during implementation, the change
 comes back to this document with a rationale section, *and* affects Sprint 31
-(compiler routing) — so don't deviate without thinking through both.
+(compiler routing), so don't deviate without thinking through both.
 
 | Role | Reviewer | Status |
 |---|---|---|

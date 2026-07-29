@@ -1,4 +1,4 @@
-# Covenant — Milestones
+# Covenant: Milestones
 
 Canonical historical record of project firsts. This file is appended-only.
 Each entry is a real, verifiable event on a public chain or in this repo's
@@ -11,7 +11,7 @@ is for users tracking versions, the milestones file is for people asking
 
 ---
 
-## 🪨  M0 — First Covenant contract on Ethereum Sepolia
+## 🪨  M0: First Covenant contract on Ethereum Sepolia
 
 | Field | Value |
 |---|---|
@@ -34,14 +34,14 @@ Until M0, Covenant existed only as :
 M0 is the first time bytecode produced by the Covenant compiler was
 accepted, mined, and persisted by a public Ethereum validator network.
 Anyone can read the bytecode at the address above, decompile it, or
-call its `update`/`read` actions — it lives forever on Sepolia.
+call its `update`/`read` actions, it lives forever on Sepolia.
 
 This was the playground operator smoke test that proved end-to-end
 Sepolia integration in V0.8.0-rc7, before V0.8.0 GA tagged.
 
 ---
 
-## 🪨  M1 — First end-to-end Covenant `ceremony` lifecycle on Sepolia
+## 🪨  M1: First end-to-end Covenant `ceremony` lifecycle on Sepolia
 
 **This is the headline milestone**: the first time a contract written in
 the Covenant language source went through its **complete** Amnesia
@@ -75,9 +75,9 @@ Final post-call state confirmed via `cast call`:
 ### Why this matters more than the M1 helper deploy
 
 The earlier sub-milestone (the 4 helper contracts deployed at predicted
-CREATE2 addresses, see "M1.0 — Helper contracts" below) proved that the
+CREATE2 addresses, see "M1.0, Helper contracts" below) proved that the
 **infrastructure layer** worked. But those helpers are written in
-**Solidity** — they're the trusted runtime that Covenant bytecode calls
+**Solidity**: they're the trusted runtime that Covenant bytecode calls
 into.
 
 This milestone proves the **end-to-end story** : a developer writes
@@ -88,7 +88,7 @@ to Sepolia, calls its actions from a wallet, and the ceremony state
 machine runs to completion with the destruction proof emitted on chain.
 
 That's the actual product. Without this, M1.0 is "we deployed some
-Solidity contracts" — interesting infrastructure, not headline-worthy.
+Solidity contracts", interesting infrastructure, not headline-worthy.
 With this, the headline is **"first Covenant smart contract running its
 full lifecycle on a public chain"**.
 
@@ -99,7 +99,7 @@ The first three Covenant ceremony deploys (`0x69D4…`, `0xbbc2…`,
 three real Sprint 31 implementation bugs that the design docs had
 specified in principle but the codegen hadn't actually wired :
 
-1. **Selector translation** — the Covenant compiler was emitting V0.8
+1. **Selector translation**: the Covenant compiler was emitting V0.8
    namespaced precompile selectors (`keccak("covenant.precompile.AmnesiaBegin:v1")`)
    for helper-contract targets, but the helpers expose Solidity ABI
    selectors (`keccak("amnesiaSetup(uint256)")`). Added
@@ -107,13 +107,13 @@ specified in principle but the codegen hadn't actually wired :
    `target.rs` that returns the Solidity selector when target uses
    helpers.
 
-2. **CALL vs STATICCALL** — the Covenant compiler was emitting
+2. **CALL vs STATICCALL**: the Covenant compiler was emitting
    `STATICCALL` for ALL precompiles (correct for V0.8 stateless native
    precompiles), but `CeremonyHelper.amnesiaSetup` mutates state and
    STATICCALL reverts on state mutations. Added per-target dispatch:
    `CALL` for helper-contract targets, `STATICCALL` for MockChain.
 
-3. **Returndata size check** — V0.8 native precompiles always returned
+3. **Returndata size check**: V0.8 native precompiles always returned
    exactly 32 bytes; V0.8 codegen used `RETURNDATASIZE == 32 OR REVERT`.
    But `amnesiaDestroy` returns `bytes memory` (variable-length, ABI-
    encoded as offset+length+data, total ≥ 96 bytes). Relaxed the
@@ -122,7 +122,7 @@ specified in principle but the codegen hadn't actually wired :
 
 Plus a 4th issue at the helper interface :
 
-4. **Operand count mismatch** — V0.8 `Opcode::AmnesiaBegin` has 1
+4. **Operand count mismatch**: V0.8 `Opcode::AmnesiaBegin` has 1
    operand (seed/nonce), but `CeremonyHelper.amnesiaSetup(uint256,uint256,uint256)`
    takes 3 args. Solidity 0.8's calldata-size dispatch check rejected
    the call. Patched the helper to add a 1-arg `amnesiaSetup(uint256)`
@@ -133,13 +133,13 @@ Plus a 4th issue at the helper interface :
 
 These are all small individual fixes (~30 lines of Rust + 8 lines of
 Solidity) but together they were the difference between "design works
-on paper" and "design works on Sepolia". The empirical loop —
-deploy → fail → diagnose → fix → redeploy → succeed — is what makes
+on paper" and "design works on Sepolia". The empirical loop,
+deploy → fail → diagnose → fix → redeploy → succeed, is what makes
 this M1 real.
 
 ---
 
-## 🪨  M1.0 — Helper contracts deployed (sub-milestone)
+## 🪨  M1.0: Helper contracts deployed (sub-milestone)
 
 | Field | Value |
 |---|---|
@@ -179,9 +179,9 @@ expected on Aster Testnet pending Sprint 42).
 
 V0.8 had a fundamental gap : cryptographic constructs (`ceremony`,
 `encrypted counter`, `pq_signed`, `verified_by`) compiled to bytecode that
-called precompile addresses `0x101`–`0x154`. Those addresses worked on the
+called precompile addresses `0x101`, `0x154`. Those addresses worked on the
 playground's in-tab MockChain (which implemented them as native
-precompiles) but on Sepolia they were empty — `OP_CALL` succeeded with
+precompiles) but on Sepolia they were empty, `OP_CALL` succeeded with
 zero return data, the calling contract proceeded as if the precompile
 returned a valid result, the behavior was silently broken. Audit
 finding **KSR-CVN-PRELIM-005**.
@@ -196,13 +196,13 @@ M1 proves the architecture works empirically :
 
 1. **CREATE2 prediction was correct** : the 4 deployed addresses match
    exactly what Sprint 30 calculated from salt + init code hash + factory.
-   This validates the Sprint 31 compiler routing layer end-to-end —
+   This validates the Sprint 31 compiler routing layer end-to-end,
    bytecode emitted with these addresses will reach the right contract.
 
 2. **State machine works on real network** : the first `amnesiaSetup`
    call advanced the ceremony to Active phase, emitted the expected
    event, and used 157k gas (well under the 200k budget). The Sprint 30
-   helper contracts are not just deployable — they're functional.
+   helper contracts are not just deployable, they're functional.
 
 3. **Etherscan-verified, externally inspectable** : anyone can read the
    four contract sources on Etherscan and verify the `Mocked*` naming +
@@ -220,7 +220,7 @@ for the full resolution narrative.
 
 ---
 
-## 🪨  M2 — First Covenant-compiled NFT (ERC-721) deployed + minted on Sepolia
+## 🪨  M2: First Covenant-compiled NFT (ERC-721) deployed + minted on Sepolia
 
 The first NFT contract whose ERC-721 ABI surface was **auto-synthesized
 by the Covenant compiler** from a 4-line `nft { ... }` source declaration,
@@ -235,7 +235,7 @@ flow on a real public chain.
 | **Address** | [`0xf8d9895cc265886d958841af8d9a6469be94bc25`](https://sepolia.etherscan.io/address/0xf8d9895cc265886d958841af8d9a6469be94bc25) |
 | **Compiler** | covenant **V0.9.0** GA (commit `71d0e1b`, tag `v0.9.0`) |
 | **Stdlib synth** | ERC-721 auto-synthesized by `covenant-stdlib::erc721` (Sprint 35.b, 515-line synthesizer) |
-| **Deploy bytecode** | 1235 bytes (1208 runtime) — 11 functions + 3 events + 4 errors from 4 source lines |
+| **Deploy bytecode** | 1235 bytes (1208 runtime), 11 functions + 3 events + 4 errors from 4 source lines |
 | **Helper bridge** | none required (no FHE/PQ/ZK opcodes ; pure ERC-721 logic) |
 | **Deployer** | `0x409D61d3582AD5A655927E615AC3CF366c165a55` (same as M0/M1) |
 
@@ -247,16 +247,16 @@ flow on a real public chain.
 | 2 | `mint(deployer, 1)` | [`0x2107c1a2…7fe6`](https://sepolia.etherscan.io/tx/0x2107c1a2761a6f030a6ef5279462e3bbf6885fd87de1dd71727e2179a5b97fe6) | block 10737907, gas 72,571, Transfer(0x0, deployer, 1) emitted |
 | 3 | `mint(deployer, 2)` | [`0xe88e72ee…c910`](https://sepolia.etherscan.io/tx/0xe88e72ee8bcefc164e98aabfe517b4478d050b07a90d85cb2980487a7bfcc910) | block 10738723, gas 55,471, Transfer(0x0, deployer, 2) emitted |
 | 4 | `transferFrom(deployer, 0x...dEaD, 1)` | [`0xe9e75df2…c293`](https://sepolia.etherscan.io/tx/0xe9e75df2ab1068407c6dc059476f4f571b3ef889cf41ea53f5be5002e081c293) | block 10738724, gas 63,087, Transfer(deployer, 0xdEaD, 1) emitted |
-| 5 | `transferFrom(deployer, 0x000…0000, 2)` (burn-attempt) | [`0xbcd0e1a2…d4d0`](https://sepolia.etherscan.io/tx/0xbcd0e1a2dd57a0962ac4e5525bebbb0c8a3840b2174fb6b819320f58582ed4d0) | block 10738725, gas 53,463, Transfer(deployer, 0x0, 2) emitted — **succeeded (empirical finding, see below)** |
+| 5 | `transferFrom(deployer, 0x000…0000, 2)` (burn-attempt) | [`0xbcd0e1a2…d4d0`](https://sepolia.etherscan.io/tx/0xbcd0e1a2dd57a0962ac4e5525bebbb0c8a3840b2174fb6b819320f58582ed4d0) | block 10738725, gas 53,463, Transfer(deployer, 0x0, 2) emitted, **succeeded (empirical finding, see below)** |
 
 Final post-lifecycle state confirmed via `cast call` :
 - `name()` → `"Audit NFT"` ✅
 - `symbol()` → `"ANFT"` ✅
 - `ownerOf(1)` → `0x000…dEaD` (transferred) ✅
-- `ownerOf(2)` → `0x000…0000` (zero-address — see empirical finding) ✅
+- `ownerOf(2)` → `0x000…0000` (zero-address, see empirical finding) ✅
 - `balanceOf(deployer)` → `0` (wallet emptied) ✅
 - `balanceOf(0x...dEaD)` → `1` ✅
-- `balanceOf(0x000…0000)` → `1` (zero address now holds a token — see empirical finding) ⚠️
+- `balanceOf(0x000…0000)` → `1` (zero address now holds a token, see empirical finding) ⚠️
 - `tokenURI(1)` → `"https://example.com/api/"` ✅
 
 ### Empirical finding : `transferFrom` to zero address succeeds (V0.9.0)
@@ -274,11 +274,11 @@ Covenant V0.9.0's auto-synthesized `transferFrom` is **permissive** :
 no zero-address check. This means :
 
   - **Effective burn-via-transferFrom path exists** (and it works).
-  - **Non-conforming to strict ERC-721 semantics** — `balanceOf(0x0)`
+  - **Non-conforming to strict ERC-721 semantics**: `balanceOf(0x0)`
     can be non-zero, which OpenZeppelin-aware indexers may treat as
     invariant-violated.
   - **No explicit `burn(uint256)` action in the auto-synthesized
-    surface** — V0.9.0 deferred that to V0.9.x.
+    surface**, V0.9.0 deferred that to V0.9.x.
 
 This is exactly the Sprint 31.b / Sprint 45 pattern : design docs assume
 "the auto-synth follows OZ semantics", deploy-and-cast-loop reveals it
@@ -313,10 +313,10 @@ That's it. The compiler synthesizes everything else : `owners`,
     field). M1 was a ceremony (helper-bridge dispatch). M2 is the first
     construct that exercises the **stdlib auto-synthesis** end-to-end on
     real Ethereum. The compiler turns a 4-line declaration into 1235
-    bytes of deployable bytecode — that's the headline product.
+    bytes of deployable bytecode, that's the headline product.
 
   - **No helper bridge.** Unlike M1 (which depends on `CeremonyHelper`),
-    NFT logic is pure EVM — no FHE / PQ / ZK opcodes. M2 validates that
+    NFT logic is pure EVM, no FHE / PQ / ZK opcodes. M2 validates that
     Covenant produces clean, helper-free bytecode for non-cryptographic
     constructs.
 
@@ -325,7 +325,7 @@ That's it. The compiler synthesizes everything else : `owners`,
     Covenant-specific runtime required on the consumer side.
 
   - **First external-tooling-compatible Covenant deploy.** OpenSea,
-    Etherscan token tracker, MetaMask NFT panel — they all see this
+    Etherscan token tracker, MetaMask NFT panel, they all see this
     contract as a standard ERC-721. The auto-synthesizer's job is
     **invisible** : downstream consumers can't tell the source was
     Covenant, only that it conforms to the standard.
@@ -340,34 +340,34 @@ time" loop for ERC-721.
 
 ---
 
-## 🪨  M6 — First Covenant contract on Robinhood Chain (and first non-Sepolia chain)
+## 🪨  M6: First Covenant contract on Robinhood Chain (and first non-Sepolia chain)
 
 The first Covenant-compiled contract deployed outside Ethereum Sepolia:
 an ERC-20 with a `burn` sink, an opt-in transfer fee and on-chain
 accounting, live on **Robinhood Chain testnet** (Arbitrum Orbit L2).
 Also the first Covenant contract whose custom actions were validated by
-an in-source `test` block **before** deployment — which caught a real
+an in-source `test` block **before** deployment, which caught a real
 compiler bug (see below).
 
 | Field | Value |
 |---|---|
 | **Date** | 2026-07-23 |
-| **Chain** | Robinhood Chain **testnet** — chainId **46630** (`0xb626`), Arbitrum Orbit L2 |
+| **Chain** | Robinhood Chain **testnet**, chainId **46630** (`0xb626`), Arbitrum Orbit L2 |
 | **Construct** | `token KairosCoin` + custom `burn` / `transfer_with_fee` / `set_fee` |
 | **Source** | [`examples/kairos_coin.cov`](examples/kairos_coin.cov) (tests in [`kairos_coin.test.cov`](examples/kairos_coin.test.cov)) |
 | **Address** | [`0x3E80F8c7911240e6092D523af79B13c046bd2FdE`](https://explorer.testnet.chain.robinhood.com/address/0x3E80F8c7911240e6092D523af79B13c046bd2FdE) |
 | **Compiler** | covenant **V0.9.3** |
-| **Deploy bytecode** | 2,493 bytes (2,422 runtime) — 15 functions, 5 events, 2 errors |
-| **Source verification** | [playground.covenant-lang.org/verify](https://playground.covenant-lang.org/verify) — no public explorer can verify Covenant |
+| **Deploy bytecode** | 2,493 bytes (2,422 runtime), 15 functions, 5 events, 2 errors |
+| **Source verification** | [playground.covenant-lang.org/verify](https://playground.covenant-lang.org/verify), no public explorer can verify Covenant |
 | **Deployer** | `0x1A7dA37293a85cBc7276Abe512355Ceb172c2d87` |
 | **Total gas, all 5 txs** | ≈ 0.0000096 ETH (gas price 0.01 gwei) |
-| **Helper bridge** | none required — plaintext ERC-20, `mockedCryptoPrimitives: []` |
+| **Helper bridge** | none required, plaintext ERC-20, `mockedCryptoPrimitives: []` |
 
 ### The transactions
 
 | # | Action | Tx | Result |
 |---|---|---|---|
-| 1 | deploy | [`0xad3dc95e…453c`](https://explorer.testnet.chain.robinhood.com/tx/0xad3dc95ed1d547f6166bdd2ebaec3e3e964176dd6e94f42e75ab285737ce453c) | block 92,677,508, gas 673,243 — 1,000,000 KRC minted to deployer |
+| 1 | deploy | [`0xad3dc95e…453c`](https://explorer.testnet.chain.robinhood.com/tx/0xad3dc95ed1d547f6166bdd2ebaec3e3e964176dd6e94f42e75ab285737ce453c) | block 92,677,508, gas 673,243, 1,000,000 KRC minted to deployer |
 | 2 | `set_fee(deployer, 100)` | [`0x595d07da…d9fa`](https://explorer.testnet.chain.robinhood.com/tx/0x595d07daf4a4dbdf4991a2f73be817ad9818740b6b75587854c5acb22fcbd9fa) | fee = 1.00 % |
 | 3 | `set_fee(deployer, 501)` | *(reverted)* | ✅ the `given bps <= 500` guard enforced the 5 % cap on-chain |
 | 4 | `burn(1_000 KRC)` | [`0xc085cf90…9b51`](https://explorer.testnet.chain.robinhood.com/tx/0xc085cf902b898930f6d1660d4b67548b7b29122f0c1129159976e1b0fd069b51) | totalSupply 1,000,000 → **999,000**; `Transfer` to `0x0` emitted |
@@ -383,7 +383,7 @@ compiler bug (see below).
 Final state confirmed via `cast call`:
 - `totalSupply()` → `999000 × 10¹⁸` ✅  ·  `burned_total()` → `1000 × 10¹⁸` ✅
 - `fees_collected()` → `100 × 10¹⁸` ✅  ·  `fee_rate_bps()` → `100` ✅
-- Both fee legs emit topic0 `0xddf252ad…3b3ef` — byte-identical to canonical ERC-20,
+- Both fee legs emit topic0 `0xddf252ad…3b3ef`, byte-identical to canonical ERC-20,
   so explorers and indexers read it as a normal token.
 
 ### What this milestone additionally proved
@@ -393,16 +393,16 @@ Final state confirmed via `cast call`:
   Verified on anvil and on Robinhood testnet; filed in [`DEBT.md`](DEBT.md).
   Without the test block the shipped source would have documented behaviour
   the bytecode did not implement.
-- **`supply:` mints RAW base units**, not `decimals`-scaled — 1,000,000 whole
+- **`supply:` mints RAW base units**, not `decimals`-scaled, 1,000,000 whole
   tokens requires `supply: 1_000_000_000_000_000_000_000_000`.
 - **Test actions ship on-chain.** The first deployment put all five `test_*`
   actions on the contract as public, callable functions. Harmless here (empty
   bodies), but a test that *mutates* would become a public unguarded state
-  mutator — and the repo's own `test_isolation_demo.cov` contains exactly such
+  mutator, and the repo's own `test_isolation_demo.cov` contains exactly such
   a test. Filed in `DEBT.md`; tests now live in a separate `.test.cov` file
   until release-mode stripping exists.
 - **Covenant needs its own source verifier.** Blockscout offers 8 verification
-  methods, all Solidity/Vyper — none accepts Covenant, so the contract shows as
+  methods, all Solidity/Vyper, none accepts Covenant, so the contract shows as
   *unverified source* on every public explorer. Tracked in `DEBT.md`.
 
 > **Testnet only.** KRC has zero monetary value and is not tradable for
@@ -410,7 +410,7 @@ Final state confirmed via `cast call`:
 
 ---
 
-## 🪨  M5 — First Covenant-compiled PQ key registry deployed on Sepolia
+## 🪨  M5: First Covenant-compiled PQ key registry deployed on Sepolia
 
 The first contract whose post-quantum (Dilithium-5 / FIPS 204)
 key-registry surface was **auto-synthesized by the Covenant compiler**
@@ -426,8 +426,8 @@ chain.
 | **Address** | [`0xb9c5a5d874fa1797d8cfbbe7292051d9227eb1d3`](https://sepolia.etherscan.io/address/0xb9c5a5d874fa1797d8cfbbe7292051d9227eb1d3) |
 | **Compiler** | covenant **V0.9.0** GA (commit `71d0e1b`, tag `v0.9.0`) |
 | **Stdlib synth** | Auto-synthesized by `covenant-stdlib::erc8231` (Sprint 35.b, 340-line synthesizer) |
-| **Deploy bytecode** | 476 bytes (449 runtime) — 5 functions + 3 events + 2 errors from 1 source line |
-| **Helper bridge** | none required (no real Dilithium verification in V0.9 — `algorithm_id()` returns 1 = Dilithium-5 marker only) |
+| **Deploy bytecode** | 476 bytes (449 runtime), 5 functions + 3 events + 2 errors from 1 source line |
+| **Helper bridge** | none required (no real Dilithium verification in V0.9, `algorithm_id()` returns 1 = Dilithium-5 marker only) |
 | **Deployer** | `0x409D61d3582AD5A655927E615AC3CF366c165a55` (same as M0/M1/M2) |
 
 ### The 2 transactions (deploy + first key registration)
@@ -461,7 +461,7 @@ key rotation once `pq_signed` guards integrate with stdlib synthesis.
     the second auto-synth pipeline (after M2's ERC-721) producing
     standards-conformant bytecode from 1 line of source.
   - **Smallest deploy-bytecode footprint of any milestone yet** (476
-    bytes deploy / 449 runtime) — much smaller than M2 NFT (1235/1208)
+    bytes deploy / 449 runtime), much smaller than M2 NFT (1235/1208)
     because PQ Registry has no token-id state, just per-account key
     storage.
   - **No helper bridge dependency.** Like M2, the registry is pure EVM
@@ -471,10 +471,10 @@ key rotation once `pq_signed` guards integrate with stdlib synthesis.
 
 ### Empirical finding : `key_of` return type mismatch
 
-TX 2 registered the key bytes `0x4b41495241ff` ("KAIRA\xff" in ASCII —
+TX 2 registered the key bytes `0x4b41495241ff` ("KAIRA\xff" in ASCII,
 deliberately short to keep the hex obvious). After registration,
 `key_of(deployer)` returned `0x0000000000000000000000000000000000000000000000000000000000000001`
-— a 32-byte uint256-shaped value instead of the registered `bytes`
+, a 32-byte uint256-shaped value instead of the registered `bytes`
 payload.
 
 The ABI declares `key_of(address) returns bytes` but the runtime
@@ -507,7 +507,7 @@ loop for ERC-8231 (modulo the empirical finding above).
 
 ### Reserved cells (future milestones)
 
-- M3 — first cross-contract Covenant call on Sepolia : **PARTIAL
+- M3, first cross-contract Covenant call on Sepolia : **PARTIAL
   V0.9.1** (2026-04-27). M3 proxy contract `M3CrossContractViewer`
   deployed at [`0xb48ef953c41e1f46c3affb1594bafb8ab3d1fc41`](https://sepolia.etherscan.io/address/0xb48ef953c41e1f46c3affb1594bafb8ab3d1fc41)
   via V0.9.1 (resolver fix unblocked compilation, deploy
@@ -517,14 +517,14 @@ loop for ERC-8231 (modulo the empirical finding above).
   succeeded, `cast storage 0` returns the M2 address correctly. **But**
   cross-contract STATICCALL reads return defaults (lookup_name returns
   empty, lookup_balance returns 0). Codegen STATICCALL chain emission
-  bug — V0.9.2 fix candidate (see DEBT.md `external contract codegen`
+  bug, V0.9.2 fix candidate (see DEBT.md `external contract codegen`
   entry). M3 will graduate from "partial" to "full milestone" when
   V0.9.2 ships the codegen fix and the lookup_* views actually return
   M2's real state.
-- M4 — first Aster Testnet ceremony (V0.9.x era, when Aster
-  factory verification unblocks deploy — see
+- M4, first Aster Testnet ceremony (V0.9.x era, when Aster
+  factory verification unblocks deploy, see
   `docs/v0.9/aster-chain-integration-status.md`)
-- M6 — first external-audit external test pass (V1.0 era)
+- M6, first external-audit external test pass (V1.0 era)
 - V0.9.0 GA tag ✅ achieved 2026-04-26 (commit `71d0e1b`)
 - V0.9.1 patch tag ⏳ in progress (resolver fix + ERC-721
   transferFrom-to-zero + ERC-8231 key_of return + erc8228 module
@@ -537,10 +537,10 @@ loop for ERC-8231 (modulo the empirical finding above).
 
 When you reach a verifiable first :
 
-1. Append a new `## 🪨 M? — <one-line description>` section
+1. Append a new `## 🪨 M?, <one-line description>` section
 2. Include : date, block (if on-chain), addresses + tx hashes (if on-chain), source path, compiler version, sprint
 3. Write a "Why this matters" paragraph that frames the milestone in the
-   project's history — what wasn't possible before, what is now
+   project's history, what wasn't possible before, what is now
 4. Link back to the audit finding(s) closed by the milestone (if any)
 5. Commit with message `milestone(M?): <description>`
 
