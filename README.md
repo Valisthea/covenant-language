@@ -10,7 +10,7 @@ Write `token`, `nft`, `registry`, `ceremony`, the compiler synthesizes the audit
 
 <br>
 
-[![version](https://img.shields.io/badge/version-0.9.5-7C3AED?style=flat-square)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.9.6-7C3AED?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml/badge.svg)](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml)
 [![tests](https://img.shields.io/badge/tests-1%2C105%20passing-3FB950?style=flat-square)](#testing)
 [![license](https://img.shields.io/badge/license-Apache--2.0-3B82F6?style=flat-square)](LICENSE)

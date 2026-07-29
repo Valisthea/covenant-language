@@ -1,13 +1,13 @@
 ---
 description: >-
-  Persistent syntax and style rules for Covenant v0.9.5 .cov source files.
+  Persistent syntax and style rules for Covenant v0.9.6 .cov source files.
   Apply whenever editing or generating .cov code.
 globs:
   - "**/*.cov"
 alwaysApply: false
 ---
 
-# Covenant v0.9.5 Syntax Rules
+# Covenant v0.9.6 Syntax Rules
 
 Apply these rules whenever editing or generating `.cov` source files.
 
@@ -113,7 +113,7 @@ revert_with InsufficientBalance(needed, balances[caller])
 
 ## Compiler diagnostics (fail-loud)
 
-The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
+The Covenant v0.9.6 compiler is **fail-loud**: rather than silently emitting
 plausible-but-wrong bytecode, it refuses and errors. Do **not** generate the
 constructs below; if a user hits one of these, explain the error and pick a
 supported construct.

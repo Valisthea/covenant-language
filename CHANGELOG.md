@@ -22,6 +22,18 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 
 ## [Unreleased]
 
+(empty, V0.9.6 just shipped.)
+
+---
+
+## [0.9.6], 2026-07-24 (fail-loud: value-path miscompile, misleading target alias, honest mocked-crypto signal)
+
+> Three defects found while answering a public question about what the compiler
+> actually guarantees on an arbitrary EVM chain. Two of them were silently wrong
+> rather than merely missing, and one of those sat on a value path. Each fix ships a
+> regression test verified non-vacuous by negative control. **1105 tests, clippy
+> clean, fmt clean.**
+
 ### Fixed, fail-loud
 
 - **`transfer <amount> from <src> to <dst>` is refused (`E523`).** The parser accepted
@@ -36,6 +48,44 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
   `covenant-evm-backend::codegen::emit_transfer` + `tests/transfer_from_hardfail.rs`
   (negative-control verified: neutralise the guard and the rejection test fails while
   the two-operand control keeps passing).
+
+- **The `evm` target alias is refused (`NoGenericEvmTarget`).** `--target-chain=evm` resolved
+  to the local mock chain. It reads as "generic EVM" but is not: MockChain emits calls to short
+  mock precompile addresses that hold no code on any real network, so a contract using the
+  cryptographic constructs compiled clean and then reverted on chain. The alias now returns a
+  dedicated error stating that no generic EVM target exists, and noting that contracts using no
+  cryptographic construct emit no chain-specific address at all and are therefore already
+  portable without one. `covenant-evm-backend::target`.
+
+### Changed
+
+- **`mockedCryptoPrimitives` now reports an `amnesia` category.** The detector deliberately
+  excluded the ceremony opcodes, on the reasoning that `CeremonyHelper.sol` implements a real if
+  simplified commitment rather than a coin-flip stub. That was the wrong call for the question the
+  field answers: a V0.9 ceremony's destroy path does not make anything unrecoverable, and
+  `CeremonyHelper.sol` is the one helper with no `notMainnet` chain-id gate, so an empty field told
+  a reader gating a pipeline the opposite of the truth. Reported under its own category so the
+  maturity difference stays visible. `covenant-evm-backend::mocked_crypto`.
+
+### Added
+
+- `docs/orbit-adoption.md`, a per-construct support matrix and staged adoption path for deploying
+  to an Arbitrum Orbit chain, including an explicit list of what has never been tested.
+- `docs/security-and-audit-roadmap.md`, what review has actually happened, what has not, the known
+  open items, and why V1.0 is an external audit rather than a feature release.
+- The internal review archive is now public at
+  https://github.com/Valisthea/covenant-security-reviews
+
+### Documentation
+
+- The editor plugins taught syntax that does not parse. Eight places showed
+  `transfer(value, to: caller)`; the real grammar puts `to` outside the parentheses. Their
+  construct table also advertised synthesis for `ballot`, `counter`, `board`, `market`, `vault`
+  and `bridge`, none of which have a synthesizer, and for `registry`, which does not compile at
+  all. Corrected, with a note that only `token`, `nft`, `confidential token` and `ceremony` have a
+  real stdlib synthesizer today.
+
+---
 
 ---
 
