@@ -2141,10 +2141,20 @@ impl<'a> Codegen<'a> {
     fn emit_transfer(&mut self, asm: &mut Assembler, f: &IrFunction, instr: &Instr) {
         // Simplified CALL for ether transfer:
         // CALL(gas, to, value, 0, 0, 0, 0)
-        // Operands: amount, to (for `from_none` transfer) or [amount, from, to].
+        // Operands: [amount, to] for the two-operand form. The three-operand
+        // form [amount, from, to] used to read operands 0 and 2 and drop the
+        // `from` entirely, paying `to` out of the contract's own balance while
+        // silently ignoring the source named in the source text. There is no
+        // EVM primitive that spends another account's native balance, so the
+        // form is refused rather than mis-lowered (E523).
         let (amount_v, to_v) = match instr.operands.len() {
             2 => (instr.operands[0], instr.operands[1]),
-            3 => (instr.operands[0], instr.operands[2]),
+            3 => {
+                self.diagnostics
+                    .push(d::transfer_from_unsupported(instr.span));
+                asm.emit(AsmOp::Push0);
+                return;
+            }
             _ => {
                 asm.emit(AsmOp::Push0);
                 return;

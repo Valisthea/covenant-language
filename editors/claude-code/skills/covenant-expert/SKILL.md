@@ -200,6 +200,7 @@ explain it and switch to a supported construct. Trust the error.
 | **E520** | a missing precompile helper method | Error — the referenced precompile helper does not exist. |
 | **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
 | **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
+| **E523** | `transfer <amt> from <src> to <dst>` | No faithful lowering → error. A native transfer compiles to a `CALL`, which spends the *contract's own* balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
 | **W508** | `only caller` | Warning — allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
 
 Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from

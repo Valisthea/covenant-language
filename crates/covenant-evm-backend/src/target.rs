@@ -68,9 +68,17 @@ impl Target {
     /// post-external-audit.
     pub fn parse(s: &str) -> Result<Self, TargetParseError> {
         match s.to_ascii_lowercase().as_str() {
-            "mockchain" | "mock" | "evm" => Ok(Target::MockChain),
+            "mockchain" | "mock" => Ok(Target::MockChain),
             "sepolia" => Ok(Target::Sepolia),
             "aster_testnet" | "aster-testnet" => Ok(Target::AsterTestnet),
+            // `evm` used to alias MockChain, which reads as "generic EVM" but is
+            // not: MockChain emits calls to short mock precompile addresses that
+            // hold no code on any real network. A cryptographic construct built
+            // that way compiles clean and then fails at runtime on chain. The
+            // alias is refused rather than silently meaning something else.
+            "evm" | "generic" | "generic_evm" | "generic-evm" => {
+                Err(TargetParseError::NoGenericEvmTarget)
+            }
             "mainnet" | "ethereum" | "ethereum_mainnet" => Err(TargetParseError::MainnetForbidden),
             other => Err(TargetParseError::Unknown(other.to_string())),
         }
@@ -110,6 +118,16 @@ pub enum TargetParseError {
          Use --target-chain={{mockchain,sepolia,aster_testnet}} instead."
     )]
     MainnetForbidden,
+    #[error(
+        "there is no generic EVM target. `evm` previously aliased the local mock chain, \
+         which emits calls to mock precompile addresses that hold no code on any real \
+         network, so a contract using the cryptographic constructs would compile clean \
+         and then revert on chain. Use --target-chain=mockchain for local execution, or \
+         a named chain target whose helper contracts are actually deployed. Contracts \
+         that use no cryptographic construct emit no chain-specific address at all, so \
+         their bytecode is already portable to any EVM chain without a target."
+    )]
+    NoGenericEvmTarget,
     #[error("unknown target '{0}' (valid: mockchain, sepolia, aster_testnet)")]
     Unknown(String),
 }
@@ -236,7 +254,13 @@ mod tests {
 
     #[test]
     fn parse_aliases() {
-        assert_eq!(Target::parse("evm").unwrap(), Target::MockChain);
+        // `evm` is deliberately NOT an alias for MockChain: it reads as "generic
+        // EVM" but MockChain emits mock precompile addresses that are empty on
+        // every real chain. Refused with a dedicated error instead.
+        assert_eq!(
+            Target::parse("evm").unwrap_err(),
+            TargetParseError::NoGenericEvmTarget
+        );
         assert_eq!(Target::parse("mock").unwrap(), Target::MockChain);
         assert_eq!(
             Target::parse("aster-testnet").unwrap(),

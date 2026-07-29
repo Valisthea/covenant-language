@@ -49,6 +49,16 @@ pub const E521_TEXT_CONSTANT_TOO_LONG: DiagCode = DiagCode(521);
 /// compiled to bytecode that silently discarded every write. Refuse to compile
 /// rather than ship that. (OMEGA F09.)
 pub const E522_NESTED_MAP_UNSUPPORTED: DiagCode = DiagCode(522);
+/// `transfer <amount> from <src> to <dst>`, the three-operand form. The EVM has
+/// no primitive that moves native value out of an account the executing contract
+/// does not control: a `CALL` spends the *contract's own* balance. `emit_transfer`
+/// destructured the operand list as `(operands[0], operands[2])`, so the `from`
+/// operand was read by the parser, lowered by the IR builder, and then silently
+/// discarded by codegen. The result compiled clean, emitted no diagnostic, and
+/// paid `dst` out of the contract's balance while the source named in the source
+/// text was ignored entirely. That is a silent miscompile on a value path, so the
+/// form is refused until it has a faithful lowering.
+pub const E523_TRANSFER_FROM_UNSUPPORTED: DiagCode = DiagCode(523);
 
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
@@ -308,6 +318,24 @@ pub fn nested_map_unsupported(span: Span, field: &str) -> Diagnostic {
              write. Flatten to a single map keyed by a composite/hashed key, or split into \
              separate maps."
         ),
+        span,
+    )
+}
+
+/// The three-operand `transfer ... from ... to ...`. See
+/// [`E523_TRANSFER_FROM_UNSUPPORTED`].
+pub fn transfer_from_unsupported(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E523_TRANSFER_FROM_UNSUPPORTED,
+        "`transfer <amount> from <src> to <dst>` has no faithful lowering. A native-value \
+         transfer compiles to a `CALL`, which spends the balance of the executing contract, \
+         and the EVM offers no way to move value out of an account the contract does not \
+         control. The `from` operand was previously parsed, lowered, and then dropped by \
+         codegen, so this paid `<dst>` out of the contract's own balance while ignoring \
+         `<src>`. Refusing to compile rather than shipping that. Use `transfer <amount> to \
+         <dst>` to send the contract's own balance, or model the debit explicitly in \
+         storage (for example a balances map) before transferring."
+            .to_string(),
         span,
     )
 }

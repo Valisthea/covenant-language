@@ -22,7 +22,20 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 
 ## [Unreleased]
 
-(empty — V0.9.4 just shipped.)
+### Fixed, fail-loud
+
+- **`transfer <amount> from <src> to <dst>` is refused (`E523`).** The parser accepted
+  the three-operand form and the IR builder lowered all three operands, but
+  `emit_transfer` destructured the operand list as `(operands[0], operands[2])`, so the
+  `from` operand was read, lowered, and then silently discarded. The statement compiled
+  clean, raised no diagnostic, and emitted a plain `CALL` paying `<dst>` out of the
+  **contract's own balance** while ignoring the source named in the source text. A
+  silent miscompile on a value path. There is no EVM primitive that spends the native
+  balance of an account the executing contract does not control, so the form has no
+  faithful lowering and is now rejected at compile time rather than mis-lowered.
+  `covenant-evm-backend::codegen::emit_transfer` + `tests/transfer_from_hardfail.rs`
+  (negative-control verified: neutralise the guard and the rejection test fails while
+  the two-operand control keeps passing).
 
 ---
 

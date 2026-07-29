@@ -129,6 +129,7 @@ supported construct.
 | **E520** | a missing precompile helper method → error. |
 | **E521** | a text/string constant longer than 32 bytes → error. |
 | **E522** | nested maps (`map<_, map<_,_>>`) are not yet supported → error (use a struct-valued map or flatten). |
+| **E523** | `transfer <amt> from <src> to <dst>` has no faithful lowering → error. A native transfer compiles to a `CALL`, which spends the contract's own balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
 | **W508** | `only caller` is an allow-all no-op → warning (it guards nothing; use a real principal). |
 
 Guard principals that can't be resolved fail **closed** (E516/E517/E518 from earlier releases).
