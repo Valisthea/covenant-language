@@ -16,8 +16,8 @@ use covenant_parser::ast::{
     ViewDecl,
 };
 use covenant_resolver::{
-    Binding, BuiltinPredicate, DeclId, DeclInfo, DeclKind, LangIdent, ResolvedFile, StdlibFn,
-    StdlibModule,
+    Binding, BuiltinPredicate, DeclId, DeclInfo, DeclKind, LangIdent, LocalId, ResolvedFile,
+    StdlibFn, StdlibModule,
 };
 
 use crate::diag;
@@ -518,19 +518,33 @@ impl Checker {
         self.in_action = false;
     }
 
-    fn register_arg_type(&mut self, arg: &Arg) {
-        let ty = self.lower_type(&arg.ty);
-        // Argument definition sites aren't recorded in `ident_bindings`
-        // (that map only holds use-sites). Find the local by matching the
-        // definition span in the resolver's `locals` vector.
-        let id_opt = self
-            .resolved
+    /// Resolve the `LocalId` a binding *definition site* introduced.
+    ///
+    /// `ident_bindings` only holds use-sites: the resolver's `introduce_local`
+    /// writes the scope arena and the `locals` vector, never the ident map. So
+    /// looking a definition span up in `ident_bindings` can never succeed, and
+    /// the local silently keeps its `Ty::Unknown` default, which is compatible
+    /// with every type and maps to `PrivacyDomain::Unknown`. That is how a
+    /// single `let` used to erase both the type and the privacy domain of the
+    /// value it bound. Every definition site must go through this helper.
+    ///
+    /// The use-site map is still consulted first so that any binding form which
+    /// *is* recorded there keeps working unchanged.
+    fn local_at_def(&self, span: Span) -> Option<LocalId> {
+        if let Some(Binding::Local(id)) = self.resolved.bindings.get(&span) {
+            return Some(*id);
+        }
+        self.resolved
             .bindings
             .locals
             .iter()
-            .find(|l| l.def_span == arg.name.span)
-            .map(|l| l.id);
-        if let Some(id) = id_opt {
+            .find(|l| l.def_span == span)
+            .map(|l| l.id)
+    }
+
+    fn register_arg_type(&mut self, arg: &Arg) {
+        let ty = self.lower_type(&arg.ty);
+        if let Some(id) = self.local_at_def(arg.name.span) {
             self.table.set_local(id, ty);
         }
     }
@@ -620,8 +634,7 @@ impl Checker {
                 } else {
                     self.synth_expr(value)
                 };
-                if let Some(Binding::Local(id)) = self.resolved.bindings.get(&name.span) {
-                    let id = *id;
+                if let Some(id) = self.local_at_def(name.span) {
                     self.table.set_local(id, got);
                 }
             }
@@ -774,8 +787,7 @@ impl Checker {
                         Ty::Unknown
                     }
                 };
-                if let Some(Binding::Local(id)) = self.resolved.bindings.get(&binding.span) {
-                    let id = *id;
+                if let Some(id) = self.local_at_def(binding.span) {
                     self.table.set_local(id, elem_ty);
                 }
                 for s in body {
@@ -792,8 +804,7 @@ impl Checker {
                     self.check_stmt(s);
                 }
                 if let Some(id) = error_binding {
-                    if let Some(Binding::Local(lid)) = self.resolved.bindings.get(&id.span) {
-                        let lid = *lid;
+                    if let Some(lid) = self.local_at_def(id.span) {
                         self.table.set_local(lid, Ty::Text);
                     }
                 }
@@ -841,12 +852,26 @@ impl Checker {
                 struct_lit,
                 span,
             } => {
-                // Resolve the collection's element struct via its binding.
-                let struct_id_opt = match self.resolved.bindings.get(&collection.span) {
-                    Some(Binding::Struct(decl_id)) => match self.table.decl_ty(*decl_id) {
-                        Ty::Struct(sid) => Some(sid),
+                // Resolve the collection's element struct from its TYPE, not
+                // from the shape of its binding. `append votes { ... }` on a
+                // record field `votes: [Vote]` binds `votes` to
+                // `Binding::Field`, never to `Binding::Struct`, so matching on
+                // `Binding::Struct` alone missed every list-of-struct field and
+                // fell through to the permissive branch: the element values
+                // were synth'd but never checked, which let an `amount` land in
+                // an `address` field, let a `ciphertext<T>` land in a plaintext
+                // field, and skipped the plaintext-to-ciphertext auto-lift so a
+                // field declared `encrypted amount` was stored in the clear.
+                // `Ty::Struct` is still accepted because a `board`'s `post`
+                // block resolves to the struct type itself rather than to a
+                // list field.
+                let coll_ty = self.resolve_ident_ty(collection);
+                let struct_id_opt = match &coll_ty {
+                    Ty::List(elem) => match elem.as_ref() {
+                        Ty::Struct(sid) => Some(*sid),
                         _ => None,
                     },
+                    Ty::Struct(sid) => Some(*sid),
                     _ => None,
                 };
                 if let Some(sid) = struct_id_opt {
@@ -860,13 +885,33 @@ impl Checker {
                                 let expected = sf.ty.clone();
                                 self.check_expr(&fa.value, &expected);
                             } else {
+                                // Not lowered by Phase 6 at all (it builds the
+                                // element from the declared field order), so
+                                // the value would be silently dropped.
+                                let sname = sinfo.name.name.clone();
+                                self.diagnostics.push(diag::append_unknown_field(
+                                    fa.name.span,
+                                    &sname,
+                                    &fa.name.name,
+                                ));
                                 self.synth_expr(&fa.value);
                             }
                         }
                     }
                 } else {
-                    let _ = span;
-                    // Permissive: synth the values without type-checking against a struct.
+                    // `Unknown` (an unresolved or already-diagnosed collection)
+                    // and `[unknown]` (the implicit `posts` list of a `board`,
+                    // whose element struct is not resolvable here) stay
+                    // permissive so this does not cascade. Anything else is a
+                    // concrete type that cannot hold a struct literal.
+                    let elem_unknown = matches!(&coll_ty, Ty::List(e) if **e == Ty::Unknown);
+                    if !matches!(coll_ty, Ty::Unknown) && !elem_unknown {
+                        let rendered = coll_ty.render(&self.table);
+                        self.diagnostics.push(diag::append_not_list(
+                            *span,
+                            &format!("`{}` has type `{}`", collection.name, rendered),
+                        ));
+                    }
                     for fa in struct_lit {
                         self.synth_expr(&fa.value);
                     }
@@ -1093,8 +1138,9 @@ impl Checker {
         if let Expr::Lambda { param, body, span } = e {
             if let Ty::Fn { params, ret } = expected {
                 if params.len() == 1 {
-                    if let Some(Binding::Local(id)) = self.resolved.bindings.get(&param.span) {
-                        let id = *id;
+                    // A lambda parameter is a definition site too, so it needs
+                    // the same `locals` scan as `let` / `for each` / `catch`.
+                    if let Some(id) = self.local_at_def(param.span) {
                         self.table.set_local(id, params[0].clone());
                     }
                     let got = self.synth_expr(body);

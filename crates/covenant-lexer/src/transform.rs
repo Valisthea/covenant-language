@@ -102,22 +102,32 @@ pub fn tokenize(source: &str, source_id: SourceId) -> (Vec<Token>, Vec<Diagnosti
                 if let Some((Ok(RawToken::Ident), next_rng)) = raw.get(i + 1) {
                     let next_slice = &source[next_rng.clone()];
                     if let Some(unit) = match_duration_unit(next_slice) {
-                        if let Some(n64) = u64_from_u128(value) {
-                            let joined =
-                                Span::new(source_id, rng.start as u32, next_rng.end as u32);
-                            push(&mut out, Token::new(TokenKind::Duration(n64, unit), joined));
-                            i += 2;
-                            continue;
-                        } else {
-                            // Unit is present but the count exceeds u64. Still report
-                            // overflow on the integer itself rather than silently
-                            // downgrading to `Integer` + `Ident`.
-                            diags.push(diag::int_overflow(span));
-                            let _ = unit; // suppress unused warning if refactored
-                            push(&mut out, Token::new(TokenKind::Error, span));
-                            i += 1;
-                            continue;
+                        let joined = Span::new(source_id, rng.start as u32, next_rng.end as u32);
+                        // The unit is part of the value, not decoration. Apply the
+                        // multiplier here, at the single point where the pair
+                        // `<int> <unit>` is still visible as one thing, so that no
+                        // later stage can lower a duration by pushing the bare
+                        // magnitude and turning `7 days` into 7 seconds.
+                        match value
+                            .checked_mul(unit.seconds() as u128)
+                            .and_then(u64_from_u128)
+                        {
+                            Some(secs) => {
+                                push(
+                                    &mut out,
+                                    Token::new(TokenKind::Duration(secs, unit), joined),
+                                );
+                            }
+                            None => {
+                                // The count alone may or may not have fit u64; what
+                                // matters is that the second count does not. Refuse
+                                // rather than emit a wrapped instant.
+                                diags.push(diag::duration_overflow(joined, unit.seconds()));
+                                push(&mut out, Token::new(TokenKind::Error, joined));
+                            }
                         }
+                        i += 2;
+                        continue;
                     }
                 }
 

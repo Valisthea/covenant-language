@@ -20,16 +20,19 @@ use covenant_ir::{
     function::IrFunctionKind,
     id::{FunctionId, GlobalId, Value},
     instr::{IrConstant, Terminator},
-    module::{IrError, IrEvent, IrField, IrMetadataValue},
+    module::{IrError, IrEvent, IrMetadataValue},
     IrModule, Opcode,
 };
 use covenant_parser::ast::Ident;
-use covenant_privacy::domain_of;
 use covenant_types::Ty;
 
 use crate::builder::FuncBuilder;
 use crate::config::StdlibConfig;
+use crate::conform;
 use crate::diag as d;
+
+/// Name used in the diagnostics this synthesizer raises.
+const STANDARD: &str = "ERC-8227";
 
 // -------------------------------------------------------------------------
 // ERC-8227 canonical ABI selectors.
@@ -79,7 +82,7 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
     for name in STANDARD_FN_NAMES {
         if user_fns.contains(*name) {
             if config.strict_conflict_detection {
-                diags.push(d::user_fn_conflict(span, name));
+                diags.push(d::user_fn_conflict(span, STANDARD, name));
                 return;
             } else {
                 diags.push(d::warn_user_override(span, name));
@@ -88,36 +91,40 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
     }
 
     // --- Ensure required fields ---
+    //
+    // A field of the right name but the wrong type is refused, not reused
+    // (F-14): the synthesized bodies address each of these with one shape,
+    // and here a plaintext `balances` would also silently leave the encrypted
+    // domain.
     let ct_amount_ty = Ty::Ciphertext(Box::new(Ty::Amount));
 
-    let total_supply_id = ensure_field(module, "total_supply", Ty::Amount, diags);
-    let balances_id = ensure_field(
-        module,
-        "balances",
-        Ty::Map(Box::new(Ty::Address), Box::new(ct_amount_ty.clone())),
-        diags,
-    );
-    let allowances_id = ensure_field(
-        module,
-        "allowances",
-        Ty::Map(Box::new(Ty::Hash), Box::new(ct_amount_ty.clone())),
-        diags,
-    );
+    let (Some(total_supply_id), Some(balances_id), Some(allowances_id)) = (
+        conform::ensure_field(module, "total_supply", Ty::Amount, STANDARD, diags),
+        conform::ensure_field(
+            module,
+            "balances",
+            Ty::Map(Box::new(Ty::Address), Box::new(ct_amount_ty.clone())),
+            STANDARD,
+            diags,
+        ),
+        conform::ensure_field(
+            module,
+            "allowances",
+            Ty::Map(Box::new(Ty::Hash), Box::new(ct_amount_ty.clone())),
+            STANDARD,
+            diags,
+        ),
+    ) else {
+        return;
+    };
 
     // --- Initialize total_supply constant from supply metadata ---
-    if let Some(IrMetadataValue::GenesisMint { amount, to }) =
-        module.metadata.get("supply").cloned()
-    {
-        if matches!(
-            to,
-            covenant_parser::ast::Principal::Named(covenant_parser::ast::PrincipalKind::Deployer)
-        ) {
-            if let Some(tsf) = module.fields.iter_mut().find(|f| f.id == total_supply_id) {
-                if tsf.initializer_const.is_none() {
-                    tsf.initializer_const = Some(IrConstant::Integer(amount));
-                }
-            }
-        }
+    //
+    // Same refusals as the ERC-20 path: a non-deployer genesis principal is
+    // never minted (F-20) and a `total_supply` field default that disagrees
+    // with the genesis amount silently wins (F-28).
+    if !conform::apply_genesis_supply(module, total_supply_id, diags) {
+        return;
     }
 
     // --- Pull metadata defaults ---
@@ -154,6 +161,11 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
             diags.push(d::warn_missing_metadata(span, "decimals"));
             18
         });
+    // The synthesized `decimals()` is the same ERC-20 accessor, so the same
+    // uint8 representability bound applies (F-41).
+    if !conform::check_decimals(span, decimals_value, diags) {
+        return;
+    }
 
     let skip = |name: &str| user_fns.contains(name);
 
@@ -225,32 +237,6 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
 
     inject_events(module, span);
     inject_errors(module, span);
-}
-
-// -------------------------------------------------------------------------
-// Field helpers
-// -------------------------------------------------------------------------
-
-fn ensure_field(module: &mut IrModule, name: &str, ty: Ty, _diags: &mut [Diagnostic]) -> GlobalId {
-    if let Some(existing) = module.fields.iter().find(|f| f.name.name.as_ref() == name) {
-        return existing.id;
-    }
-    let id = GlobalId(module.fields.len() as u32);
-    let span = module.name.span;
-    module.fields.push(IrField {
-        id,
-        name: Ident {
-            name: name.into(),
-            span,
-        },
-        ty: ty.clone(),
-        privacy: domain_of(&ty),
-        initializer_fn: None,
-        initializer_const: None,
-        span,
-        explicit_slot: None,
-    });
-    id
 }
 
 // -------------------------------------------------------------------------

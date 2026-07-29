@@ -24,6 +24,19 @@ pub struct ParseError;
 /// is set well under that with margin for other stages' larger stack frames.
 pub(crate) const MAX_PARSE_DEPTH: u32 = 96;
 
+/// Maximum number of statements and blocks in a single executable body
+/// (`action`, `migrate`, `on_destroy`).
+///
+/// This is a size bound, not a depth bound, and it exists because the cost of
+/// lowering and generating code for one body grows faster than its statement
+/// count: a body of tens of thousands of statements takes minutes, and the
+/// language server runs that pipeline on every keystroke of a file it did not
+/// choose to open. The number is set from what can actually ship: EIP-170 caps
+/// deployed runtime code at 24576 bytes, which no body past roughly a thousand
+/// statements can fit under, so this leaves several times the headroom any
+/// deployable contract needs while keeping the worst case near a second.
+pub(crate) const MAX_BODY_STMTS: u32 = 4096;
+
 pub struct Parser<'a> {
     pub(crate) tokens: &'a [Token],
     pub(crate) pos: usize,
@@ -37,6 +50,10 @@ pub struct Parser<'a> {
     /// `[T]`, `priority_queue<>`). Guarded by `enter_type_depth`/
     /// `exit_type_depth` to bound stack usage independently of `nest_depth`.
     pub(crate) type_depth: u32,
+    /// Statements and blocks parsed so far in the executable body currently
+    /// being parsed. Reset by `parse_function_body`; bounded by
+    /// `MAX_BODY_STMTS`.
+    pub(crate) body_stmts: u32,
     pub(crate) diagnostics: Vec<Diagnostic>,
     pub(crate) source_id: SourceId,
 }
@@ -49,6 +66,7 @@ impl<'a> Parser<'a> {
             paren_depth: 0,
             nest_depth: 0,
             type_depth: 0,
+            body_stmts: 0,
             diagnostics: Vec::new(),
             source_id,
         }
@@ -74,6 +92,31 @@ impl<'a> Parser<'a> {
         self.nest_depth = self.nest_depth.saturating_sub(1);
     }
 
+    /// Charge one level for a node appended to an *iterative* spine: the Pratt
+    /// loop's left-associative chain (`a + b + c`, `v.f.f`, `m[k][k]`, `f()()`)
+    /// and the l-value loop. Those build one AST level per iteration without
+    /// recursing, so `enter_depth` alone never rose above 1 no matter how long
+    /// the chain was, and the resulting spine was walked recursively by later
+    /// stages (and by `Drop`), overflowing the native stack with no diagnostic.
+    /// Charging here bounds the depth of the tree the parser hands on, not just
+    /// the depth of the parser's own recursion.
+    ///
+    /// The caller is responsible for restoring `nest_depth`; every charge site
+    /// sits inside a function that snapshots and restores it.
+    pub(crate) fn enter_chain_depth(&mut self) -> Result<(), ParseError> {
+        // Reserve two levels rather than one: a spine node needs room for
+        // itself and for the frame that parses its right operand. Charging a
+        // single level would let the generic `enter_depth` ceiling trip first
+        // and report a long flat chain as if it were deeply nested source.
+        if self.nest_depth + 1 >= MAX_PARSE_DEPTH {
+            let span = self.current_span();
+            self.push_diag(diag::chain_too_long(span));
+            return Err(ParseError);
+        }
+        self.nest_depth += 1;
+        Ok(())
+    }
+
     /// Enter one level of `parse_type` recursion. Returns `Err` without
     /// incrementing once the depth limit is reached, having already pushed a
     /// diagnostic -- callers should `?` this and bail out like any other parse
@@ -94,6 +137,31 @@ impl<'a> Parser<'a> {
     /// successful `enter_type_depth`.
     pub(crate) fn exit_type_depth(&mut self) {
         self.type_depth = self.type_depth.saturating_sub(1);
+    }
+
+    /// Charge one statement or block against the current body's size budget.
+    /// Returns `Err` (having pushed a diagnostic) once the body is larger than
+    /// anything that could be compiled in reasonable time or deployed at all.
+    /// The diagnostic is pushed only on the crossing, so the caller unwinding
+    /// the body does not emit one per remaining statement.
+    pub(crate) fn charge_body_stmt(&mut self) -> Result<(), ParseError> {
+        if self.body_stmts >= MAX_BODY_STMTS {
+            if self.body_stmts == MAX_BODY_STMTS {
+                let span = self.current_span();
+                self.push_diag(diag::body_too_large(span, MAX_BODY_STMTS));
+            }
+            self.body_stmts = MAX_BODY_STMTS.saturating_add(1);
+            return Err(ParseError);
+        }
+        self.body_stmts += 1;
+        Ok(())
+    }
+
+    /// Has the current body already exceeded its size budget? Used by the block
+    /// parser to abandon the body instead of trying to recover statement by
+    /// statement.
+    pub(crate) fn body_budget_blown(&self) -> bool {
+        self.body_stmts > MAX_BODY_STMTS
     }
 
     // -------- low-level cursor --------

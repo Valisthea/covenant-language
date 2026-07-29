@@ -354,12 +354,17 @@ fn text_bad_escape_emits_e010() {
 }
 
 // ---------- Duration literals ----------
+//
+// The value carried by a `Duration` token is the literal converted to seconds.
+// Asserting the raw magnitude here would re-admit the defect where `7 days`
+// reached the backend as the integer 7 and a seven-day lock opened after seven
+// seconds.
 
 #[test]
 fn duration_seven_days() {
     assert_eq!(
         first_non_trivial("7 days"),
-        TokenKind::Duration(7, DurationUnit::Days)
+        TokenKind::Duration(604_800, DurationUnit::Days)
     );
 }
 
@@ -367,7 +372,7 @@ fn duration_seven_days() {
 fn duration_one_hour_singular() {
     assert_eq!(
         first_non_trivial("1 hour"),
-        TokenKind::Duration(1, DurationUnit::Hours)
+        TokenKind::Duration(3_600, DurationUnit::Hours)
     );
 }
 
@@ -375,7 +380,7 @@ fn duration_one_hour_singular() {
 fn duration_one_hours_plural_on_singular() {
     assert_eq!(
         first_non_trivial("1 hours"),
-        TokenKind::Duration(1, DurationUnit::Hours)
+        TokenKind::Duration(3_600, DurationUnit::Hours)
     );
 }
 
@@ -383,7 +388,7 @@ fn duration_one_hours_plural_on_singular() {
 fn duration_one_week_singular_on_plural() {
     assert_eq!(
         first_non_trivial("1 week"),
-        TokenKind::Duration(1, DurationUnit::Weeks)
+        TokenKind::Duration(604_800, DurationUnit::Weeks)
     );
 }
 
@@ -391,8 +396,72 @@ fn duration_one_week_singular_on_plural() {
 fn duration_fifty_two_weeks() {
     assert_eq!(
         first_non_trivial("52 weeks"),
-        TokenKind::Duration(52, DurationUnit::Weeks)
+        TokenKind::Duration(52 * 604_800, DurationUnit::Weeks)
     );
+}
+
+/// Every unit scales, and each one scales by its own factor. A single shared
+/// bug (dropping the unit, or applying one multiplier to all units) fails this.
+#[test]
+fn duration_every_unit_carries_its_multiplier() {
+    for (src, expected, unit) in [
+        ("1 seconds", 1u64, DurationUnit::Seconds),
+        ("1 minutes", 60, DurationUnit::Minutes),
+        ("1 hours", 3_600, DurationUnit::Hours),
+        ("1 days", 86_400, DurationUnit::Days),
+        ("1 weeks", 604_800, DurationUnit::Weeks),
+        ("30 days", 2_592_000, DurationUnit::Days),
+    ] {
+        assert_eq!(
+            first_non_trivial(src),
+            TokenKind::Duration(expected, unit),
+            "wrong second count for `{src}`"
+        );
+    }
+}
+
+/// `1 days > 2 hours` is true in the source language; it can only be true if
+/// the two literals reach the comparison already in the same unit.
+#[test]
+fn duration_units_are_comparable_after_scaling() {
+    let day = match first_non_trivial("1 days") {
+        TokenKind::Duration(n, _) => n,
+        other => panic!("expected a duration, got {other:?}"),
+    };
+    let two_hours = match first_non_trivial("2 hours") {
+        TokenKind::Duration(n, _) => n,
+        other => panic!("expected a duration, got {other:?}"),
+    };
+    assert!(
+        day > two_hours,
+        "1 day must exceed 2 hours: {day} vs {two_hours}"
+    );
+}
+
+/// The scaled value must not wrap: refuse loudly instead.
+#[test]
+fn duration_overflow_emits_e060() {
+    let (toks, diags) = tokenize("18446744073709551615 weeks", SourceId::new(0));
+    assert!(
+        diags
+            .iter()
+            .any(|d| d.code == codes::E060_DURATION_OVERFLOW),
+        "expected E060, got {diags:?}"
+    );
+    assert!(
+        !toks
+            .iter()
+            .any(|t| matches!(t.kind, TokenKind::Duration(_, _))),
+        "an overflowing duration must not produce a Duration token"
+    );
+}
+
+/// A count that fits u64 in seconds stays accepted at the boundary.
+#[test]
+fn duration_at_u64_boundary_is_accepted() {
+    let n = u64::MAX / 604_800;
+    let (_, diags) = tokenize(&format!("{n} weeks"), SourceId::new(0));
+    assert!(diags.is_empty(), "unexpected diagnostics: {diags:?}");
 }
 
 #[test]
@@ -544,7 +613,7 @@ fn duration_span_covers_both_parts() {
     let first = &toks[0];
     assert!(matches!(
         first.kind,
-        TokenKind::Duration(7, DurationUnit::Days)
+        TokenKind::Duration(604_800, DurationUnit::Days)
     ));
     assert_eq!(first.span.start, 0);
     assert_eq!(first.span.end, 6);

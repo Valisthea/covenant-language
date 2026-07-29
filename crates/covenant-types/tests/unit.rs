@@ -31,6 +31,51 @@ fn with_view(ret_ty: &str, body_expr: &str) -> (TypedFile, Vec<Diagnostic>) {
     ))
 }
 
+/// `record R { view v returns amount { 1 + 1 + ... } }` with a left-leaning
+/// `Binary` spine `depth` levels deep, assembled WITHOUT going through the
+/// parser.
+///
+/// V0.9.6 F-31 taught the parser to charge an iterative chain spine against its
+/// depth budget, so it now refuses to build a tree this deep (E040). That is the
+/// right place for the first check, but it also means parsed source can no
+/// longer reach the typechecker's own depth guard, which is deliberately
+/// independent of it. The shallow shell is parsed so that everything except the
+/// depth (spans, construct, view signature) is exactly what the real pipeline
+/// produces.
+fn deep_binary_chain_file(depth: usize) -> covenant_parser::ast::File {
+    use covenant_parser::ast::{BinaryOp, Expr, TopLevelDecl};
+
+    let (toks, _) = tokenize(
+        "record R {\n view v returns amount { 1 }\n}\n",
+        SourceId::new(0),
+    );
+    let mut file = parse(&toks, SourceId::new(0)).0.expect("shell parses");
+
+    let view = file
+        .top_level
+        .body
+        .iter_mut()
+        .find_map(|d| match d {
+            TopLevelDecl::View(v) => Some(v),
+            _ => None,
+        })
+        .expect("the shell declares a view");
+
+    let leaf = view.body.clone();
+    let span = view.span;
+    let mut expr = leaf.clone();
+    for _ in 0..depth {
+        expr = Expr::Binary {
+            op: BinaryOp::Add,
+            lhs: Box::new(expr),
+            rhs: Box::new(leaf.clone()),
+            span,
+        };
+    }
+    view.body = expr;
+    file
+}
+
 // ---------- Literals ----------
 
 #[test]
@@ -93,20 +138,27 @@ fn rejects_field_type_referring_to_non_type_binding_hgh_026() {
 }
 
 #[test]
-fn e232_deeply_chained_binary_expr_does_not_overflow_stack_hgh_029() {
-    // OMEGA V6 HGH-029 regression test: `synth_expr` needs its OWN
-    // independent depth guard, not just the resolver's -- `pipeline()`
-    // above (like several real callers, e.g. covenant-testing) discards
-    // the resolver's diagnostics and calls `typecheck` directly on the
-    // resolved file, so the resolver hitting its own limit does not stop
-    // the typechecker from separately walking the same deep tree. If the
-    // guard regresses, this test process crashes outright.
-    let chain = " + 1".repeat(500);
-    let src = format!("record R {{\n view v returns amount {{ 1{chain} }}\n}}\n");
-    let (_, d) = pipeline(&src);
+fn e232_deeply_nested_ast_is_refused_by_the_typechecker_hgh_029() {
+    // OMEGA V6 HGH-029 regression test: `synth_expr` needs its OWN independent
+    // depth guard. `pipeline()` above, like several real callers (e.g.
+    // covenant-testing), discards the resolver's diagnostics and calls
+    // `typecheck` directly on the resolved file, so the resolver hitting its own
+    // limit does not stop the typechecker from separately walking the same deep
+    // tree. If the guard regresses, this test process crashes outright rather
+    // than failing an assertion.
+    //
+    // The tree is built directly rather than parsed. V0.9.6 F-31 taught the
+    // parser to charge an iterative chain spine against its depth budget, so a
+    // deep chain written in source is now refused at parse time (E040) and never
+    // reaches this stage. Feeding source here would test the parser's guard and
+    // leave this one untested, which is exactly the sort of "some upstream stage
+    // will catch it" reasoning the three independent guards exist to defeat.
+    let file = deep_binary_chain_file(400);
+    let (resolved, _) = resolve(file, SourceId::new(0));
+    let (_, d) = typecheck(resolved, SourceId::new(0));
     assert!(
         has_code(&d, covenant_types::codes::E232_TOO_DEEPLY_NESTED),
-        "expected E232 (too deeply nested) for a 500-deep chained `+` expression"
+        "expected E232 (too deeply nested) for a 400-deep `Binary` tree, got {d:?}"
     );
 }
 

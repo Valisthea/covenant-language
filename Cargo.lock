@@ -280,6 +280,7 @@ name = "covenant-evm-backend"
 version = "0.9.6"
 dependencies = [
  "covenant-diag",
+ "covenant-evm-runtime",
  "covenant-ir",
  "covenant-lexer",
  "covenant-opt",

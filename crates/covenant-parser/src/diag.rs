@@ -25,6 +25,27 @@ pub const E030_BAD_STMT_TERMINATOR: DiagCode = DiagCode(30);
 pub const E031_TOO_DEEPLY_NESTED: DiagCode = DiagCode(31);
 pub const E032_TYPE_TOO_DEEPLY_NESTED: DiagCode = DiagCode(32);
 
+/// An operator, field, index or call chain longer than the parser will build.
+///
+/// Distinct from E031 on purpose: E031 fires on *nested* source (`((((...))))`)
+/// and its advice is to un-nest, while this one fires on flat source that reads
+/// as a single long line (`a + a + a + ...`, `v.f.f.f...`) whose AST is just as
+/// deep. Refusing is right because the tree the parser would hand on is walked
+/// recursively by every later stage, so building it means an uncatchable
+/// process death instead of a diagnostic.
+pub const E040_CHAIN_TOO_LONG: DiagCode = DiagCode(40);
+
+/// A single executable body holding more statements than the compiler will
+/// process.
+///
+/// The cost of lowering and generating code for one body grows faster than its
+/// statement count, so a body of tens of thousands of statements takes minutes
+/// while producing nothing: the runtime code of such a body cannot fit the
+/// EIP-170 deployment limit under any circumstances. Refusing at the size bound
+/// turns that into an immediate answer, which matters most for the language
+/// server, which runs the same pipeline on files it did not choose to open.
+pub const E041_BODY_TOO_LARGE: DiagCode = DiagCode(41);
+
 pub fn type_too_deeply_nested(span: Span) -> Diagnostic {
     // OMEGA V6 (F06 fix): the E031 guard covers the Pratt expression parser and
     // the block parser, but `parse_type` recursed one native stack frame per
@@ -57,6 +78,24 @@ pub fn too_deeply_nested(span: Span) -> Diagnostic {
         span,
     )
     .with_help("split this into smaller named sub-expressions or statements")
+}
+
+pub fn chain_too_long(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E040_CHAIN_TOO_LONG,
+        "expression chain exceeds the maximum supported length",
+        span,
+    )
+    .with_help("bind part of the chain to a `let` and continue from there")
+}
+
+pub fn body_too_large(span: Span, max: u32) -> Diagnostic {
+    Diagnostic::error(
+        E041_BODY_TOO_LARGE,
+        format!("body exceeds the maximum of {max} statements and blocks"),
+        span,
+    )
+    .with_help("split the logic across several actions; a body this size cannot fit the 24576-byte deployment limit")
 }
 
 pub fn unexpected_token(span: Span, what: impl Into<String>) -> Diagnostic {

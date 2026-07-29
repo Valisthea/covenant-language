@@ -13,10 +13,25 @@ use crate::diag;
 use crate::parser::{ParseError, Parser};
 
 impl<'a> Parser<'a> {
+    /// Parse the top-level `{ stmt* }` body of an executable declaration
+    /// (`action`, `migrate`, `on_destroy`). Resets the per-body size budget:
+    /// a file of many small actions is cheap, one action of many thousands of
+    /// statements is not, so the budget is charged per body and not per file.
+    pub(crate) fn parse_function_body(&mut self) -> Result<Vec<Stmt>, ParseError> {
+        self.body_stmts = 0;
+        self.parse_block()
+    }
+
     /// Parse a `{ stmt* }` block, consuming the braces.
     pub(crate) fn parse_block(&mut self) -> Result<Vec<Stmt>, ParseError> {
         self.enter_depth()?;
-        let result = self.parse_block_body();
+        // A block is itself a unit of work for later stages, so charge it too:
+        // otherwise a `match` with thousands of empty arms slips past the
+        // budget with a statement count of zero.
+        let result = match self.charge_body_stmt() {
+            Ok(()) => self.parse_block_body(),
+            Err(e) => Err(e),
+        };
         self.exit_depth();
         result
     }
@@ -29,6 +44,12 @@ impl<'a> Parser<'a> {
             match self.parse_stmt() {
                 Ok(s) => out.push(s),
                 Err(_) => {
+                    // An over-budget body is not recoverable: continuing would
+                    // re-charge every remaining statement and bury the real
+                    // diagnostic under thousands of follow-on errors.
+                    if self.body_budget_blown() {
+                        return Err(ParseError);
+                    }
                     // recover to next newline or `}` and continue
                     self.recover_to(&[TokenKind::Newline, TokenKind::RBrace]);
                     let _ = self.eat(&TokenKind::Newline);
@@ -41,6 +62,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse_stmt(&mut self) -> Result<Stmt, ParseError> {
+        self.charge_body_stmt()?;
         self.skip_newlines();
         let t = match self.peek() {
             Some(t) => t,
@@ -375,16 +397,28 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_lvalue(&mut self) -> Result<LValue, ParseError> {
+        // Same shape as the Pratt loop: an iterative spine that has to be
+        // charged, or `discard a.f.f.f...` builds an unbounded `LValue` chain
+        // that later stages walk recursively.
+        let base = self.nest_depth;
+        let result = self.parse_lvalue_body();
+        self.nest_depth = base;
+        result
+    }
+
+    fn parse_lvalue_body(&mut self) -> Result<LValue, ParseError> {
         let id = self.expect_ident("identifier for l-value")?;
         let mut lv = LValue::Ident(id);
         loop {
             match self.peek_kind() {
                 Some(TokenKind::Dot) => {
+                    self.enter_chain_depth()?;
                     self.advance();
                     let f = self.expect_ident("field name after `.`")?;
                     lv = LValue::FieldAccess(Box::new(lv), f);
                 }
                 Some(TokenKind::LBracket) => {
+                    self.enter_chain_depth()?;
                     self.advance();
                     let e = self.parse_expr()?;
                     self.expect(&TokenKind::RBracket, "`]`")?;

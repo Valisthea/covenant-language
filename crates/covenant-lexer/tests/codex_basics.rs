@@ -77,7 +77,8 @@ fn coin_integer_is_not_fused() {
     );
 }
 
-/// `7 days` in the OpenBallot fixture must fuse into a single `Duration` token.
+/// `7 days` in the OpenBallot fixture must fuse into a single `Duration` token
+/// carrying seven days worth of seconds, not the bare magnitude 7.
 #[test]
 fn open_ballot_fuses_duration() {
     use covenant_lexer::DurationUnit;
@@ -86,8 +87,8 @@ fn open_ballot_fuses_duration() {
     assert!(
         tokens
             .iter()
-            .any(|t| matches!(t.kind, TokenKind::Duration(7, DurationUnit::Days))),
-        "expected Duration(7, Days) in OpenBallot fixture"
+            .any(|t| matches!(t.kind, TokenKind::Duration(604_800, DurationUnit::Days))),
+        "expected Duration(604800, Days) in OpenBallot fixture"
     );
 }
 

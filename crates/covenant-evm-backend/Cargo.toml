@@ -24,4 +24,8 @@ covenant-resolver = { path = "../covenant-resolver", version = "0.9.2" }
 covenant-lexer = { path = "../covenant-lexer", version = "0.9.2" }
 covenant-opt = { path = "../covenant-opt", version = "0.9.2" }
 covenant-stdlib = { path = "../covenant-stdlib", version = "0.9.2" }
+# The mini-EVM interpreter, so backend regression tests can assert what the
+# emitted bytecode actually DOES rather than only which opcodes it contains.
+# It has no covenant dependencies of its own, so this adds no cycle.
+covenant-evm-runtime = { path = "../covenant-evm-runtime", version = "0.9.2" }
 hex = "0.4"

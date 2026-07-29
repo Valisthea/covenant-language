@@ -36,6 +36,16 @@ pub const E230_EMPTY_ARRAY_NO_CONTEXT: DiagCode = DiagCode(230);
 pub const E231_NOT_A_TYPE: DiagCode = DiagCode(231);
 pub const E232_TOO_DEEPLY_NESTED: DiagCode = DiagCode(232);
 
+/// An `append <list> { ... }` literal names a field the element struct does not
+/// declare. Refusing is the only faithful option: the IR builds the element's
+/// operands by walking the struct's DECLARED field order and looking each
+/// declared name up in the literal, so a literal entry whose name matches no
+/// declared field is never lowered at all. The value the author wrote is
+/// silently discarded and the element is built as if the entry were absent.
+/// There is no correct lowering to pick, so the mistake is reported at the
+/// point it is made.
+pub const E240_APPEND_UNKNOWN_FIELD: DiagCode = DiagCode(240);
+
 pub const W303_TEST_INTRINSIC: DiagCode = DiagCode(303);
 pub const W304_REVEAL_ON_PLAINTEXT: DiagCode = DiagCode(304);
 pub const W305_MATCH_NOT_EXHAUSTIVE: DiagCode = DiagCode(305);
@@ -155,6 +165,15 @@ pub fn append_not_list(span: Span, detail: &str) -> Diagnostic {
         format!("`append` target must be a list of structs; {detail}"),
         span,
     )
+}
+
+pub fn append_unknown_field(span: Span, struct_name: &str, field: &str) -> Diagnostic {
+    Diagnostic::error(
+        E240_APPEND_UNKNOWN_FIELD,
+        format!("struct `{struct_name}` has no field `{field}`"),
+        span,
+    )
+    .with_help("remove the entry, or add the field to the struct declaration")
 }
 
 pub fn empty_array_no_context(span: Span) -> Diagnostic {

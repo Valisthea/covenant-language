@@ -41,6 +41,11 @@ type ExtFuncMap = HashMap<Box<str>, (Box<str>, bool, u32)>;
 /// order (append literals may list fields in a different order).
 type StructAppendMeta = (StructTypeId, Vec<(Box<str>, Ty)>);
 
+/// The type, privacy domain and span of the value a lowering will produce.
+/// Bundled so a helper that ends in a merge block does not carry the same three
+/// trailing parameters alongside its operands.
+type ResultInfo = (Ty, PrivacyDomain, Span);
+
 pub struct Builder {
     checked: PrivacyCheckedFile,
     diagnostics: Vec<Diagnostic>,
@@ -406,8 +411,22 @@ impl Builder {
         }
 
         // Guards → pre-body Assert sequence.
+        //
+        // `given` lands in that same pre-body sequence, byte-identical to
+        // `when`, while the guide shipped in this tree calls it a postcondition
+        // "checked after the body executes". The two readings only differ when
+        // the guard reads state the body writes, so warn exactly there rather
+        // than on every `given` (a warning on a working construct gets muted,
+        // and muted warnings are worse than none).
+        let body_writes = fields_written_by(&a.body);
         for g in &a.guards {
-            let lowered = self.lower_guard(&mut fb, g);
+            if let covenant_parser::ast::Guard::Given(e) = g {
+                if let Some(field) = self.guard_reads_written_field(e, &body_writes) {
+                    self.diagnostics
+                        .push(diag::given_is_precondition(e.span(), &field));
+                }
+            }
+            let lowered = self.lower_guard(&mut fb, g, a.span);
             fb.guards.push(lowered);
         }
 
@@ -453,7 +472,7 @@ impl Builder {
         }
 
         for g in &v.guards {
-            let lowered = self.lower_guard(&mut fb, g);
+            let lowered = self.lower_guard(&mut fb, g, v.span);
             fb.guards.push(lowered);
         }
 
@@ -487,7 +506,7 @@ impl Builder {
         }
 
         for g in &r.guards {
-            let lowered = self.lower_guard(&mut fb, g);
+            let lowered = self.lower_guard(&mut fb, g, r.span);
             fb.guards.push(lowered);
         }
 
@@ -713,10 +732,19 @@ impl Builder {
         }
     }
 
+    /// `decl_span` is the enclosing action / view / reveal's span. It is the
+    /// fallback location for diagnostics raised by an `only` clause whose
+    /// principal carries no span of its own (`only owner`, `only parties`, ...):
+    /// W421 used to be built with `Span::new(source_id, 0, 0)`, so the single
+    /// warning that an access-control guard cannot be enforced rendered as a
+    /// bare line with no file, no line and no caret, and in a file with several
+    /// guarded actions the developer could not tell WHICH action had been
+    /// compiled to always-revert.
     fn lower_guard(
         &mut self,
         fb: &mut FunctionBuilder,
         g: &covenant_parser::ast::Guard,
+        decl_span: Span,
     ) -> IrGuard {
         use covenant_parser::ast::Guard;
         match g {
@@ -754,7 +782,12 @@ impl Builder {
             }
             Guard::Only(p) => {
                 let lowered = self.lower_principal(fb, p);
-                let span = Span::new(self.checked.typed.resolved.file.source_id, 0, 0);
+                // Point at the principal itself when it has a span of its own,
+                // otherwise at the enclosing declaration, so the diagnostics
+                // raised below name a real location. Never `Span(0, 0)`: that
+                // renders as a bare message with no source snippet at all.
+                let span = principal_span(p).unwrap_or(decl_span);
+                self.check_principal_is_address(fb, p, &lowered, span);
                 // KSR-CVN-011: lower every principal-based `only` clause into a
                 // real IR assertion. Prior to this, non-predicate principals
                 // (owner / admin / deployer / address(...)) fell through to
@@ -764,6 +797,86 @@ impl Builder {
                 IrGuard::Only(lowered)
             }
         }
+    }
+
+    /// An `only <principal>` clause must denote an ADDRESS. Nothing checked
+    /// this: `parse_principal` routes any non-keyword token to
+    /// `Principal::Address(expr)`, the type checker's `check_principal` is
+    /// empty, and `emit_only_assert` emits `caller == <that value>` verbatim.
+    /// So `only "owner"` compiled to `caller == 0`, `only 42` to `caller == 42`
+    /// and `only true` to `caller == 1`. Named principals resolve BY NAME only,
+    /// so `field owner: map<address, bool>` (a natural way to write a multi-owner
+    /// allowlist) compared the caller against the map's base slot, which a
+    /// Covenant map never writes. Every one of these compiled clean and produced
+    /// an action that reverts for every possible caller forever, on an immutable
+    /// contract.
+    ///
+    /// Refusing rather than implementing: giving `only <map field>` allowlist
+    /// semantics is a language-design decision (what would `map<address, amount>`
+    /// mean? non-zero?), not a single correct answer, and the intent is already
+    /// expressible today as `when allowlist[caller]`.
+    fn check_principal_is_address(
+        &mut self,
+        fb: &FunctionBuilder,
+        ast_p: &Principal,
+        ir_p: &IrPrincipal,
+        span: Span,
+    ) {
+        let (ty, what) = match ir_p {
+            IrPrincipal::Address(v) => {
+                let Principal::Address(e) = ast_p else {
+                    // `IrPrincipal::Address` is only produced from
+                    // `Principal::Address`.
+                    return;
+                };
+                let what = covenant_parser::printer::expr_str(e);
+                // The type checker's `check_principal` is empty, so a principal
+                // expression is never type-synthesized and `expr_types` has no
+                // entry for it: a literal principal reaches here as
+                // `Ty::Unknown`. Read the literal's own shape instead.
+                if let Some(rendered) = literal_principal_type_name(e) {
+                    self.diagnostics
+                        .push(diag::principal_not_address(span, &what, rendered));
+                    return;
+                }
+                (fb.value_types.get(v).cloned().unwrap_or(Ty::Unknown), what)
+            }
+            IrPrincipal::Owner(Some(_)) => (self.named_field_ty("owner"), "owner".to_string()),
+            IrPrincipal::Admin(Some(_)) => (self.named_field_ty("admin"), "admin".to_string()),
+            // Everything else is either already an address by construction
+            // (deployer / caller), a predicate call, or already refused
+            // fail-closed with W421 below.
+            _ => return,
+        };
+        if !ty_is_definitely_not_address(&ty) {
+            return;
+        }
+        let rendered = ty.render(&self.checked.typed.types);
+        self.diagnostics
+            .push(diag::principal_not_address(span, &what, &rendered));
+    }
+
+    /// Does this `given` expression read a FIELD that the body writes? That is
+    /// the only case where "checked before the body" and "checked after the
+    /// body" give different answers, so it is the only case worth warning about.
+    /// Returns the first such field name.
+    fn guard_reads_written_field(
+        &self,
+        e: &Expr,
+        body_writes: &HashSet<Box<str>>,
+    ) -> Option<Box<str>> {
+        let mut reads = Vec::new();
+        collect_ident_reads(e, &mut reads);
+        reads.into_iter().find(|name| {
+            body_writes.contains(name) && self.field_by_name.contains_key(name.as_ref())
+        })
+    }
+
+    fn named_field_ty(&self, name: &str) -> Ty {
+        self.field_by_name
+            .get(name)
+            .map(|(_, ty, _)| ty.clone())
+            .unwrap_or(Ty::Unknown)
     }
 
     /// KSR-CVN-011: emit an authorization assertion for an `only(principal)`
@@ -1051,11 +1164,97 @@ impl Builder {
                 };
                 fb.set_current(merge_id);
             }
-            Stmt::Match { span, .. } => {
-                // V0 simplification: match lowering reduced to a no-op with a
-                // placeholder choice-match opcode. Full lowering is deferred
-                // until the optimizer gets structural pattern semantics.
-                let _ = span;
+            Stmt::Match {
+                scrutinee,
+                arms,
+                span,
+            } => {
+                // This arm used to be `let _ = span`: every match statement was
+                // dropped whole. A `revert_with` arm therefore failed OPEN (the
+                // call succeeded instead of reverting) and an assigning arm
+                // never wrote anything, with no diagnostic anywhere in the
+                // pipeline.
+                //
+                // The grammar makes the correct lowering mechanical: a pattern
+                // is `MatchPattern::Literal(Expr)` and nothing else (no
+                // wildcard, no binding, no or-pattern), so
+                //     match s { p1 => b1  p2 => b2 }
+                // is exactly
+                //     if s == p1 { b1 } else if s == p2 { b2 }
+                // which is the `Stmt::If` shape already lowered above, using
+                // machinery that exists (Branch + blocks, no new opcode and no
+                // backend change). A scrutinee that matches no arm falls
+                // through, the same as an `if` with no `else`, which is the
+                // only behaviour the source can express here.
+                let scrut_v = self.lower_expr(fb, scrutinee);
+
+                // Refuse an encrypted scrutinee rather than branch on the
+                // ciphertext HANDLE: that would test the handle, not the value,
+                // and would also leak the taken arm through control flow.
+                // `encrypted_when` is the construct for that.
+                if matches!(
+                    fb.value_types.get(&scrut_v).cloned().unwrap_or(Ty::Unknown),
+                    Ty::Ciphertext(_)
+                ) {
+                    self.diagnostics
+                        .push(diag::match_encrypted_scrutinee(*span));
+                    return;
+                }
+
+                let merge_id = fb.new_block(*span);
+                for arm in arms {
+                    let covenant_parser::ast::MatchPattern::Literal(pat) = &arm.pattern;
+                    let pat_v = self.lower_expr(fb, pat);
+                    let eq = fb.emit_instr(
+                        Opcode::Eq,
+                        vec![scrut_v, pat_v],
+                        Some(Ty::Bool),
+                        PrivacyDomain::Plaintext,
+                        arm.span,
+                        InstrMetadata::default(),
+                    );
+                    let body_id = fb.new_block(arm.span);
+                    let next_id = fb.new_block(arm.span);
+                    fb.current_block_mut().terminator = Terminator::Branch {
+                        cond: eq,
+                        then_target: body_id,
+                        then_args: vec![],
+                        else_target: next_id,
+                        else_args: vec![],
+                    };
+
+                    fb.set_current(body_id);
+                    match &arm.body {
+                        covenant_parser::ast::MatchBody::Stmt(s) => self.lower_stmt(fb, s),
+                        covenant_parser::ast::MatchBody::Block(stmts) => {
+                            for s in stmts {
+                                self.lower_stmt(fb, s);
+                            }
+                        }
+                    }
+                    // Same discipline as the CRT-002 `Stmt::If` fix: only a real
+                    // terminal statement (`return` / `revert_with`) suppresses
+                    // the fallthrough jump to the merge block.
+                    if !matches!(
+                        fb.current_block().terminator,
+                        Terminator::Return(_) | Terminator::Revert { .. }
+                    ) {
+                        fb.current_block_mut().terminator = Terminator::Jump {
+                            target: merge_id,
+                            args: vec![],
+                        };
+                    }
+
+                    // The next arm's comparison goes in the else block.
+                    fb.set_current(next_id);
+                }
+                // No arm matched: fall through, exactly like an `if` with no
+                // `else`.
+                fb.current_block_mut().terminator = Terminator::Jump {
+                    target: merge_id,
+                    args: vec![],
+                };
+                fb.set_current(merge_id);
             }
             Stmt::ForEach {
                 binding,
@@ -1170,11 +1369,20 @@ impl Builder {
                 span,
                 ..
             } => {
-                for s in body {
-                    self.lower_stmt(fb, s);
-                }
-                let _ = span;
+                // This used to inline the try body and drop the catch body
+                // (`let _ = catch_body`), so a failure inside the body reverted
+                // the whole transaction and the catch never ran: the exact
+                // opposite of what the construct says, with no diagnostic.
+                //
+                // Refusing rather than implementing: trapping a revert on the
+                // EVM requires an external CALL boundary plus a returndata
+                // check, and `Terminator` has no `TryCall` variant (the six it
+                // has are Jump / Branch / FheBranch / Return / Revert /
+                // Unreachable). That is code generation to design, not a bug to
+                // fix, so it must not be half-lowered here.
+                let _ = body;
                 let _ = catch_body;
+                self.diagnostics.push(diag::try_catch_unimplemented(*span));
             }
             Stmt::Emit { event, args, span } => {
                 let arg_vs: Vec<Value> = args.iter().map(|a| self.lower_expr(fb, a)).collect();
@@ -1329,15 +1537,39 @@ impl Builder {
                         *span,
                         InstrMetadata::default(),
                     );
+                } else {
+                    // The assumption previously stated here -- that an
+                    // unregistered collection had already been rejected by the
+                    // resolver -- is false. A `board`'s `posts` resolves fine
+                    // (the resolver seeds it as a construct-implicit binding)
+                    // but nothing allocates a storage field for it, so this
+                    // `else` was the whole persistence path being skipped: the
+                    // append built the element, dropped it, and reported
+                    // success on chain having written nothing, in a construct
+                    // whose entire reason for existing is that it is
+                    // append-only. Refuse instead of pretending.
+                    self.diagnostics
+                        .push(diag::append_unbacked_collection(*span, &collection.name));
                 }
-                // If `collection` doesn't resolve to a registered field, the
-                // resolver has already rejected the program (unresolved
-                // identifier) before IR construction is reached -- nothing
-                // further to do here.
             }
-            Stmt::Discard(_, _) | Stmt::Delete(_, _) => {
-                // Discard is a no-op at IR level; Delete is handled similarly
-                // until map-aware deletion lands.
+            Stmt::Discard(_, _) => {
+                // `discard` means "evaluate for effect and throw the value
+                // away"; a no-op at IR level is what it says.
+            }
+            Stmt::Delete(target, span) => {
+                // `delete` shared the empty `discard` arm, so `delete
+                // allowance[spender]` compiled to an empty function that still
+                // shipped in the ABI and returned success while the allowance
+                // survived. `delete` means the opposite of `discard`: it is a
+                // write.
+                //
+                // Implemented, not refused: zeroing is exactly what the
+                // language already compiles for `<target> = 0`, which the
+                // storage paths below already emit correctly (that assignment
+                // is the audit's own positive control). So `delete` is lowered
+                // as that assignment, and only the shapes with no correct
+                // zeroing are refused.
+                self.lower_delete(fb, target, *span);
             }
             Stmt::Return(e, _) => {
                 let v_opt = e.as_ref().map(|expr| self.lower_expr(fb, expr));
@@ -1447,26 +1679,61 @@ impl Builder {
             }
             LValue::Index(base, key_expr) => {
                 if let LValue::Ident(base_id) = base.as_ref() {
-                    if let Some((field_id, _field_ty, _)) =
+                    if let Some((field_id, field_ty, _)) =
                         self.field_by_name.get(base_id.name.as_ref()).cloned()
                     {
+                        // Indexed assignment used to take the MAP lowering for
+                        // EVERY field type, including `[T]`: `xs[i] = v` stored
+                        // at `keccak(i ‖ slot)` while the matching read `xs[i]`
+                        // (`ListGet`) reads `keccak(slot) + i`, so the two
+                        // addresses never coincided -- every indexed write was
+                        // lost and every read returned 0. Worse, the trailing
+                        // `SStore(field)` of the `MapSet` result wrote 0 into
+                        // the field's own slot, which for a list is the LENGTH
+                        // word, so an indexed write also truncated the list to
+                        // empty.
+                        //
+                        // `ListSet` and `ListGet` share the backend's
+                        // `emit_list_elem_addr`, so routing a list write through
+                        // `ListSet` makes the write and the read agree by
+                        // construction, and `ListSet` produces no result value,
+                        // so there is no length-clobbering `SStore` to emit.
+                        // Prefer the type-checker's own type (see the note in
+                        // `Stmt::Append`): `field_by_name`'s cached `Ty`
+                        // collapses named element types to `Unknown`, which the
+                        // backend needs to compute the element stride.
+                        let real_ty = self.real_field_ty(base_id).unwrap_or(field_ty);
+                        let is_list = matches!(real_ty, Ty::List(_));
                         let key = self.lower_expr(fb, key_expr);
                         let cur = fb.emit_instr(
                             Opcode::SLoad(field_id),
                             vec![],
-                            Some(Ty::Unknown),
+                            Some(if is_list {
+                                real_ty.clone()
+                            } else {
+                                Ty::Unknown
+                            }),
                             PrivacyDomain::Plaintext,
                             base_id.span,
                             InstrMetadata::default(),
                         );
-                        // For compound operators, read-modify-write the map slot.
+                        let elem_ty = match &real_ty {
+                            Ty::List(inner) => (**inner).clone(),
+                            Ty::Map(_, v) => (**v).clone(),
+                            _ => Ty::Unknown,
+                        };
+                        // For compound operators, read-modify-write the element.
                         let value_to_store = if matches!(op, AssignOp::Eq) {
                             rhs
                         } else {
                             let old = fb.emit_instr(
-                                Opcode::MapGet,
+                                if is_list {
+                                    Opcode::ListGet
+                                } else {
+                                    Opcode::MapGet
+                                },
                                 vec![cur, key],
-                                Some(Ty::Unknown),
+                                Some(elem_ty.clone()),
                                 PrivacyDomain::Plaintext,
                                 base_id.span,
                                 InstrMetadata::default(),
@@ -1482,28 +1749,39 @@ impl Builder {
                             fb.emit_instr(
                                 binop,
                                 vec![old, rhs],
-                                Some(Ty::Unknown),
+                                Some(elem_ty),
                                 PrivacyDomain::Plaintext,
                                 span,
                                 InstrMetadata::default(),
                             )
                         };
-                        let updated = fb.emit_instr(
-                            Opcode::MapSet,
-                            vec![cur, key, value_to_store],
-                            Some(Ty::Unknown),
-                            PrivacyDomain::Plaintext,
-                            span,
-                            InstrMetadata::default(),
-                        );
-                        fb.emit_instr(
-                            Opcode::SStore(field_id),
-                            vec![updated],
-                            None,
-                            PrivacyDomain::Plaintext,
-                            span,
-                            InstrMetadata::default(),
-                        );
+                        if is_list {
+                            fb.emit_instr(
+                                Opcode::ListSet,
+                                vec![cur, key, value_to_store],
+                                None,
+                                PrivacyDomain::Plaintext,
+                                span,
+                                InstrMetadata::default(),
+                            );
+                        } else {
+                            let updated = fb.emit_instr(
+                                Opcode::MapSet,
+                                vec![cur, key, value_to_store],
+                                Some(Ty::Unknown),
+                                PrivacyDomain::Plaintext,
+                                span,
+                                InstrMetadata::default(),
+                            );
+                            fb.emit_instr(
+                                Opcode::SStore(field_id),
+                                vec![updated],
+                                None,
+                                PrivacyDomain::Plaintext,
+                                span,
+                                InstrMetadata::default(),
+                            );
+                        }
                     }
                 }
             }
@@ -1609,6 +1887,139 @@ impl Builder {
         }
     }
 
+    /// `delete <target>`: write the type's zero back to the target's storage.
+    ///
+    /// Shares the storage paths of `<target> = 0`, which is the shape the
+    /// language already compiles correctly, so this adds no new address
+    /// arithmetic. Anything with no correct zeroing is refused (E435) rather
+    /// than compiled to the empty function `delete` used to produce.
+    fn lower_delete(&mut self, fb: &mut FunctionBuilder, target: &LValue, span: Span) {
+        match target {
+            LValue::Ident(id) => {
+                let Some((field_id, field_ty, _)) =
+                    self.field_by_name.get(id.name.as_ref()).cloned()
+                else {
+                    self.diagnostics.push(diag::delete_unsupported_target(
+                        span,
+                        &format!("`{}` is not a storage field", id.name),
+                    ));
+                    return;
+                };
+                // A whole map cannot be cleared: a Covenant map is a bare
+                // `keccak(key ‖ slot)` mapping with no key array, so there is
+                // no set of slots to zero. Writing 0 to the field's own slot
+                // would look like a clear and change nothing (the same trap
+                // E425 refuses for `map.length` / `.keys`).
+                if matches!(field_ty, Ty::Map(_, _)) {
+                    self.diagnostics.push(diag::delete_unsupported_target(
+                        span,
+                        &format!(
+                            "`{}` is a map, and a map carries no key list to iterate, so the \
+                             entries cannot be enumerated and zeroed. Delete the entries you \
+                             know: `delete {}[key]`",
+                            id.name, id.name
+                        ),
+                    ));
+                    return;
+                }
+                // For a list this zeroes the length word, which is exactly what
+                // the language's own `xs = []` compiles to.
+                let zero = emit_zero(fb, &field_ty, span);
+                fb.emit_instr(
+                    Opcode::SStore(field_id),
+                    vec![zero],
+                    None,
+                    PrivacyDomain::Plaintext,
+                    span,
+                    InstrMetadata::default(),
+                );
+            }
+            LValue::Index(base, key_expr) => {
+                let LValue::Ident(base_id) = base.as_ref() else {
+                    self.diagnostics.push(diag::delete_unsupported_target(
+                        span,
+                        "the indexed collection is not a plain field name",
+                    ));
+                    return;
+                };
+                let Some((field_id, field_ty, _)) =
+                    self.field_by_name.get(base_id.name.as_ref()).cloned()
+                else {
+                    self.diagnostics.push(diag::delete_unsupported_target(
+                        span,
+                        &format!("`{}` is not a storage field", base_id.name),
+                    ));
+                    return;
+                };
+                let real_ty = self.real_field_ty(base_id).unwrap_or(field_ty);
+                let is_list = matches!(real_ty, Ty::List(_));
+                let is_map = matches!(real_ty, Ty::Map(_, _));
+                if !is_list && !is_map {
+                    self.diagnostics.push(diag::delete_unsupported_target(
+                        span,
+                        &format!("`{}` is neither a map nor a list", base_id.name),
+                    ));
+                    return;
+                }
+                let key = self.lower_expr(fb, key_expr);
+                let handle = fb.emit_instr(
+                    Opcode::SLoad(field_id),
+                    vec![],
+                    Some(if is_list {
+                        real_ty.clone()
+                    } else {
+                        Ty::Unknown
+                    }),
+                    PrivacyDomain::Plaintext,
+                    base_id.span,
+                    InstrMetadata::default(),
+                );
+                if is_list {
+                    // Element write through the same address formula the read
+                    // uses; the length word is deliberately left alone, which
+                    // is what deleting one element means.
+                    let elem_ty = match &real_ty {
+                        Ty::List(inner) => (**inner).clone(),
+                        _ => Ty::Unknown,
+                    };
+                    let zero = emit_zero(fb, &elem_ty, span);
+                    fb.emit_instr(
+                        Opcode::ListSet,
+                        vec![handle, key, zero],
+                        None,
+                        PrivacyDomain::Plaintext,
+                        span,
+                        InstrMetadata::default(),
+                    );
+                } else {
+                    // `MapDelete` is the opcode meant for exactly this and the
+                    // backend already lowers it (PUSH0 + keyed slot + SSTORE).
+                    // It yields no result, so unlike the `MapSet` assignment
+                    // path there is no stray `SStore` of a handle back into the
+                    // map field's own (unused) slot.
+                    fb.emit_instr(
+                        Opcode::MapDelete,
+                        vec![handle, key],
+                        None,
+                        PrivacyDomain::Plaintext,
+                        span,
+                        InstrMetadata::default(),
+                    );
+                }
+            }
+            LValue::FieldAccess(_, field) => {
+                self.diagnostics.push(diag::delete_unsupported_target(
+                    span,
+                    &format!(
+                        "`.{}` is a struct member, and struct members have no standalone \
+                         zeroing lowering. Assign the zero explicitly instead",
+                        field.name
+                    ),
+                ));
+            }
+        }
+    }
+
     // -----------------------------------------------------------------
     // Expression lowering
     // -----------------------------------------------------------------
@@ -1643,6 +2054,80 @@ impl Builder {
         result
     }
 
+    /// Will lowering `e` produce a ciphertext? Answered from the type-checker's
+    /// own table plus Phase 4's auto-lift markers, so short-circuit lowering can
+    /// decide BEFORE touching the right operand: inspecting the operand's type
+    /// by lowering it is exactly the evaluation short-circuiting must avoid.
+    fn expr_yields_ciphertext(&self, e: &Expr) -> bool {
+        self.lift_spans.contains(&e.span())
+            || matches!(
+                self.checked.typed.types.expr_types.get(&e.span()),
+                Some(Ty::Ciphertext(_))
+            )
+    }
+
+    /// `a && b` / `a || b` with the right operand evaluated only when the left
+    /// one does not already decide the answer.
+    ///
+    /// Same shape as the `Expr::If` lowering: a merge block carrying the result
+    /// in a block parameter. For `&&` the false edge jumps straight to the merge
+    /// with a constant `false`; for `||` the true edge jumps with a constant
+    /// `true`. Constants are block-independent values, so passing one as a block
+    /// argument from the deciding block is well formed.
+    fn lower_short_circuit(
+        &mut self,
+        fb: &mut FunctionBuilder,
+        op: BinaryOp,
+        lhs_v: Value,
+        rhs: &Expr,
+        result: ResultInfo,
+    ) -> Value {
+        let (ty, dom, span) = result;
+        let is_and = matches!(op, BinaryOp::And);
+        let rhs_id = fb.new_block(span);
+        let merge_id = fb.new_block(span);
+        let merge_param = fb.fresh_value(ValueInfo::BlockParam {
+            block: merge_id,
+            index: 0,
+        });
+        fb.value_types.insert(merge_param, ty.clone());
+        fb.value_privacy.insert(merge_param, dom);
+        fb.block_mut(merge_id).params.push(merge_param);
+
+        // The value the left operand alone decides: `false` for `&&`, `true`
+        // for `||`.
+        let short_v = fb.emit_const(IrConstant::Bool(!is_and), ty.clone(), span);
+        fb.current_block_mut().terminator = if is_and {
+            Terminator::Branch {
+                cond: lhs_v,
+                then_target: rhs_id,
+                then_args: vec![],
+                else_target: merge_id,
+                else_args: vec![short_v],
+            }
+        } else {
+            Terminator::Branch {
+                cond: lhs_v,
+                then_target: merge_id,
+                then_args: vec![short_v],
+                else_target: rhs_id,
+                else_args: vec![],
+            }
+        };
+
+        fb.set_current(rhs_id);
+        let rhs_v = self.lower_expr(fb, rhs);
+        // The right operand may itself have opened blocks (a nested `&&`, an
+        // `if` expression); terminate whichever block we ended up in.
+        fb.current_block_mut().terminator = Terminator::Jump {
+            target: merge_id,
+            args: vec![rhs_v],
+        };
+
+        fb.set_current(merge_id);
+        merge_param
+    }
+
     fn lower_expr_inner(&mut self, fb: &mut FunctionBuilder, e: &Expr) -> Value {
         let ty = self
             .checked
@@ -1673,6 +2158,28 @@ impl Builder {
                     self.diagnostics
                         .push(diag::membership_in_unimplemented(*span));
                     return fb.emit_const(IrConstant::Integer(0), ty, *span);
+                }
+                // `&&` and `||` did not short-circuit: both operands were
+                // lowered as ordinary values and combined with a bitwise EVM
+                // AND / OR before the branch, so the right operand was ALWAYS
+                // evaluated. The classic defensive idiom
+                // `if x != 0 && 100 / x > 5` therefore reverted on x == 0, the
+                // exact input the guard was written to protect against, leaving
+                // the action permanently uncallable for it.
+                //
+                // The compiler chose the `&&` / `||` spellings, so short-circuit
+                // is the only reading; this is a correctness fix, not a feature.
+                // It reuses the merge-block-with-a-parameter machinery that
+                // `Expr::If` already uses, so no new opcode and no backend
+                // change. Encrypted operands keep the bitwise lowering below:
+                // an FHE branch cannot skip work based on a ciphertext without
+                // leaking which way it went, so `FheAnd` / `FheOr` stay total.
+                if matches!(op, BinaryOp::And | BinaryOp::Or)
+                    && !self.expr_yields_ciphertext(lhs)
+                    && !self.expr_yields_ciphertext(rhs)
+                {
+                    let l = self.lower_expr(fb, lhs);
+                    return self.lower_short_circuit(fb, *op, l, rhs, (ty, dom, *span));
                 }
                 let l = self.lower_expr(fb, lhs);
                 let r = self.lower_expr(fb, rhs);
@@ -1837,17 +2344,32 @@ impl Builder {
                 )
             }
             Expr::Array { elements, span } => {
-                // Synthesize a list via repeated ListAppend on a zero list.
-                // For V0 we emit a single-instruction placeholder with all
-                // elements as operands of StructNew (any list-builder opcode
-                // would need a dedicated opcode; we use StructNew(0) as a
-                // stand-in). A future pass should promote this to a proper
-                // ListBuild opcode.
-                let operands: Vec<Value> =
-                    elements.iter().map(|el| self.lower_expr(fb, el)).collect();
+                // The comment here used to claim "synthesize a list via
+                // repeated ListAppend on a zero list" while the code did no
+                // such thing: it emitted one placeholder `StructNew`, whose
+                // backend arm answers with a single `PUSH0`. An enclosing
+                // assignment then stored that 0 into the field's slot, which
+                // for a list is the length word, so `xs = [10, 20, 30]`
+                // compiled to exactly one storage write of zero and none of the
+                // three elements was written anywhere.
+                //
+                // Refusing rather than implementing: a real lowering has to
+                // clear the previous contents and then write each element at
+                // `keccak(slot) + i`, which is a list-builder loop the IR has
+                // no opcode for. The EMPTY literal is kept: `[]` is precisely
+                // the zero-length list, and storing 0 into the length word is
+                // the correct and complete lowering for it.
+                if !elements.is_empty() {
+                    for el in elements {
+                        let _ = self.lower_expr(fb, el);
+                    }
+                    self.diagnostics
+                        .push(diag::list_literal_unimplemented(*span, elements.len()));
+                    return fb.emit_const(IrConstant::Integer(0), ty, *span);
+                }
                 fb.emit_instr(
                     Opcode::StructNew(StructTypeId(0)),
-                    operands,
+                    vec![],
                     Some(ty),
                     dom,
                     *span,
@@ -1899,10 +2421,31 @@ impl Builder {
                 merge_param
             }
             Expr::Match {
-                scrutinee, span, ..
+                scrutinee,
+                arms,
+                span,
             } => {
+                // This evaluated the scrutinee and then produced a constant 0
+                // as the expression's value, with no diagnostic: `label()`
+                // returned 0 for every input, and `n = match n { .. }` did not
+                // merely fail to update `n`, it destroyed the value already
+                // stored there.
+                //
+                // Refusing rather than implementing, unlike the STATEMENT form
+                // just above: an expression must yield a value on every path,
+                // and `MatchPattern` has exactly one variant (a literal), so
+                // the grammar cannot express a wildcard arm. There is therefore
+                // no value the compiler can produce for a scrutinee that
+                // matches no arm without inventing one. `Expr::If` already
+                // requires an explicit `else`, so an if/else chain says out
+                // loud what the fallback is; a wildcard pattern is a parser
+                // feature, not a fix to make here.
                 let _ = self.lower_expr(fb, scrutinee);
-                // Placeholder ChoiceMatch; full lowering deferred.
+                for arm in arms {
+                    let covenant_parser::ast::MatchPattern::Literal(pat) = &arm.pattern;
+                    let _ = self.lower_expr(fb, pat);
+                }
+                self.diagnostics.push(diag::match_expr_unimplemented(*span));
                 fb.emit_const(IrConstant::Integer(0), ty, *span)
             }
             Expr::EncryptedLit(inner, span) => {
@@ -2016,6 +2559,20 @@ impl Builder {
             LangIdent::Block | LangIdent::Msg => {
                 // Namespaces — represent as a placeholder value; subsequent
                 // FieldAccess dispatches to the concrete opcode.
+                return fb.emit_const(IrConstant::Integer(0), ty, span);
+            }
+            // Construct-implicit collections (`posts` on a `board`, `tally` on
+            // a `ballot`). Nothing allocates a storage field for these, so the
+            // placeholder 0 below was handed to the backend as a LIST HANDLE:
+            // `posts.length` read 0 forever, and `posts[i].<field>` SLOADed
+            // storage slot 0, i.e. the construct's first declared field, for
+            // every index -- a public view disclosing an unrelated field's
+            // storage word, and any guard written against a post's own field
+            // silently re-pointed at field number 0. Refuse rather than answer
+            // with a handle onto someone else's slot.
+            LangIdent::Posts | LangIdent::Tally => {
+                self.diagnostics
+                    .push(diag::implicit_collection_unbacked(span, li.name()));
                 return fb.emit_const(IrConstant::Integer(0), ty, span);
             }
             _ => return fb.emit_const(IrConstant::Integer(0), ty, span),
@@ -2367,6 +2924,212 @@ impl FunctionBuilder {
 // ---------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------
+
+/// Names an action body writes to: assignment targets, `delete` targets and
+/// `append` collections, each reduced to the root identifier. Used to decide
+/// whether a `given` guard's precondition reading and postcondition reading
+/// could differ.
+fn fields_written_by(body: &[Stmt]) -> HashSet<Box<str>> {
+    let mut out = HashSet::new();
+    collect_writes(body, &mut out);
+    out
+}
+
+fn collect_writes(body: &[Stmt], out: &mut HashSet<Box<str>>) {
+    for s in body {
+        match s {
+            Stmt::Assign { target, .. } | Stmt::Delete(target, _) => {
+                out.insert(lvalue_root(target).name.clone());
+            }
+            Stmt::Append { collection, .. } => {
+                out.insert(collection.name.clone());
+            }
+            Stmt::If {
+                then_block,
+                else_ifs,
+                else_block,
+                ..
+            } => {
+                collect_writes(then_block, out);
+                for (_, b) in else_ifs {
+                    collect_writes(b, out);
+                }
+                if let Some(b) = else_block {
+                    collect_writes(b, out);
+                }
+            }
+            Stmt::EncryptedWhen {
+                then_block,
+                otherwise,
+                ..
+            } => {
+                collect_writes(then_block, out);
+                if let Some(b) = otherwise {
+                    collect_writes(b, out);
+                }
+            }
+            Stmt::Match { arms, .. } => {
+                for arm in arms {
+                    match &arm.body {
+                        covenant_parser::ast::MatchBody::Stmt(inner) => {
+                            collect_writes(std::slice::from_ref(inner.as_ref()), out)
+                        }
+                        covenant_parser::ast::MatchBody::Block(b) => collect_writes(b, out),
+                    }
+                }
+            }
+            Stmt::ForEach { body, .. } => collect_writes(body, out),
+            Stmt::TryCatch {
+                body, catch_body, ..
+            } => {
+                collect_writes(body, out);
+                collect_writes(catch_body, out);
+            }
+            _ => {}
+        }
+    }
+}
+
+fn lvalue_root(lv: &LValue) -> &Ident {
+    match lv {
+        LValue::Ident(id) => id,
+        LValue::FieldAccess(base, _) | LValue::Index(base, _) => lvalue_root(base),
+    }
+}
+
+fn collect_ident_reads(e: &Expr, out: &mut Vec<Box<str>>) {
+    match e {
+        Expr::Ident(id) => out.push(id.name.clone()),
+        Expr::Literal(_) => {}
+        Expr::Binary { lhs, rhs, .. } => {
+            collect_ident_reads(lhs, out);
+            collect_ident_reads(rhs, out);
+        }
+        Expr::Unary { operand, .. } => collect_ident_reads(operand, out),
+        Expr::Call { callee, args, .. } => {
+            collect_ident_reads(callee, out);
+            for a in args {
+                collect_ident_reads(a, out);
+            }
+        }
+        // The `.field` name is a member, not a readable identifier.
+        Expr::FieldAccess { base, .. } => collect_ident_reads(base, out),
+        Expr::Index { base, index, .. } => {
+            collect_ident_reads(base, out);
+            collect_ident_reads(index, out);
+        }
+        Expr::Slice { base, from, to, .. } => {
+            collect_ident_reads(base, out);
+            collect_ident_reads(from, out);
+            collect_ident_reads(to, out);
+        }
+        Expr::Array { elements, .. } => {
+            for el in elements {
+                collect_ident_reads(el, out);
+            }
+        }
+        Expr::Paren(inner) | Expr::EncryptedLit(inner, _) => collect_ident_reads(inner, out),
+        Expr::If {
+            cond,
+            then_expr,
+            else_expr,
+            ..
+        } => {
+            collect_ident_reads(cond, out);
+            collect_ident_reads(then_expr, out);
+            collect_ident_reads(else_expr, out);
+        }
+        Expr::Match {
+            scrutinee, arms, ..
+        } => {
+            collect_ident_reads(scrutinee, out);
+            for arm in arms {
+                let covenant_parser::ast::MatchPattern::Literal(p) = &arm.pattern;
+                collect_ident_reads(p, out);
+                collect_ident_reads(&arm.body, out);
+            }
+        }
+        Expr::Lambda { body, .. } => collect_ident_reads(body, out),
+    }
+}
+
+/// The span to hang an `only <principal>` diagnostic on. Named principals
+/// (`only owner`) carry none of their own, so the caller falls back to the
+/// enclosing declaration rather than to `Span(0, 0)`, which renders with no
+/// file and no line.
+fn principal_span(p: &Principal) -> Option<Span> {
+    match p {
+        Principal::Named(_) => None,
+        Principal::Predicate(id) => Some(id.span),
+        Principal::Address(e) => Some(e.span()),
+        Principal::Call { name, .. } => Some(name.span),
+    }
+}
+
+/// The type name of a principal written as a literal, when that literal cannot
+/// possibly be an address. Only an `0x`-prefixed 20-byte hex literal is one.
+///
+/// Needed because `covenant-types`' `check_principal` is empty: a principal
+/// expression is never synthesized, so nothing records its type and it reaches
+/// the IR builder as `Ty::Unknown`. That is precisely how `only "owner"`,
+/// `only 42`, `only true` and `only -1` all compiled clean.
+fn literal_principal_type_name(e: &Expr) -> Option<&'static str> {
+    match e {
+        Expr::Paren(inner) => literal_principal_type_name(inner),
+        // Negation only applies to numbers, so `only -1` is an amount.
+        Expr::Unary {
+            op: UnaryOp::Neg, ..
+        } => Some("amount"),
+        Expr::Unary {
+            op: UnaryOp::Not, ..
+        } => Some("bool"),
+        Expr::Literal(lit) => match lit {
+            LiteralExpr::Text(_, _) => Some("text"),
+            LiteralExpr::Bool(_, _) => Some("bool"),
+            LiteralExpr::Integer(_, _) => Some("amount"),
+            LiteralExpr::Duration(_, _, _) => Some("duration"),
+            LiteralExpr::Hex(bytes, _) => match bytes.len() {
+                20 => None,
+                32 => Some("hash"),
+                _ => Some("bytes"),
+            },
+        },
+        _ => None,
+    }
+}
+
+/// Types that cannot possibly denote a principal. Deliberately an explicit
+/// list rather than `!= Ty::Address`: `Ty::Unknown` and the nominal types are
+/// left alone so a legitimate program is never refused on a type the checker
+/// could not pin down.
+fn ty_is_definitely_not_address(ty: &Ty) -> bool {
+    matches!(
+        ty,
+        Ty::Amount
+            | Ty::Time
+            | Ty::Duration
+            | Ty::Text
+            | Ty::Bool
+            | Ty::Hash
+            | Ty::Bytes
+            | Ty::PqKey
+            | Ty::List(_)
+            | Ty::Map(_, _)
+            | Ty::Ciphertext(_)
+    )
+}
+
+/// The value a storage word of type `ty` reads back as when it was never
+/// written. Used by `delete`, which means "put it back the way it started".
+fn emit_zero(fb: &mut FunctionBuilder, ty: &Ty, span: Span) -> Value {
+    match ty {
+        Ty::Bool => fb.emit_const(IrConstant::Bool(false), ty.clone(), span),
+        // Every other single-word type (amount / time / duration / address /
+        // hash / a list's length word) zeroes to the integer 0, which is what
+        // the backend's `emit_const_initializer` writes for an unset field.
+        _ => fb.emit_const(IrConstant::Integer(0), ty.clone(), span),
+    }
+}
 
 fn choose_binop(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Opcode {
     use BinaryOp::*;

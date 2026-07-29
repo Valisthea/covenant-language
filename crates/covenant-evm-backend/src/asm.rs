@@ -60,6 +60,7 @@ pub const OP_JUMPI: u8 = 0x57;
 pub const OP_JUMPDEST: u8 = 0x5b;
 pub const OP_PUSH0: u8 = 0x5f;
 pub const OP_DUP1: u8 = 0x80;
+pub const OP_DUP2: u8 = 0x81;
 pub const OP_SWAP1: u8 = 0x90;
 pub const OP_LOG0: u8 = 0xa0;
 pub const OP_LOG1: u8 = 0xa1;
@@ -72,10 +73,29 @@ pub const OP_RETURN: u8 = 0xf3;
 pub const OP_REVERT: u8 = 0xfd;
 pub const OP_INVALID: u8 = 0xfe;
 
+/// The PUSH opcode carrying `n` immediate bytes. `n` must be in `1..=32`.
+///
+/// This was a `debug_assert!`, which the shipped release binary compiles out.
+/// `0x60 + (n - 1)` wraps straight past PUSH32 into unrelated opcodes there:
+/// a 33-byte literal emitted `0x80` (DUP1) followed by the literal's own bytes
+/// laid down as *instructions*, and a 256-byte literal truncated `n` to 0 so
+/// the emitter wrote a single PUSH0 while [`op_len`] still charged 257 bytes,
+/// desynchronising every label offset after it. Codegen rejects an over-long
+/// constant up front (E530), so reaching this assertion means a codegen
+/// invariant broke. Aborting the compile beats handing an attacker a way to
+/// place chosen opcodes in the runtime.
 pub fn push_n(n: u8) -> u8 {
-    debug_assert!((1..=32).contains(&n));
+    assert!(
+        (1..=32).contains(&n),
+        "PUSH immediate must be 1..=32 bytes, got {n}. The EVM has no wider PUSH, so the \
+         immediate would be emitted as executable code."
+    );
     0x60 + (n - 1)
 }
+
+/// The largest immediate a single EVM PUSH can carry. Codegen consults this
+/// before turning a source constant into a `PushBytes`.
+pub const MAX_PUSH_BYTES: usize = 32;
 
 pub struct Assembler {
     ops: Vec<AsmOp>,

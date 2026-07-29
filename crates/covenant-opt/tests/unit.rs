@@ -36,6 +36,20 @@ fn count_opcode(m: &IrModule, f: impl Fn(&Opcode) -> bool) -> usize {
         .count()
 }
 
+/// Same count, restricted to one action. Module-wide counts are useless for
+/// anything an unrelated view also emits: `view get_n returns amount { n }`
+/// contributes an `SLoad` of its own and would make an `SLoad >= 1` assertion
+/// pass no matter what the optimizer did to the action under test.
+fn count_opcode_in(m: &IrModule, func_name: &str, f: impl Fn(&Opcode) -> bool) -> usize {
+    m.functions
+        .iter()
+        .filter(|fun| fun.name.name.as_ref() == func_name)
+        .flat_map(|fun| fun.blocks.iter())
+        .flat_map(|b| b.instructions.iter())
+        .filter(|i| f(&i.opcode))
+        .count()
+}
+
 // ---------------- Constant folding ----------------
 
 #[test]
@@ -116,6 +130,144 @@ fn dce_preserves_transfer() {
     let m = opt(src);
     let transfers = count_opcode(&m, |o| matches!(o, Opcode::Transfer));
     assert_eq!(transfers, 1);
+}
+
+// ---------------- OMEGA V3.6 F-19: runtime traps survive DCE ----------------
+//
+// These go through the real front end on purpose. The defect was reported
+// from source (`let y = 100 / x` and `let remaining = bal - amt` lost their
+// guards in the default optimized build, 122 runtime bytes against 166 with
+// `--no-optimize`), so the regression is pinned at the same altitude: parse,
+// type, lower, optimize, then count what is left in the IR the backend will
+// see.
+
+/// The finding's own reproduction, verbatim.
+const F19_SRC: &str = r#"
+record P7 {
+    field bal: amount
+    field n: amount
+
+    action set_bal(v: amount) { bal = v }
+
+    action div_guard(x: amount) {
+        let y = 100 / x
+        n = 1
+    }
+
+    action sub_guard(amt: amount) {
+        let remaining = bal - amt
+        n = 2
+    }
+
+    view get_n returns amount { n }
+}
+"#;
+
+#[test]
+fn f19_division_guard_survives_when_the_binding_is_never_read() {
+    let m = opt(F19_SRC);
+    let divs = count_opcode(&m, |o| matches!(o, Opcode::Div));
+    assert_eq!(
+        divs, 1,
+        "`let y = 100 / x` must keep its Div: the zero-divisor revert is the \
+         behaviour the source promises, whether or not `y` is ever read"
+    );
+}
+
+#[test]
+fn f19_checked_subtraction_survives_when_the_binding_is_never_read() {
+    let m = opt(F19_SRC);
+    let subs = count_opcode(&m, |o| matches!(o, Opcode::SubChecked));
+    assert_eq!(
+        subs, 1,
+        "`let remaining = bal - amt` must keep its SubChecked: the underflow \
+         revert is the behaviour the source promises"
+    );
+}
+
+#[test]
+fn f19_a_kept_trap_keeps_the_values_it_guards() {
+    // The subtler half of the same defect. Retaining the SubChecked is not
+    // enough: its underflow guard compares the SLoad of `bal` against the
+    // parameter, so the SLoad has to be seeded live off the retained
+    // instruction. Seed from a narrower set and the guard ships comparing a
+    // memory slot that was never written.
+    let m = opt(F19_SRC);
+    let sloads = count_opcode_in(&m, "sub_guard", |o| matches!(o, Opcode::SLoad(_)));
+    assert_eq!(
+        sloads, 1,
+        "the SLoad of `bal` feeding the retained underflow guard must stay live"
+    );
+}
+
+#[test]
+fn f19_dce_still_removes_genuinely_dead_work() {
+    // Negative control at source level: the pass must still be a pass. A
+    // dead read of a field carries no trap and has to go.
+    let src = r#"
+record R {
+    field bal: amount
+    field n: amount
+
+    action f() {
+        let unused = bal
+        n = 1
+    }
+}
+"#;
+    let m = opt(src);
+    let sloads = count_opcode(&m, |o| matches!(o, Opcode::SLoad(_)));
+    assert_eq!(
+        sloads, 0,
+        "a dead field read traps on nothing and must still be eliminated"
+    );
+}
+
+#[test]
+fn f19_division_by_a_literal_non_zero_is_still_eliminated() {
+    // The backend emits no guard for a literal non-zero divisor, so there is
+    // no trap to preserve and the usual liveness rule applies. Without this
+    // the fix would tax every `value * bps / 10000`.
+    let src = r#"
+record R {
+    field n: amount
+
+    action f(v: amount) {
+        let unused = v / 10000
+        n = 1
+    }
+}
+"#;
+    let m = opt(src);
+    let divs = count_opcode(&m, |o| matches!(o, Opcode::Div));
+    assert_eq!(
+        divs, 0,
+        "a provably non-zero divisor emits no guard, so the dead Div goes"
+    );
+}
+
+#[test]
+fn f19_division_by_a_literal_zero_reaches_the_backend() {
+    // E519 is raised during codegen, so it only fires if the instruction
+    // survives this far. Deleting it here is how `let y = 100 / 0` compiled
+    // clean under the default optimized build while `--no-optimize`
+    // correctly refused it.
+    let src = r#"
+record R {
+    field n: amount
+
+    action f() {
+        let unused = 100 / 0
+        n = 1
+    }
+}
+"#;
+    let m = opt(src);
+    let divs = count_opcode(&m, |o| matches!(o, Opcode::Div));
+    assert_eq!(
+        divs, 1,
+        "a literal-zero divisor must reach codegen so E519 can refuse it"
+    );
 }
 
 // ---------------- SLoad coalescing ----------------

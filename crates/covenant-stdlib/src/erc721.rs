@@ -15,33 +15,45 @@
 //!     view  getApproved(token_id: amount) returns address
 //!     view  isApprovedForAll(owner: address, operator: address) returns bool
 //!     action approve(spender: address, token_id: amount)
+//!                - gated: caller is the owner OR an approved operator
 //!     action setApprovalForAll(operator: address, approved: bool)
 //!     action transferFrom(from: address, to: address, token_id: amount)
-//!                — gated: caller is owner OR approved OR operator;
+//!                - gated: caller is owner OR approved OR operator;
 //!                  reverts when to == address(0)
 //!     action mint(to: address, token_id: amount)
+//!                - gated: caller is the deployer; reverts when
+//!                  to == address(0)
 //!     action burn(token_id: amount)
-//!                — gated: caller is owner OR approved OR operator
+//!                - gated: caller is owner OR approved OR operator
 //!
 //!   Events (3): Transfer, Approval, ApprovalForAll
-//!   Errors (5): NotTokenOwner, TokenAlreadyMinted, TokenDoesNotExist,
-//!               NotApprovedOrOwner, InvalidReceiver
+//!   Errors (6): NotTokenOwner, TokenAlreadyMinted, TokenDoesNotExist,
+//!               NotApprovedOrOwner, InvalidReceiver, NotDeployer
 //!
 //! Design choices:
 //!   - `transferFrom` and `burn` enforce caller authorization (caller is
 //!     the token owner, the per-token approved address, or an approved
 //!     operator) and `transferFrom` reverts when `to == address(0)`,
 //!     matching OpenZeppelin's `_isAuthorized` / `ERC721InvalidReceiver`
-//!     semantics. Earlier (≤ V0.9.1) synthesis left both unchecked
-//!     (V0.9.2 hardening — DEBT.md "ERC-721 transferFrom permissive").
-//!   - `mint` is open-access. Add an explicit `only deployer` (or other
-//!     guard) in source if you need access control. This matches the
-//!     ERC-20 `token` synthesizer's `transfer` philosophy (the language
-//!     handles the standard surface; access control is per-contract).
+//!     semantics. Earlier (<= V0.9.1) synthesis left both unchecked
+//!     (V0.9.2 hardening, DEBT.md "ERC-721 transferFrom permissive").
+//!   - `mint` is gated to the deployer. Before V0.9.7 it was open-access
+//!     and the header here told authors to "add an explicit `only deployer`"
+//!     in source, which does not work: a `mint` declared inside an `nft`
+//!     block is refused by E601, and renaming it leaves the ungated
+//!     synthesized twin in the ABI beside the guarded action. `mint` is not
+//!     part of EIP-721 (OpenZeppelin's `_mint` is internal), so a public
+//!     supply-creating entry point with no caller check had no standard to
+//!     appeal to. The deployer is the only principal the constructor
+//!     captures, so it is the gate.
+//!   - `mint` also rejects `to == address(0)`, matching `transferFrom`.
+//!     Without it the zero address could be "minted" repeatedly on one id
+//!     (the existence test reads `owners[id] == 0` as unminted), inflating
+//!     `balanceOf(0x0)` with no path that ever decrements it.
 //!   - `tokenURI` returns `base_uri` concatenated with the token id's
 //!     decimal representation. Compositional URI patterns (e.g. trailing
 //!     `.json`) require user-declared override.
-//!   - V0.9 does not synthesize `safeTransferFrom` — the receiver-hook
+//!   - V0.9 does not synthesize `safeTransferFrom`: the receiver-hook
 //!     callback dance adds external-call surface that V0.9.0 prefers to
 //!     keep audit-explicit. Sprint 35.c may add it.
 
@@ -52,16 +64,26 @@ use covenant_ir::{
     function::IrFunctionKind,
     id::{FunctionId, GlobalId, Value},
     instr::{IrConstant, Terminator},
-    module::{IrEvent, IrField, IrMetadataValue},
+    module::{IrEvent, IrMetadataValue},
     IrError, IrModule, Opcode,
 };
 use covenant_parser::ast::Ident;
-use covenant_privacy::PrivacyDomain;
 use covenant_types::Ty;
 
 use crate::builder::FuncBuilder;
 use crate::config::StdlibConfig;
+use crate::conform;
 use crate::diag as d;
+
+/// Name used in the diagnostics this synthesizer raises.
+const STANDARD: &str = "ERC-721";
+
+/// Canonical shapes of the synthesized events. Kept beside `inject_events` so
+/// the shadow check and the injection cannot drift apart.
+const EVENT_SHAPE_TRANSFER: &[(Ty, bool)] =
+    &[(Ty::Address, true), (Ty::Address, true), (Ty::Amount, true)];
+const EVENT_SHAPE_APPROVAL_FOR_ALL: &[(Ty, bool)] =
+    &[(Ty::Address, true), (Ty::Address, true), (Ty::Bool, false)];
 
 /// Entry point for ERC-721 synthesis on a single Nft module.
 pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<Diagnostic>) {
@@ -77,7 +99,7 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
     for name in STANDARD_FN_NAMES {
         if user_fns.contains(*name) {
             if config.strict_conflict_detection {
-                diags.push(d::user_fn_conflict(span, name));
+                diags.push(d::user_fn_conflict(span, STANDARD, name));
                 return;
             } else {
                 diags.push(d::warn_user_override(span, name));
@@ -85,28 +107,50 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
         }
     }
 
+    // --- Refuse a shadowing event or error whose shape the bodies below
+    //     cannot honour (F-35). Checked before anything is injected. ---
+    if reject_shadow_shape_conflicts(module, diags) {
+        return;
+    }
+
     // --- Resolve or inject required fields ---
-    let owners_id = ensure_field(
-        module,
-        "owners",
-        Ty::Map(Box::new(Ty::Amount), Box::new(Ty::Address)),
-    );
-    let balances_id = ensure_field(
-        module,
-        "balances",
-        Ty::Map(Box::new(Ty::Address), Box::new(Ty::Amount)),
-    );
-    let token_approvals_id = ensure_field(
-        module,
-        "token_approvals",
-        Ty::Map(Box::new(Ty::Amount), Box::new(Ty::Address)),
-    );
-    let operator_approvals_id = ensure_field(
-        module,
-        "operator_approvals",
-        // Flattened key: keccak256(owner, operator) → bool
-        Ty::Map(Box::new(Ty::Hash), Box::new(Ty::Bool)),
-    );
+    //
+    // A field of the right name but the wrong type is refused, not reused:
+    // the synthesized bodies address each of these with exactly one shape
+    // (F-14).
+    let (Some(owners_id), Some(balances_id), Some(token_approvals_id), Some(operator_approvals_id)) = (
+        conform::ensure_field(
+            module,
+            "owners",
+            Ty::Map(Box::new(Ty::Amount), Box::new(Ty::Address)),
+            STANDARD,
+            diags,
+        ),
+        conform::ensure_field(
+            module,
+            "balances",
+            Ty::Map(Box::new(Ty::Address), Box::new(Ty::Amount)),
+            STANDARD,
+            diags,
+        ),
+        conform::ensure_field(
+            module,
+            "token_approvals",
+            Ty::Map(Box::new(Ty::Amount), Box::new(Ty::Address)),
+            STANDARD,
+            diags,
+        ),
+        conform::ensure_field(
+            module,
+            "operator_approvals",
+            // Flattened key: keccak256(owner, operator) -> bool
+            Ty::Map(Box::new(Ty::Hash), Box::new(Ty::Bool)),
+            STANDARD,
+            diags,
+        ),
+    ) else {
+        return;
+    };
 
     // --- Pull metadata (name / symbol / base_uri) ---
     let name_text = module
@@ -189,9 +233,13 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
         next_id += 1;
     }
     if !skip("approve") {
-        module
-            .functions
-            .push(synth_approve(next_id, owners_id, token_approvals_id, span));
+        module.functions.push(synth_approve(
+            next_id,
+            owners_id,
+            token_approvals_id,
+            operator_approvals_id,
+            span,
+        ));
         next_id += 1;
     }
     if !skip("setApprovalForAll") {
@@ -250,26 +298,27 @@ const STANDARD_FN_NAMES: &[&str] = &[
     "burn",
 ];
 
-fn ensure_field(module: &mut IrModule, name: &str, ty: Ty) -> GlobalId {
-    if let Some(existing) = module.fields.iter().find(|f| f.name.name.as_ref() == name) {
-        return existing.id;
+/// Refuse any user-declared event or error that shadows a synthesized one with
+/// a different shape (F-35): the synthesized bodies keep emitting the canonical
+/// arity, so a differently-shaped redeclaration ships an ABI the runtime does
+/// not honour. Returns `true` when synthesis must stop.
+fn reject_shadow_shape_conflicts(module: &IrModule, diags: &mut Vec<Diagnostic>) -> bool {
+    let mut conflict = false;
+    for name in ["Transfer", "Approval"] {
+        conflict |= conform::event_shadow_conflicts(module, name, EVENT_SHAPE_TRANSFER, diags);
     }
-    let id = GlobalId(module.fields.len() as u32);
-    let span = module.name.span;
-    module.fields.push(IrField {
-        id,
-        name: Ident {
-            name: name.into(),
-            span,
-        },
-        ty,
-        privacy: PrivacyDomain::Plaintext,
-        initializer_fn: None,
-        initializer_const: None,
-        span,
-        explicit_slot: None,
-    });
-    id
+    conflict |= conform::event_shadow_conflicts(
+        module,
+        "ApprovalForAll",
+        EVENT_SHAPE_APPROVAL_FOR_ALL,
+        diags,
+    );
+    // Every synthesized revert here passes `args: Vec::new()`, so the canonical
+    // shape of each error carries no parameters.
+    for name in ERROR_NAMES {
+        conflict |= conform::error_shadow_conflicts(module, name, &[], diags);
+    }
+    conflict
 }
 
 fn inject_events(module: &mut IrModule, span: Span) {
@@ -313,15 +362,20 @@ fn inject_events(module: &mut IrModule, span: Span) {
     }
 }
 
+/// Errors the synthesized bodies revert with. `NotDeployer` is the mint gate's
+/// (V0.9.7, F-16).
+const ERROR_NAMES: &[&str] = &[
+    "NotTokenOwner",
+    "TokenAlreadyMinted",
+    "TokenDoesNotExist",
+    "NotApprovedOrOwner",
+    "InvalidReceiver",
+    "NotDeployer",
+];
+
 fn inject_errors(module: &mut IrModule, span: Span) {
     let existing: HashSet<Box<str>> = module.errors.iter().map(|e| e.name.name.clone()).collect();
-    for name in [
-        "NotTokenOwner",
-        "TokenAlreadyMinted",
-        "TokenDoesNotExist",
-        "NotApprovedOrOwner",
-        "InvalidReceiver",
-    ] {
+    for name in ERROR_NAMES.iter().copied() {
         if !existing.contains(name) {
             module.errors.push(IrError {
                 name: Ident {
@@ -463,6 +517,7 @@ fn synth_approve(
     next_id: u32,
     owners_id: GlobalId,
     token_approvals_id: GlobalId,
+    operator_approvals_id: GlobalId,
     span: Span,
 ) -> covenant_ir::IrFunction {
     let mut fb = FuncBuilder::new(
@@ -475,7 +530,17 @@ fn synth_approve(
     let spender = fb.add_param("spender", Ty::Address);
     let token_id = fb.add_param("token_id", Ty::Amount);
 
-    // Check caller == ownerOf(token_id)
+    // EIP-721 `approve`: throws unless msg.sender is the current owner OR an
+    // authorized operator of the current owner. Until V0.9.7 the gate was the
+    // single `caller == owner` equality below, so a valid operator (one that
+    // `isApprovedForAll` reports true for) was refused with NotTokenOwner,
+    // breaking the marketplace and vault flow where a contract is granted
+    // `setApprovalForAll` and then delegates per-token approvals (F-34).
+    //
+    // The per-token approved address is deliberately NOT accepted here:
+    // `_isAuthorized` admits it for transferFrom / burn, but EIP-721 lets only
+    // the owner and its operators re-approve, so `emit_is_authorized` is the
+    // wrong predicate for this function.
     let caller = fb.emit_instr(Opcode::LoadCaller, vec![], Some(Ty::Address));
     let owners_map = fb.emit_instr(
         Opcode::SLoad(owners_id),
@@ -489,10 +554,25 @@ fn synth_approve(
     );
     let is_owner = fb.emit_instr(Opcode::Eq, vec![caller, owner], Some(Ty::Bool));
 
+    // operator_approvals uses the same flattened keccak(owner, operator) key as
+    // setApprovalForAll / isApprovedForAll.
+    let op_key = fb.emit_instr(Opcode::Keccak, vec![owner, caller], Some(Ty::Hash));
+    let op_map = fb.emit_instr(
+        Opcode::SLoad(operator_approvals_id),
+        vec![],
+        Some(Ty::Map(Box::new(Ty::Hash), Box::new(Ty::Bool))),
+    );
+    let is_operator = fb.emit_instr(Opcode::MapGet, vec![op_map, op_key], Some(Ty::Bool));
+    let authorized = fb.emit_instr(
+        Opcode::LogicalOr,
+        vec![is_owner, is_operator],
+        Some(Ty::Bool),
+    );
+
     let do_approve = fb.new_block();
     let revert_block = fb.new_block();
     fb.terminate(Terminator::Branch {
-        cond: is_owner,
+        cond: authorized,
         then_target: do_approve,
         then_args: Vec::new(),
         else_target: revert_block,
@@ -899,7 +979,69 @@ fn synth_mint(
     let to = fb.add_param("to", Ty::Address);
     let token_id = fb.add_param("token_id", Ty::Amount);
 
-    // Check token doesn't exist (owners[id] == 0)
+    let zero_addr = fb.emit_const(IrConstant::ZeroAddress, Ty::Address);
+
+    // --- Guard 1: caller is the deployer (NotDeployer) ---
+    //
+    // F-16. `mint` creates supply out of nothing and is not part of EIP-721,
+    // so shipping it public and uncheckable is an authorization hole, not a
+    // design choice: any account could mint any unminted id to any address.
+    // The header's old advice ("add an explicit `only deployer` in source")
+    // is unreachable, an inline `mint` inside an `nft` block is refused by
+    // E601, so the gate has to live here. The deployer is the one principal
+    // the constructor captures, which is what `only deployer` itself uses.
+    let caller = fb.emit_instr(Opcode::LoadCaller, vec![], Some(Ty::Address));
+    let deployer = fb.emit_instr(Opcode::LoadDeployer, vec![], Some(Ty::Address));
+    let is_deployer = fb.emit_instr(Opcode::Eq, vec![caller, deployer], Some(Ty::Bool));
+
+    let check_receiver = fb.new_block();
+    let revert_deployer = fb.new_block();
+    fb.terminate(Terminator::Branch {
+        cond: is_deployer,
+        then_target: check_receiver,
+        then_args: Vec::new(),
+        else_target: revert_deployer,
+        else_args: Vec::new(),
+    });
+    fb.set_current(revert_deployer);
+    fb.terminate(Terminator::Revert {
+        error: Ident {
+            name: "NotDeployer".into(),
+            span,
+        },
+        args: Vec::new(),
+    });
+
+    // --- Guard 2: to != address(0) (InvalidReceiver) ---
+    //
+    // F-27. Without this, `mint(0x0, id)` succeeded and left `owners[id]` at
+    // the zero address, which the existence test below still reads as
+    // unminted: the same id could be minted to the zero address again and
+    // again, each call incrementing `balances[0x0]` with no path anywhere in
+    // the surface that decrements it. `transferFrom` already refuses the zero
+    // receiver, so this closes the asymmetry inside one synthesizer.
+    fb.set_current(check_receiver);
+    let to_nonzero = fb.emit_instr(Opcode::Ne, vec![to, zero_addr], Some(Ty::Bool));
+    let check_unminted = fb.new_block();
+    let revert_receiver = fb.new_block();
+    fb.terminate(Terminator::Branch {
+        cond: to_nonzero,
+        then_target: check_unminted,
+        then_args: Vec::new(),
+        else_target: revert_receiver,
+        else_args: Vec::new(),
+    });
+    fb.set_current(revert_receiver);
+    fb.terminate(Terminator::Revert {
+        error: Ident {
+            name: "InvalidReceiver".into(),
+            span,
+        },
+        args: Vec::new(),
+    });
+
+    // --- Guard 3: token does not exist yet (TokenAlreadyMinted) ---
+    fb.set_current(check_unminted);
     let owners_map = fb.emit_instr(
         Opcode::SLoad(owners_id),
         vec![],
@@ -910,7 +1052,6 @@ fn synth_mint(
         vec![owners_map, token_id],
         Some(Ty::Address),
     );
-    let zero_addr = fb.emit_const(IrConstant::ZeroAddress, Ty::Address);
     let is_unminted = fb.emit_instr(Opcode::Eq, vec![cur_owner, zero_addr], Some(Ty::Bool));
 
     let do_mint = fb.new_block();

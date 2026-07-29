@@ -1,4 +1,4 @@
-//! Lexer diagnostic codes (E001-E010, cf. Doc 5 §17.2 and Phase 1 spec).
+//! Lexer diagnostic codes (E001-E010 and E060-E069, cf. Doc 5 §17.2 and Phase 1 spec).
 
 use covenant_diag::{DiagCode, Diagnostic, Span};
 
@@ -12,6 +12,16 @@ pub const E007_HEX_EMPTY: DiagCode = DiagCode(7);
 pub const E008_BARE_CR: DiagCode = DiagCode(8);
 pub const E009_UNTERMINATED_NESTED: DiagCode = DiagCode(9);
 pub const E010_BAD_ESCAPE: DiagCode = DiagCode(10);
+
+/// A duration literal whose value in seconds does not fit in `u64`.
+///
+/// The lexer normalizes `<int> <unit>` to seconds on the spot, so the count the
+/// author wrote can be in range while the normalized value is not (`u64::MAX
+/// weeks`). Refusing is the only honest answer: silently truncating or wrapping
+/// the second count would produce a lock or cooldown that expires at an
+/// arbitrary instant, which is exactly the class of miscompile the normalization
+/// exists to prevent.
+pub const E060_DURATION_OVERFLOW: DiagCode = DiagCode(60);
 
 pub fn unexpected(span: Span, ch: &str) -> Diagnostic {
     Diagnostic::error(E001_UNEXPECTED, format!("unexpected character: {ch}"), span)
@@ -71,6 +81,15 @@ pub fn unterminated_nested(span: Span) -> Diagnostic {
         "unterminated `(* ... *)` comment",
         span,
     )
+}
+
+pub fn duration_overflow(span: Span, unit_secs: u64) -> Diagnostic {
+    Diagnostic::error(
+        E060_DURATION_OVERFLOW,
+        format!("duration literal overflows u64 once converted to seconds (x{unit_secs})"),
+        span,
+    )
+    .with_help("durations are counted in seconds; the largest representable value is 18446744073709551615 seconds")
 }
 
 pub fn bad_escape(span: Span, escape: &str) -> Diagnostic {

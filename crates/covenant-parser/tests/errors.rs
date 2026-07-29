@@ -128,3 +128,208 @@ fn multiple_errors_reported() {
         diags.len()
     );
 }
+
+// ---------- E040: iterative chains (F-31) ----------
+//
+// The E031 guard counts recursive descent only. The Pratt parser builds
+// left-associative operator chains and postfix chains inside a loop, so a chain
+// of any length kept `nest_depth` at 1 and E031 never fired; the resulting
+// left spine was then walked recursively by every later stage (and by `Drop`),
+// killing `check`, `build`, `fmt`, `lint` and the language server with an
+// uncatchable `STATUS_STACK_OVERFLOW` and no diagnostic at all. Each test below
+// uses a chain far past the observed crash thresholds (3500 to 4200), so if the
+// guard regresses the test process dies outright instead of failing an
+// assertion.
+//
+// Negative control for all of them: remove the `enter_chain_depth()?` calls
+// from the Pratt loop in `parse_expr.rs` (and from `parse_lvalue_body`) and
+// every one of these either overflows the stack or fails its assertion.
+
+#[test]
+fn e040_long_add_chain_does_not_overflow_stack_f31() {
+    let chain = " + v".repeat(5000);
+    let src = format!(
+        "record R {{
+ field n: amount
+ action a(v: amount) {{ n = v{chain} }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E040_CHAIN_TOO_LONG),
+        "expected E040 for a 5000-term `+` chain"
+    );
+}
+
+#[test]
+fn e040_long_field_chain_does_not_overflow_stack_f31() {
+    let chain = ".f".repeat(5000);
+    let src = format!(
+        "record R {{
+ field n: amount
+ action a(v: amount) {{ n = v{chain} }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E040_CHAIN_TOO_LONG),
+        "expected E040 for a 5000-link field chain"
+    );
+}
+
+#[test]
+fn e040_long_index_chain_does_not_overflow_stack_f31() {
+    let chain = "[k]".repeat(5000);
+    let src = format!(
+        "record R {{
+ field n: amount
+ action a(k: amount, m: amount) {{ n = m{chain} }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E040_CHAIN_TOO_LONG),
+        "expected E040 for a 5000-link index chain"
+    );
+}
+
+#[test]
+fn e040_long_guard_chain_does_not_overflow_stack_f31() {
+    let chain = " && v".repeat(5000);
+    let src = format!(
+        "record R {{
+ field n: amount
+ action a(v: bool) when v{chain} {{ n = 1 }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E040_CHAIN_TOO_LONG),
+        "expected E040 for a 5000-term `&&` action guard"
+    );
+}
+
+#[test]
+fn e040_long_lvalue_chain_does_not_overflow_stack_f31() {
+    // `parse_lvalue` has its own iterative spine, reached from `discard` and
+    // `delete`, and it needs the same charge as the Pratt loop.
+    let chain = ".f".repeat(5000);
+    let src = format!(
+        "record R {{
+ field s: amount
+ action a() {{ discard s{chain} }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E040_CHAIN_TOO_LONG),
+        "expected E040 for a 5000-link l-value chain"
+    );
+}
+
+#[test]
+fn ordinary_chains_still_parse() {
+    // The guard must not fire on anything a person would write. Sixteen terms
+    // and four postfix links stay clean.
+    let src = "record R {
+ field n: amount
+ action a(v: amount) { n = v + v + v + v + v + v + v + v + v + v + v + v + v + v + v + v }
+}
+";
+    assert!(parse_diags(src).is_empty(), "diags: {:?}", parse_diags(src));
+    let src2 = "record R {
+ field n: amount
+ action a(v: amount) { n = v.a.b.c.d }
+}
+";
+    assert!(
+        parse_diags(src2).is_empty(),
+        "diags: {:?}",
+        parse_diags(src2)
+    );
+}
+
+// ---------- E041: body size (F-32) ----------
+
+#[test]
+fn e041_oversized_action_body_is_refused_f32() {
+    // Code generation for a single body costs more than linear in its statement
+    // count: 20000 statements took minutes to build and 50000 never finished,
+    // while the language server runs that same pipeline on any file it is asked
+    // to open. No body this size can fit the 24576-byte deployment limit, so
+    // refusing at the size bound costs nothing that could have shipped.
+    //
+    // Negative control: raise `MAX_BODY_STMTS` above 8000 (or drop the
+    // `charge_body_stmt()?` call at the top of `parse_stmt`) and this fails.
+    let stmts = "        n = 1
+"
+    .repeat(8000);
+    let src = format!(
+        "record R {{
+    field n: amount
+    action a() {{
+{stmts}    }}
+}}
+"
+    );
+    assert!(
+        has_code(&src, codes::E041_BODY_TOO_LARGE),
+        "expected E041 for an 8000-statement action body"
+    );
+}
+
+#[test]
+fn e041_reports_once_not_per_statement() {
+    // An over-budget body must not bury its own diagnostic under thousands of
+    // follow-on errors.
+    let stmts = "        n = 1
+"
+    .repeat(8000);
+    let src = format!(
+        "record R {{
+    field n: amount
+    action a() {{
+{stmts}    }}
+}}
+"
+    );
+    let count = parse_diags(&src)
+        .iter()
+        .filter(|d| d.code == codes::E041_BODY_TOO_LARGE)
+        .count();
+    assert_eq!(count, 1, "expected exactly one E041, got {count}");
+}
+
+#[test]
+fn e041_budget_is_per_body_not_per_file() {
+    // Many small actions are cheap to compile and must stay legal, even when
+    // their statements add up past the per-body bound.
+    let mut src = String::from(
+        "record R {
+    field n: amount
+",
+    );
+    for i in 0..600 {
+        src.push_str(&format!(
+            "    action a{i}() {{ n = 1
+ n = 2
+ n = 3
+ n = 4
+ n = 5
+ n = 6
+ n = 7
+ n = 8
+ n = 9
+ n = 10 }}
+"
+        ));
+    }
+    src.push_str(
+        "}
+",
+    );
+    assert!(
+        !has_code(&src, codes::E041_BODY_TOO_LARGE),
+        "6000 statements spread over 600 actions must not trip the per-body bound"
+    );
+}

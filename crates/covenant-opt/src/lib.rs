@@ -24,6 +24,7 @@ mod constant_fold;
 mod cse;
 mod dce;
 mod diag;
+mod effects;
 mod fhe_fold;
 mod helpers;
 mod manager;

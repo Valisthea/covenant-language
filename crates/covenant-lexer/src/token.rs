@@ -32,6 +32,24 @@ pub enum DurationUnit {
     Weeks,
 }
 
+impl DurationUnit {
+    /// Number of seconds in one unit. This is the multiplier the lexer applies
+    /// when it fuses `<int> <unit>` into a single `Duration` token, so callers
+    /// downstream never have to (and must not) apply it again.
+    ///
+    /// A `duration` value is a count of seconds everywhere in the compiler
+    /// because that is what the EVM `TIMESTAMP` opcode counts.
+    pub const fn seconds(self) -> u64 {
+        match self {
+            DurationUnit::Seconds => 1,
+            DurationUnit::Minutes => 60,
+            DurationUnit::Hours => 3_600,
+            DurationUnit::Days => 86_400,
+            DurationUnit::Weeks => 604_800,
+        }
+    }
+}
+
 /// The kind tag of a [`Token`].
 ///
 /// Organized per Phase 1 spec into literals, identifiers, keyword groups,
@@ -42,6 +60,15 @@ pub enum TokenKind {
     Integer(u128),
     HexBytes(Box<[u8]>),
     Text(Box<str>),
+    /// A fused `<int> <unit>` duration literal.
+    ///
+    /// The first field is the value **already normalized to seconds** (`7 days`
+    /// carries 604800, not 7): a duration literal denotes an elapsed-time
+    /// quantity, and the only faithful representation of that quantity in a
+    /// compiler that lowers to `TIMESTAMP` arithmetic is a second count. The
+    /// second field is the unit **as written**, kept only so diagnostics and
+    /// the source printer can reproduce the original spelling; it is not a
+    /// pending multiplier and must never be applied a second time.
     Duration(u64, DurationUnit),
     True,
     False,

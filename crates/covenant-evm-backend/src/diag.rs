@@ -59,6 +59,38 @@ pub const E522_NESTED_MAP_UNSUPPORTED: DiagCode = DiagCode(522);
 /// text was ignored entirely. That is a silent miscompile on a value path, so the
 /// form is refused until it has a faithful lowering.
 pub const E523_TRANSFER_FROM_UNSUPPORTED: DiagCode = DiagCode(523);
+/// A `hex` literal wider than 32 bytes. A single EVM PUSH carries at most 32
+/// immediate bytes, and `push_n` computed the opcode as `0x60 + (len - 1)`
+/// behind a `debug_assert!` the release binary compiles out. A 33-byte literal
+/// therefore emitted `0x80` (DUP1) followed by the literal's own bytes as
+/// executable instructions: a source-level constant became runtime code, and a
+/// literal chosen as `CALLER PUSH4 0xfffffffe SSTORE` let any caller take over
+/// the deployer-auth slot. A 256-byte literal truncated the length byte to 0,
+/// emitting one PUSH0 while the size accounting still charged 257 bytes, which
+/// desynchronised every label offset after it. Representing a wider constant
+/// needs multi-word constant support (the same dynamic-`bytes` work tracked in
+/// DEBT.md), so refuse rather than emit whatever `0x60 + (len - 1)` lands on.
+pub const E530_HEX_CONSTANT_TOO_LONG: DiagCode = DiagCode(530);
+/// A bare struct-typed field (`field cfg: Cfg`, as opposed to `[Cfg]`). The IR
+/// builder has no lowering for `cfg.x = v`: the statement was dropped with no
+/// instruction and no diagnostic, so every write to such a field vanished. The
+/// read path is worse: `StructGet` treats its operand as a storage ADDRESS
+/// (correct for a list element, where `ListGet` computes one), so `cfg.x` read
+/// `SLOAD(SLOAD(slot) + 1)` and returned whatever the NEXT declared field
+/// holds. A guard written as `when caller == cfg.who` therefore compared the
+/// caller against an unrelated field that some other action can write. Faithful
+/// support needs real multi-slot storage allocation for struct fields, so
+/// refuse until that exists.
+pub const E531_BARE_STRUCT_FIELD: DiagCode = DiagCode(531);
+/// An `indexed` event parameter of a dynamic type (`text` / `bytes`). The ABI
+/// spec says the topic is `keccak256(value)`, and the emitted ABI advertises
+/// exactly that, but the constant path pushes a zero placeholder and there is
+/// no dynamic-value hashing anywhere: every emit produced `topic1 = 0x00..00`,
+/// so two logs carrying different tags were byte-identical in their topics and
+/// a filter on `keccak256("alpha")` never matched. DEBT.md has claimed since
+/// V0.1 that this is refused; it was not. Refusing it restores the documented
+/// behaviour instead of shipping a topic that encodes nothing.
+pub const E532_DYNAMIC_INDEXED_EVENT_PARAM: DiagCode = DiagCode(532);
 
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
@@ -74,6 +106,15 @@ pub const W507_DYNAMIC_RETURN_NOT_ENCODED: DiagCode = DiagCode(507);
 /// unenforceable `only` principal already warns (W-class / KSR-CVN-011). This
 /// closes that gap so an accidental no-op guard is no longer silent. (OMEGA F05.)
 pub const W508_ONLY_CALLER_NOOP: DiagCode = DiagCode(508);
+/// A non-indexed event parameter of a dynamic type (`text` / `bytes`). The
+/// emitted ABI declares `string`/`bytes`, which a decoder reads as
+/// offset + length + data, but the log data word is the same zero placeholder
+/// the constant path pushes for any text. This is the non-indexed half of
+/// E532 and it is only a warning for the same reason W507 is: emitting text in
+/// an event is an ordinary, widely-used pattern, and hard-failing it would
+/// make routine code uncompilable rather than fixing an edge case. Real
+/// dynamic-`bytes` log encoding is tracked in DEBT.md.
+pub const W530_DYNAMIC_EVENT_DATA_NOT_ENCODED: DiagCode = DiagCode(530);
 
 fn warn(code: DiagCode, msg: impl Into<String>, span: Span) -> Diagnostic {
     Diagnostic {
@@ -336,6 +377,74 @@ pub fn transfer_from_unsupported(span: Span) -> Diagnostic {
          <dst>` to send the contract's own balance, or model the debit explicitly in \
          storage (for example a balances map) before transferring."
             .to_string(),
+        span,
+    )
+}
+
+/// A `hex` literal too wide for a single PUSH. See [`E530_HEX_CONSTANT_TOO_LONG`].
+pub fn hex_constant_too_long(span: Span, len: usize) -> Diagnostic {
+    Diagnostic::error(
+        E530_HEX_CONSTANT_TOO_LONG,
+        format!(
+            "hex literal is {len} bytes; a single EVM PUSH carries at most 32. This used to \
+             emit `0x60 + ({len} - 1)`, an unrelated opcode, followed by the literal's own \
+             bytes as executable instructions -- a constant in the source became runtime \
+             code. Split the value across several 32-byte constants (for example one field \
+             per word), or hash it down to a 32-byte digest."
+        ),
+        span,
+    )
+}
+
+/// A bare struct-typed field. See [`E531_BARE_STRUCT_FIELD`].
+pub fn bare_struct_field(span: Span, field: &str, ty: &str) -> Diagnostic {
+    Diagnostic::error(
+        E531_BARE_STRUCT_FIELD,
+        format!(
+            "field `{field}` has struct type `{ty}` and is not held in a list, which this \
+             release cannot lower: `{field}.<member> = v` emitted no instruction at all (the \
+             write was silently dropped) and `{field}.<member>` dereferenced the field's \
+             stored word as a storage address, returning the NEXT declared field's slot. \
+             Refusing to compile rather than shipping a field that discards every write and \
+             aliases its neighbour. Declare the members as separate top-level fields, or hold \
+             the struct in a `[{ty}]` list, whose element access IS lowered."
+        ),
+        span,
+    )
+}
+
+/// A dynamic `indexed` event parameter. See [`E532_DYNAMIC_INDEXED_EVENT_PARAM`].
+pub fn dynamic_indexed_event_param(
+    span: Span,
+    event: &str,
+    param: &str,
+    ty_name: &str,
+) -> Diagnostic {
+    Diagnostic::error(
+        E532_DYNAMIC_INDEXED_EVENT_PARAM,
+        format!(
+            "event `{event}` marks the dynamic parameter `{param}: {ty_name}` as `indexed`. \
+             The ABI spec (and the ABI this compiler emits) says that topic carries \
+             `keccak256({param})`, but nothing hashes it: every emit wrote `topic1 = \
+             0x00..00`, so two logs with different values were indistinguishable and a topic \
+             filter never matched. Drop `indexed` from `{param}` so the value at least \
+             travels in the log data, or index a `hash` field you compute yourself."
+        ),
+        span,
+    )
+}
+
+/// A dynamic non-indexed event parameter. See
+/// [`W530_DYNAMIC_EVENT_DATA_NOT_ENCODED`].
+pub fn warn_dynamic_event_data(span: Span, event: &str, param: &str, ty_name: &str) -> Diagnostic {
+    warn(
+        W530_DYNAMIC_EVENT_DATA_NOT_ENCODED,
+        format!(
+            "event `{event}` declares `{param}: {ty_name}`, published in the ABI as a dynamic \
+             type (offset + length + data). This release writes a single placeholder word \
+             there instead, so a caller decoding the log per the published ABI misreads it. \
+             Real dynamic-`bytes`/`text` log encoding is tracked in DEBT.md."
+        ),
         span,
     )
 }

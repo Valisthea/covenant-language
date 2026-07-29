@@ -156,33 +156,43 @@ fn five_basic_examples_all_compile() {
     // any selector for the canonical fixture set.
     //
     // OMEGA V6 CRT-004 fix (E518): ballot/board use BuiltinPredicate guards
-    // (first_time_caller / registered_key) that now correctly fail to
-    // compile -- see the `_expect_e518` flag below.
-    for (name, src, expect_e518) in [
+    // (first_time_caller / registered_key) that now correctly fail to compile.
+    //
+    // Codes are listed per fixture, matching the driver test, so a fixture
+    // cannot start being refused for an unrelated reason and still pass.
+    // `board` reports E430/E431 and not E518: V0.9.6 F-13 made `append` into,
+    // and reads from, a collection with no storage field an error, and those
+    // are raised in `build_ir`, upstream of the codegen stage that raises E518.
+    // So the pipeline stops before it reaches the guard. The `registered_key`
+    // E518 coverage lives in covenant-testing's
+    // `registered_key_predicate_is_refused`.
+    //
+    // Empty slice = the fixture must compile clean.
+    for (name, src, expect_codes) in [
         (
             "hello",
             include_str!("../../covenant-lexer/tests/fixtures/example_01_hello.cov"),
-            false,
+            &[][..],
         ),
         (
             "coin",
             include_str!("../../covenant-lexer/tests/fixtures/example_02_coin.cov"),
-            false,
+            &[][..],
         ),
         (
             "ballot",
             include_str!("../../covenant-lexer/tests/fixtures/example_03_open_ballot.cov"),
-            true,
+            &["E518"][..],
         ),
         (
             "counter",
             include_str!("../../covenant-lexer/tests/fixtures/example_04_shielded_counter.cov"),
-            false,
+            &[][..],
         ),
         (
             "board",
             include_str!("../../covenant-lexer/tests/fixtures/example_05_quantum_board.cov"),
-            true,
+            &["E430", "E431"][..],
         ),
     ] {
         let r = compile_evm(src);
@@ -191,16 +201,23 @@ fn five_basic_examples_all_compile() {
             .iter()
             .filter(|d| d.level == JsLevel::Error)
             .collect();
-        if expect_e518 {
-            assert!(
-                errs.iter().any(|d| d.code == "E518"),
-                "{name}: expected E518 (unlowered BuiltinPredicate), got {errs:?}"
-            );
-        } else {
+        if expect_codes.is_empty() {
             assert!(errs.is_empty(), "{name}: must compile clean, got {errs:?}");
             assert!(r.ok, "{name}: ok must be true");
             assert!(r.deploy_bytecode.is_some(), "{name}: missing bytecode");
             assert!(r.abi.is_some(), "{name}: missing ABI");
+        } else {
+            for code in expect_codes {
+                assert!(
+                    errs.iter().any(|d| d.code == *code),
+                    "{name}: expected {code} among the refusals, got {errs:?}"
+                );
+            }
+            // The adapter must mark a refused compile as not-ok. This is the
+            // flag the playground gates its deploy button on, and it is what
+            // keeps a codegen-stage refusal (which still returns bytecode, by
+            // `compile`'s documented contract) from being treated as a build.
+            assert!(!r.ok, "{name}: refused fixture must report ok = false");
         }
     }
 }

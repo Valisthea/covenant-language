@@ -11,16 +11,28 @@ use covenant_ir::{
     function::IrFunctionKind,
     id::{FunctionId, GlobalId, Value},
     instr::{IrConstant, Terminator},
-    module::{IrEvent, IrField, IrMetadataValue},
+    module::{IrEvent, IrMetadataValue},
     IrError, IrModule, Opcode,
 };
 use covenant_parser::ast::Ident;
-use covenant_privacy::PrivacyDomain;
 use covenant_types::Ty;
 
 use crate::builder::FuncBuilder;
 use crate::config::StdlibConfig;
+use crate::conform;
 use crate::diag as d;
+
+/// Name used in the diagnostics this synthesizer raises.
+const STANDARD: &str = "ERC-20";
+
+/// Canonical shape of the ERC-20 `Transfer` / `Approval` events: two indexed
+/// addresses then a non-indexed amount. Kept beside `inject_events` so the
+/// shadow check and the injection cannot drift apart.
+const EVENT_SHAPE_TRANSFER: &[(Ty, bool)] = &[
+    (Ty::Address, true),
+    (Ty::Address, true),
+    (Ty::Amount, false),
+];
 
 /// Entry point for ERC-20 synthesis on a single Token module.
 pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<Diagnostic>) {
@@ -36,7 +48,7 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
     for name in STANDARD_FN_NAMES {
         if user_fns.contains(*name) {
             if config.strict_conflict_detection {
-                diags.push(d::user_fn_conflict(span, name));
+                diags.push(d::user_fn_conflict(span, STANDARD, name));
                 return;
             } else {
                 diags.push(d::warn_user_override(span, name));
@@ -44,44 +56,47 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
         }
     }
 
+    // --- Refuse a shadowing event or error whose shape the bodies below
+    //     cannot honour (F-35). Checked before anything is injected so the
+    //     module is left exactly as the author wrote it. ---
+    if reject_shadow_shape_conflicts(module, diags) {
+        return;
+    }
+
     // --- Resolve or inject required fields ---
-    let total_supply_id = ensure_field(module, "total_supply", Ty::Amount, diags);
-    let balances_id = ensure_field(
-        module,
-        "balances",
-        Ty::Map(Box::new(Ty::Address), Box::new(Ty::Amount)),
-        diags,
-    );
-    let allowances_id = ensure_field(
-        module,
-        "allowances",
-        // V0 uses flattened key: Hash = keccak(owner, spender) → Amount.
-        Ty::Map(Box::new(Ty::Hash), Box::new(Ty::Amount)),
-        diags,
-    );
+    //
+    // `conform::ensure_field` returns None when the author declared a field of
+    // that name with a different type: reusing it would address the slot with
+    // a shape the declaration contradicts (F-14), so synthesis stops.
+    let (Some(total_supply_id), Some(balances_id), Some(allowances_id)) = (
+        conform::ensure_field(module, "total_supply", Ty::Amount, STANDARD, diags),
+        conform::ensure_field(
+            module,
+            "balances",
+            Ty::Map(Box::new(Ty::Address), Box::new(Ty::Amount)),
+            STANDARD,
+            diags,
+        ),
+        conform::ensure_field(
+            module,
+            "allowances",
+            // V0 uses flattened key: Hash = keccak(owner, spender) -> Amount.
+            Ty::Map(Box::new(Ty::Hash), Box::new(Ty::Amount)),
+            STANDARD,
+            diags,
+        ),
+    ) else {
+        return;
+    };
 
     // --- Apply genesis mint from `supply: N to <principal>` metadata ---
     //
-    // V0.1: only `to deployer` is honored in the constructor; other principals
-    // (owner, holders, parties, …) require runtime info we don't yet expose
-    // at deploy time and stay deferred to V0.2+. When a recognized GenesisMint
-    // is present, we record the amount as `total_supply`'s constant
-    // initializer so the EVM backend's constructor path SSTOREs it; the
-    // backend also reads `module.metadata["supply"]` to seed the balances
-    // map entry for the deployer.
-    if let Some(IrMetadataValue::GenesisMint { amount, to }) =
-        module.metadata.get("supply").cloned()
-    {
-        if matches!(
-            to,
-            covenant_parser::ast::Principal::Named(covenant_parser::ast::PrincipalKind::Deployer)
-        ) {
-            if let Some(tsf) = module.fields.iter_mut().find(|f| f.id == total_supply_id) {
-                if tsf.initializer_const.is_none() {
-                    tsf.initializer_const = Some(IrConstant::Integer(amount));
-                }
-            }
-        }
+    // Only `to deployer` is honored in the constructor; every other principal
+    // is refused rather than dropped (F-20), and a `total_supply` field default
+    // that disagrees with the genesis amount is refused rather than silently
+    // preferred (F-28). See `conform::apply_genesis_supply`.
+    if !conform::apply_genesis_supply(module, total_supply_id, diags) {
+        return;
     }
 
     // --- Pull metadata defaults ---
@@ -118,8 +133,10 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
             diags.push(d::warn_missing_metadata(span, "decimals"));
             18
         });
-    if decimals_value > 30 {
-        diags.push(d::warn_decimals_range(span, decimals_value));
+    // EIP-20 types `decimals()` as uint8; a value that cannot round-trip
+    // through it is refused rather than warned about (F-41).
+    if !conform::check_decimals(span, decimals_value, diags) {
+        return;
     }
 
     // --- Synthesize the 9 functions, skipping any user-declared ones in permissive mode ---
@@ -205,28 +222,26 @@ const STANDARD_FN_NAMES: &[&str] = &[
     "name",
 ];
 
-/// Find an existing field by name, or inject one with the given type and
-/// return its `GlobalId`.
-fn ensure_field(module: &mut IrModule, name: &str, ty: Ty, _diags: &mut [Diagnostic]) -> GlobalId {
-    if let Some(existing) = module.fields.iter().find(|f| f.name.name.as_ref() == name) {
-        return existing.id;
+/// Refuse any user-declared event or error that shadows a synthesized one with
+/// a different shape (F-35).
+///
+/// `inject_events` / `inject_errors` skip a name the author already used, but
+/// `synth_transfer` and friends keep emitting the canonical arity, so a
+/// differently-shaped redeclaration ships an ABI the runtime does not honour:
+/// a two-word `InsufficientBalance` reverting with a zero-byte payload, or a
+/// `Transfer` whose topic0 is no longer the canonical ERC-20 hash. Returns
+/// `true` when synthesis must stop.
+fn reject_shadow_shape_conflicts(module: &IrModule, diags: &mut Vec<Diagnostic>) -> bool {
+    let mut conflict = false;
+    for name in ["Transfer", "Approval"] {
+        conflict |= conform::event_shadow_conflicts(module, name, EVENT_SHAPE_TRANSFER, diags);
     }
-    let id = GlobalId(module.fields.len() as u32);
-    let span = module.name.span;
-    module.fields.push(IrField {
-        id,
-        name: Ident {
-            name: name.into(),
-            span,
-        },
-        ty: ty.clone(),
-        privacy: PrivacyDomain::Plaintext,
-        initializer_fn: None,
-        initializer_const: None,
-        span,
-        explicit_slot: None,
-    });
-    id
+    // Both synthesized errors revert with `args: Vec::new()`, so their
+    // canonical shape carries no parameters at all.
+    for name in ["InsufficientBalance", "InsufficientAllowance"] {
+        conflict |= conform::error_shadow_conflicts(module, name, &[], diags);
+    }
+    conflict
 }
 
 fn inject_events(module: &mut IrModule, span: Span) {

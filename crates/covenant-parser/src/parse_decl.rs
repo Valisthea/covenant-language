@@ -491,7 +491,7 @@ impl<'a> Parser<'a> {
         let name = self.expect_ident("action name")?;
         let args = self.parse_arg_list()?;
         let (guards, qualifiers) = self.parse_guards_and_qualifiers()?;
-        let body = self.parse_block()?;
+        let body = self.parse_function_body()?;
         Ok(ActionDecl {
             span: start.join(self.current_span()),
             annotations,
@@ -782,7 +782,7 @@ impl<'a> Parser<'a> {
         let from = self.expect_int_literal("source version")?;
         self.expect(&TokenKind::KwTo, "`to`")?;
         let to = self.expect_int_literal("target version")?;
-        let body = self.parse_block()?;
+        let body = self.parse_function_body()?;
         Ok(MigrateBlock {
             from,
             to,
@@ -793,7 +793,7 @@ impl<'a> Parser<'a> {
 
     fn parse_on_destroy(&mut self, start: Span) -> Result<OnDestroyBlock, ParseError> {
         self.expect(&TokenKind::KwOnDestroy, "`on_destroy`")?;
-        let body = self.parse_block()?;
+        let body = self.parse_function_body()?;
         Ok(OnDestroyBlock {
             body,
             span: start.join(self.current_span()),

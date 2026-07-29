@@ -21,9 +21,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr_bp(&mut self, min_bp: u8) -> Result<Expr, ParseError> {
+        // Save and restore rather than pair a single `exit_depth`: the body
+        // charges one level per node it appends to the iterative left spine
+        // (`a + b + c`, `v.f.f.f`, `m[k][k]`) and those charges are only known
+        // once it returns, including on the error path.
+        let base = self.nest_depth;
         self.enter_depth()?;
         let result = self.parse_expr_bp_body(min_bp);
-        self.exit_depth();
+        self.nest_depth = base;
         result
     }
 
@@ -38,6 +43,7 @@ impl<'a> Parser<'a> {
                 if let Expr::Ident(ident) = &lhs {
                     if matches!(self.peek_kind(), Some(TokenKind::FatArrow)) {
                         let id = ident.clone();
+                        self.enter_chain_depth()?;
                         self.advance();
                         let body = self.parse_expr_bp(0)?;
                         let body_span = body.span();
@@ -60,6 +66,11 @@ impl<'a> Parser<'a> {
                     if l_bp < min_bp {
                         break;
                     }
+                    // Every iteration here deepens the tree by one level even
+                    // though the parser itself does not recurse, so the node
+                    // has to be charged explicitly or the depth guard never
+                    // sees a chain of any length.
+                    self.enter_chain_depth()?;
                     self.advance();
                     let rhs = self.parse_expr_bp(r_bp)?;
                     let span = lhs.span().join(rhs.span());
@@ -74,18 +85,21 @@ impl<'a> Parser<'a> {
                     if BP_POSTFIX < min_bp {
                         break;
                     }
+                    self.enter_chain_depth()?;
                     lhs = self.parse_call_tail(lhs)?;
                 }
                 InfixOrPostfix::Field => {
                     if BP_POSTFIX < min_bp {
                         break;
                     }
+                    self.enter_chain_depth()?;
                     lhs = self.parse_field_tail(lhs)?;
                 }
                 InfixOrPostfix::Index => {
                     if BP_POSTFIX < min_bp {
                         break;
                     }
+                    self.enter_chain_depth()?;
                     lhs = self.parse_index_tail(lhs)?;
                 }
             }

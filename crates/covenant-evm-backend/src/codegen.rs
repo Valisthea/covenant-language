@@ -89,6 +89,119 @@ impl<'a> Codegen<'a> {
         }
     }
 
+    /// Reject `hex` literals wider than one EVM PUSH.
+    ///
+    /// `push_n` computed the opcode as `0x60 + (len - 1)` behind a
+    /// `debug_assert!` that the shipped release binary compiles out, so a
+    /// 33-byte literal emitted `0x80` (DUP1) followed by the literal's own
+    /// bytes laid down as instructions. Because the dispatcher leaves the
+    /// selector word on the stack, the bogus DUP1 succeeded and execution fell
+    /// straight into the constant: a literal spelling
+    /// `CALLER PUSH4 0xfffffffe SSTORE PUSH0 PUSH0 RETURN` let any caller
+    /// rewrite `DEPLOYER_SLOT` and take the contract over, from an action
+    /// whose source text only emits a log. A 256-byte literal truncated `len`
+    /// to 0, emitting a single PUSH0 while `op_len` still charged 257 bytes,
+    /// which desynchronised every label offset after it.
+    ///
+    /// The reach is not adversarial-only: a BLS key is 48 bytes and a
+    /// post-quantum key far more, and this compiler's own ERC-8231 registry
+    /// construct exists to hold exactly those.
+    fn check_hex_constants(&mut self) {
+        for f in &self.module.functions {
+            for (v, info) in &f.values {
+                if let ValueInfo::Const(IrConstant::Hex(b)) = info {
+                    if b.len() > asm::MAX_PUSH_BYTES {
+                        let span = f.value_spans.get(v).copied().unwrap_or(f.span);
+                        self.diagnostics
+                            .push(d::hex_constant_too_long(span, b.len()));
+                    }
+                }
+            }
+        }
+    }
+
+    /// Reject a bare struct-typed field (`field cfg: Cfg`, not `[Cfg]`).
+    ///
+    /// There is no lowering for either direction. `cfg.w = v` produced an
+    /// empty function body: the IR for the whole action was just `Return`, and
+    /// the transaction executed with zero storage operations, so every write
+    /// was silently dropped. The read path is worse than a no-op: `StructGet`
+    /// treats operand 0 as a storage ADDRESS, which is correct only when
+    /// `ListGet` computed one, so `cfg.x` evaluated `SLOAD(SLOAD(slot) + 1)`
+    /// and returned the NEXT declared field's word. A guard written
+    /// `when caller == cfg.who` therefore compared the caller against an
+    /// unrelated field that an unguarded action could write, which is how an
+    /// account that was never admin passed it and drained a balance.
+    ///
+    /// Doing this properly needs real multi-slot storage allocation for struct
+    /// fields (`storage.rs` documents the intended layout and reserves 4 slots
+    /// as a placeholder, but nothing implements it). Refuse until it exists,
+    /// the same call E522 makes for nested maps.
+    fn check_bare_struct_fields(&mut self) {
+        for field in &self.module.fields {
+            // `field.ty` is `Unknown` for a struct-typed field: nominal types
+            // are only resolved while typing expressions, so ask the resolver
+            // helper rather than matching the declared type.
+            let ty = storage::resolved_field_ty(self.module, field.id, &field.ty);
+            if let Ty::Struct(sid) = &ty {
+                let ty_name = self
+                    .module
+                    .structs
+                    .iter()
+                    .find(|s| s.id == StructTypeId(sid.0))
+                    .map(|s| s.name.name.to_string())
+                    .unwrap_or_else(|| "<struct>".to_string());
+                self.diagnostics.push(d::bare_struct_field(
+                    field.span,
+                    field.name.name.as_ref(),
+                    &ty_name,
+                ));
+            }
+        }
+    }
+
+    /// Reject a dynamic `indexed` event parameter, and warn about a dynamic
+    /// non-indexed one.
+    ///
+    /// For an `indexed` parameter the ABI spec, and the ABI this compiler
+    /// emits, say the topic is `keccak256(value)`. Nothing hashes it: the
+    /// constant path pushes a zero placeholder and there is no dynamic-value
+    /// encoder anywhere, so every emit produced `topic1 = 0x00..00`. Two logs
+    /// carrying different tags were byte-identical in their topics and a
+    /// filter on `keccak256("alpha")` never matched. DEBT.md has stated since
+    /// V0.1 that this is rejected with a diagnostic; the check had gone
+    /// missing, and E512 now means something else entirely.
+    ///
+    /// The non-indexed case is the same encoding gap in the log data, but it
+    /// is only a warning, for the reason W507 is a warning: putting text in an
+    /// event is an ordinary pattern, and hard-failing it would make routine
+    /// code uncompilable rather than fix an edge case.
+    fn check_dynamic_event_params(&mut self) {
+        for e in &self.module.events {
+            for (name, ty, indexed) in &e.params {
+                if is_static_abi_ty(ty) {
+                    continue;
+                }
+                let ty_name = abi::abi_type_of(ty);
+                if *indexed {
+                    self.diagnostics.push(d::dynamic_indexed_event_param(
+                        e.span,
+                        e.name.name.as_ref(),
+                        name.name.as_ref(),
+                        &ty_name,
+                    ));
+                } else {
+                    self.diagnostics.push(d::warn_dynamic_event_data(
+                        e.span,
+                        e.name.name.as_ref(),
+                        name.name.as_ref(),
+                        &ty_name,
+                    ));
+                }
+            }
+        }
+    }
+
     /// Emit the full runtime bytecode (dispatcher + all public functions).
     pub fn emit_runtime(&mut self) -> Vec<AsmOp> {
         let mut asm = Assembler::new();
@@ -96,6 +209,9 @@ impl<'a> Codegen<'a> {
         // Module-wide fail-loud checks that don't depend on emitted bytecode.
         self.check_events();
         self.check_nested_maps();
+        self.check_hex_constants();
+        self.check_bare_struct_fields();
+        self.check_dynamic_event_params();
 
         // Compute selectors up front.
         for (name, _sig, sel) in
@@ -514,6 +630,17 @@ impl<'a> Codegen<'a> {
             // duration, amount). Dynamic types (text, bytes, list, map, struct)
             // do not round-trip yet and will be extended in V0.2.
             if block.id == entry_id {
+                // The ABI publishes this function as `nonpayable`, so the
+                // runtime has to mean it. Without this guard every action
+                // accepted Ether while the artifact told wallets it could not,
+                // and the ETH landed in a contract whose source never mentions
+                // value. Solidity emits the same check. `abi::emit_abi`
+                // consults the same predicate, so the two can never disagree.
+                if !abi::function_is_payable(f) {
+                    asm.op(asm::OP_CALLVALUE);
+                    asm.push_label("__revert__");
+                    asm.op(asm::OP_JUMPI); // revert when callvalue != 0
+                }
                 self.emit_param_prelude(asm, f);
                 if is_initializer {
                     self.emit_initializer_guard(asm, &f.name.name);
@@ -611,6 +738,23 @@ impl<'a> Codegen<'a> {
     /// MSTORE             ; store word
     /// ```
     fn emit_param_prelude(&mut self, asm: &mut Assembler, f: &IrFunction) {
+        // The dispatcher matched a 4-byte selector and checked nothing else,
+        // and CALLDATALOAD zero-pads past the end of calldata. A caller who
+        // sent only the selector therefore drove any action down its all-zero
+        // argument path with status 1: an owner-setter truncated to its
+        // selector wrote the zero address. Solidity's decoder bounds-checks
+        // `calldatasize` and reverts; so do we. Every ABI-declared parameter
+        // contributes one head word, dynamic ones included (their head is the
+        // data offset), so the requirement is the full head area.
+        if !f.params.is_empty() {
+            let required = 4u32 + (f.params.len() as u32) * 32;
+            asm.push_u32(required);
+            asm.op(asm::OP_CALLDATASIZE);
+            asm.op(asm::OP_LT); // calldatasize < required
+            asm.push_label("__revert__");
+            asm.op(asm::OP_JUMPI);
+        }
+
         for (i, param) in f.params.iter().enumerate() {
             if !is_static_abi_ty(&param.ty) {
                 // Skip dynamic types — their slots stay zero until V0.2.
@@ -619,8 +763,56 @@ impl<'a> Codegen<'a> {
             let calldata_off = 4u32 + (i as u32) * 32;
             asm.push_u32(calldata_off);
             asm.op(asm::OP_CALLDATALOAD);
+            self.emit_param_canonicality_check(asm, &param.ty);
             asm.push_u32(value_memory_offset(param.value));
             asm.op(asm::OP_MSTORE);
+        }
+    }
+
+    /// Reject a calldata word that is not a canonical encoding of the declared
+    /// ABI type. Consumes nothing: the word is still on top of the stack
+    /// afterwards, ready for the caller's MSTORE.
+    ///
+    /// The prelude used to store the raw 32-byte word unmasked and
+    /// unvalidated, which broke both directions.
+    ///
+    /// `bool`: `&&` and `||` are aliased onto the bitwise EVM AND and OR, so
+    /// the word `0x02` is truthy for `!`, for a bare `when b` and for `||`,
+    /// but `0x02 & 0x01 == 0` makes it false for `&&`. A guard written
+    /// `when !(a && b)` therefore FAILED OPEN for a caller who hand-encoded
+    /// `0x02`, while the honest `true, true` correctly reverted. The same word
+    /// is simultaneously not-equal-to-true and not-equal-to-false.
+    ///
+    /// `address`: a recipient word with dirty high bits keys
+    /// `keccak(dirtyWord ‖ slot)`, a storage slot no conformant caller can
+    /// ever address again, while the `Transfer` log emitted in the same
+    /// transaction says the value was delivered. The value leaves the
+    /// reachable supply and state contradicts the event.
+    ///
+    /// Solidity's decoder rejects both. No conformant encoder produces either,
+    /// so this costs correct callers nothing.
+    fn emit_param_canonicality_check(&mut self, asm: &mut Assembler, ty: &Ty) {
+        match ty {
+            Ty::Bool => {
+                // Canonical iff `w == (w != 0)`, i.e. w is exactly 0 or 1.
+                asm.op(asm::OP_DUP1); // [w, w]
+                asm.op(asm::OP_ISZERO);
+                asm.op(asm::OP_ISZERO); // [w, w != 0]
+                asm.op(asm::OP_DUP2); // [w, canon, w]
+                asm.op(asm::OP_EQ); // [w, canon == w]
+                asm.op(asm::OP_ISZERO); // [w, non-canonical]
+                asm.push_label("__revert__");
+                asm.op(asm::OP_JUMPI); // [w]
+            }
+            Ty::Address => {
+                // Canonical iff the top 96 bits are zero.
+                asm.op(asm::OP_DUP1); // [w, w]
+                asm.push_u32(160);
+                asm.op(asm::OP_SHR); // [w, w >> 160]
+                asm.push_label("__revert__");
+                asm.op(asm::OP_JUMPI); // [w]
+            }
+            _ => {}
         }
     }
 
@@ -642,8 +834,10 @@ impl<'a> Codegen<'a> {
             Opcode::BitAnd | Opcode::LogicalAnd => self.binop(asm, f, instr, asm::OP_AND),
             Opcode::BitOr | Opcode::LogicalOr => self.binop(asm, f, instr, asm::OP_OR),
             Opcode::BitXor => self.binop(asm, f, instr, asm::OP_XOR),
-            Opcode::ShiftLeft => self.binop(asm, f, instr, asm::OP_SHL),
-            Opcode::ShiftRight => self.binop(asm, f, instr, asm::OP_SHR),
+            // NOT `binop`: SHL/SHR read the shift count from the top of the
+            // stack, the opposite of SUB/DIV/LT/GT. See `binop_shift`.
+            Opcode::ShiftLeft => self.binop_shift(asm, f, instr, asm::OP_SHL),
+            Opcode::ShiftRight => self.binop_shift(asm, f, instr, asm::OP_SHR),
             Opcode::Eq => self.binop(asm, f, instr, asm::OP_EQ),
             Opcode::Ne => {
                 // EQ is commutative so either operand order is fine, but we
@@ -682,20 +876,44 @@ impl<'a> Codegen<'a> {
                 self.mstore_result(asm, instr);
             }
             Opcode::SignedNeg => {
-                // Two's-complement negation: 0 - x.
-                asm.emit(AsmOp::Push0);
+                // Two's-complement negation: 0 - x. SUB takes its FIRST
+                // argument from the top of the stack, so the operand has to
+                // be pushed first and the zero last. Pushing the zero first
+                // computed `x - 0`, i.e. unary minus was the identity
+                // function and `-x` evaluated to `x` for every input.
                 self.load_operand(asm, f, instr.operands[0]);
+                asm.emit(AsmOp::Push0);
                 asm.op(asm::OP_SUB);
                 self.mstore_result(asm, instr);
             }
 
             // ---- Time / duration arithmetic ----
-            Opcode::TimeAdd | Opcode::DurationAdd | Opcode::DurationScale => {
-                self.binop(asm, f, instr, asm::OP_ADD);
+            //
+            // Checked, exactly like the `amount` arms above. These used to be
+            // raw ADD/SUB: `deadline - now` on a deadline already in the past
+            // returned 2^256-100 instead of reverting, so a "time remaining"
+            // became astronomically large the instant it went negative, and
+            // `time MAX + duration 1` wrapped to the Unix epoch, which every
+            // `now >= unlock` guard then passed. The identical operators on
+            // `amount` have reverted since KSR-CVN-031; there is no reason a
+            // clock wraps where a balance does not.
+            Opcode::TimeAdd | Opcode::DurationAdd => {
+                self.binop_checked(asm, f, instr, asm::OP_ADD);
             }
             Opcode::TimeSub | Opcode::DurationSub => {
-                self.binop(asm, f, instr, asm::OP_SUB);
+                self.binop_checked(asm, f, instr, asm::OP_SUB);
             }
+            // `(duration, amount) -> duration`, i.e. `lock_period * periods`.
+            // This was grouped with the two Add opcodes and emitted as ADD, so
+            // `base * 7` stored `base + 7`: 107 rather than 700, `base * 1`
+            // stored 101, and `base * 0` left the period untouched.
+            Opcode::DurationScale => {
+                self.binop_checked(asm, f, instr, asm::OP_MUL);
+            }
+            // `(duration, amount) -> duration`, i.e. `lock_period * periods`.
+            // This was grouped with the two Add opcodes and emitted as ADD, so
+            // `base * 7` stored `base + 7`: 107 rather than 700, `base * 1`
+            // stored 101, and `base * 0` left the period untouched.
 
             // ---- Storage ----
             Opcode::SLoad(id) => {
@@ -756,12 +974,24 @@ impl<'a> Codegen<'a> {
             }
             Opcode::ListGet => {
                 let stride = self.list_elem_stride(f, instr.operands[0]);
+                // Whether to dereference is a property of the ELEMENT TYPE,
+                // not of the stride. Testing `stride == 1` conflated a scalar
+                // element with a struct that happens to have exactly one
+                // field: the extra SLOAD handed `StructGet`/`StructSet` the
+                // element's stored VALUE where they expect an ADDRESS, so
+                // `xs[i].c` read `SLOAD(SLOAD(elem))` and `xs[i].c = v` wrote
+                // `SSTORE(<element's current value>, v)`. Both the slot and
+                // the word were caller-chosen (the caller picked the element
+                // value at `append` time), i.e. an arbitrary storage read and
+                // an arbitrary storage write out of an ordinary row-table
+                // setter. A two-field struct was unaffected, which is why the
+                // `list<Struct>` fixture never caught it.
                 self.emit_list_elem_addr(asm, f, instr.operands[0], instr.operands[1], stride);
-                if stride == 1 {
+                if !self.list_elem_is_struct(f, instr.operands[0]) {
                     asm.op(asm::OP_SLOAD);
                 }
-                // stride > 1 (struct element): leave the computed address on
-                // the stack as the "struct value" for StructGet/StructSet.
+                // Struct element: leave the computed address on the stack as
+                // the "struct value" for StructGet/StructSet.
                 self.mstore_result(asm, instr);
             }
             Opcode::ListSet => {
@@ -1367,32 +1597,62 @@ impl<'a> Codegen<'a> {
         //
         // The STATICCALL/CALL above used retOffset=0x00, retSize=32, so on
         // success the EVM copied the callee's first 32-byte return word into
-        // mem[0x00]. The previous code zeroed mem[0x00] HERE — *after* the call
-        // — which wiped that return word, so every `IFoo.at(addr).method()`
-        // view returned 0/default (the M3 milestone bug, DEBT.md "external
-        // contract codegen"). We must NOT clobber it before reading.
+        // mem[0x00]. An older revision zeroed mem[0x00] HERE, *after* the
+        // call, which wiped that return word, so every
+        // `IFoo.at(addr).method()` view returned 0/default (the M3 milestone
+        // bug, DEBT.md "external contract codegen"). We must NOT clobber it
+        // before reading.
         //
-        // For a successful-but-empty return (RETURNDATASIZE == 0) mem[0x00]
-        // still holds outgoing calldata, so we substitute zero in that case.
-        // V0.1 assumes 32-byte word returns; dynamic-typed returns
-        // (string/bytes) still need offset+length decoding (tracked in DEBT).
-        asm.op(asm::OP_RETURNDATASIZE);
-        let have_ret = format!(
-            "__extret_{}_{}",
-            f.name.name,
-            instr.result.map(|v| v.0).unwrap_or(u32::MAX)
-        );
-        asm.push_label(have_ret.clone());
-        asm.op(asm::OP_JUMPI); // returndatasize != 0 → keep mem[0x00]
-        asm.emit(AsmOp::Push0); // empty return: mem[0x00] = 0
-        asm.emit(AsmOp::Push0);
-        asm.op(asm::OP_MSTORE);
-        asm.label_def(have_ret);
+        // Validate the width before reading it. mem[0x00] is the same buffer
+        // the outgoing calldata was built in (see the retOffset=0x00 push
+        // above), and the EVM only overwrites as many bytes as the callee
+        // actually returned. Branching on `RETURNDATASIZE != 0` alone accepted
+        // a callee that returned 1 to 31 bytes: the untouched tail of
+        // mem[0x00] still held the outgoing selector word, so `MLOAD(0x00)`
+        // read a non-zero word and a guard of the form
+        // `when IGate.at(gate).allowed(caller)` PASSED on a gate that had
+        // answered false. Returning more than 32 bytes broke it the other way:
+        // the head of any ABI dynamic type is the offset 0x20, likewise
+        // non-zero. So the decision was contaminated by attacker-influenced
+        // stale memory rather than merely unchecked, and it failed toward more
+        // authority.
+        //
+        // The precompile path in this same file already gets this right
+        // (`emit_precompile_call` step 6). Same shape here: a static-typed
+        // result occupies exactly one word, so require exactly 32 bytes; a
+        // dynamic-typed result is ABI-encoded as offset+length+data, so
+        // require at least 32. A callee that conforms to the declared return
+        // type satisfies this; one that does not is an error, not a zero.
+        //
+        // Only when the result is consumed. `IFoo.at(a).notify(x)` written as
+        // a statement still gets an SSA result (the IR builder allocates one
+        // unconditionally, typed `Unknown` when the interface declares no
+        // return), but nobody decodes it, and Solidity does not check the
+        // length of a return nobody decodes either. A callee with no code at
+        // all returns zero bytes, which is a normal outcome for such a call.
+        let consumed = instr.result.is_some_and(|r| value_is_consumed(f, r));
+        if let (Some(result), true) = (instr.result, consumed) {
+            let exact_word = f
+                .value_types
+                .get(&result)
+                .map(is_static_abi_ty)
+                .unwrap_or(true);
+            asm.op(asm::OP_RETURNDATASIZE);
+            asm.push_u32(32);
+            if exact_word {
+                asm.op(asm::OP_EQ);
+                asm.op(asm::OP_ISZERO); // 1 when size != 32
+            } else {
+                asm.op(asm::OP_GT); // 1 when 32 > size, i.e. size < 32
+            }
+            asm.push_label("__revert__");
+            asm.op(asm::OP_JUMPI);
 
-        // Load return value from mem[0x00].
-        asm.emit(AsmOp::Push0);
-        asm.op(asm::OP_MLOAD);
-        self.mstore_result(asm, instr);
+            // Load return value from mem[0x00].
+            asm.emit(AsmOp::Push0);
+            asm.op(asm::OP_MLOAD);
+            self.mstore_result(asm, instr);
+        }
     }
 
     fn emit_terminator(&mut self, asm: &mut Assembler, f: &IrFunction, block: &IrBlock) {
@@ -1590,6 +1850,11 @@ impl<'a> Codegen<'a> {
             IrConstant::Address(b) => asm.push_bytes(b.to_vec()),
             IrConstant::ZeroAddress => asm.emit(AsmOp::Push0),
             IrConstant::Duration { n, .. } => asm.push_bytes(big_endian_u128(*n as u128)),
+            // `check_hex_constants` has already reported E530 for this, but
+            // codegen still runs to completion so the user sees every
+            // diagnostic at once. Emit a placeholder rather than letting
+            // `push_n` compute an out-of-range PUSH opcode.
+            IrConstant::Hex(b) if b.len() > asm::MAX_PUSH_BYTES => asm.emit(AsmOp::Push0),
             IrConstant::Hex(b) => asm.push_bytes(b.to_vec()),
             IrConstant::Text(_) => {
                 // Texts are stored off-stack; emit a zero placeholder for V0.
@@ -1620,6 +1885,23 @@ impl<'a> Codegen<'a> {
         // LT then computes `lhs < rhs`, etc. — matching the IR semantics.
         self.load_operand(asm, f, instr.operands[1]);
         self.load_operand(asm, f, instr.operands[0]);
+        asm.op(op);
+        self.mstore_result(asm, instr);
+    }
+
+    /// `SHL` / `SHR`, which do NOT follow the `binop` convention.
+    ///
+    /// Every other non-commutative opcode in this backend (SUB, DIV, LT, GT)
+    /// takes its LEFT operand from the top of the stack, so `binop` pushes the
+    /// right operand first. `SHL`/`SHR` invert that: they pop the SHIFT COUNT
+    /// first and the value second. Routing them through `binop` therefore
+    /// emitted `b << a` for the source expression `a << b`, so the permission
+    /// bitmap idiom `1 << role` computed `role << 1`: `mask(0)` was 0 where
+    /// the source says 1, `mask(3)` was 6 where the source says 8, and
+    /// `256 >> 4` annihilated to 0. Push the value first, the count last.
+    fn binop_shift(&mut self, asm: &mut Assembler, f: &IrFunction, instr: &Instr, op: u8) {
+        self.load_operand(asm, f, instr.operands[0]); // value (below top)
+        self.load_operand(asm, f, instr.operands[1]); // shift count (top)
         asm.op(op);
         self.mstore_result(asm, instr);
     }
@@ -1738,16 +2020,40 @@ impl<'a> Codegen<'a> {
         self.binop(asm, f, instr, op);
     }
 
+    /// The first memory offset past every SSA slot this function owns.
+    ///
+    /// Multi-word codegen scratch has to start here. The 0x00 scratch region
+    /// is only 0x80 bytes wide before it runs into `SSA_MEMORY_BASE`, so any
+    /// sequence that writes five or more consecutive words from 0x00 silently
+    /// overwrites SSA value 0 onward -- which is what an `emit` with five
+    /// non-indexed parameters did. Two-word users (`emit_map_slot`, which
+    /// writes 0x00 and 0x20 and hashes them immediately) stay well inside the
+    /// scratch region and keep using it.
+    fn scratch_base(&self, f: &IrFunction) -> u32 {
+        let max_value = f
+            .values
+            .iter()
+            .map(|(v, _)| v.0)
+            .chain(f.value_types.keys().map(|v| v.0))
+            .max()
+            .unwrap_or(0);
+        // `+ 1` so the base is past the last SSA word, not on top of it.
+        SSA_MEMORY_BASE + (max_value + 1) * 32
+    }
+
     fn emit_keccak(&mut self, asm: &mut Assembler, f: &IrFunction, instr: &Instr) {
-        // Lay operands out in memory starting at 0x00, then KECCAK256 over the
+        // Lay operands out above the SSA region, then KECCAK256 over the
         // combined length. For V0 we assume every operand is a 32-byte value.
+        // Starting at 0x00 had the same overlap the log-data path had: a hash
+        // of four or more operands ran into SSA value 0.
+        let base = self.scratch_base(f);
         for (i, v) in instr.operands.iter().enumerate() {
             self.load_operand(asm, f, *v);
-            asm.push_u32((i as u32) * 32);
+            asm.push_u32(base + (i as u32) * 32);
             asm.op(asm::OP_MSTORE);
         }
         asm.push_u32(instr.operands.len() as u32 * 32);
-        asm.emit(AsmOp::Push0);
+        asm.push_u32(base);
         asm.op(asm::OP_KECCAK256);
         self.mstore_result(asm, instr);
     }
@@ -1821,6 +2127,20 @@ impl<'a> Codegen<'a> {
         }
     }
 
+    /// Whether a `List<T>`'s element type is a struct, i.e. whether `ListGet`
+    /// must yield a storage ADDRESS (for `StructGet`/`StructSet` to offset
+    /// into) rather than the dereferenced word.
+    ///
+    /// Deliberately independent of [`Self::list_elem_stride`]: a struct with
+    /// exactly one field has stride 1, so the two questions have different
+    /// answers and conflating them was an arbitrary-storage-write primitive.
+    fn list_elem_is_struct(&self, f: &IrFunction, list_value: Value) -> bool {
+        matches!(
+            f.value_types.get(&list_value),
+            Some(Ty::List(inner)) if matches!(inner.as_ref(), Ty::Struct(_))
+        )
+    }
+
     /// `keccak256(slot_number)` -- the start of a list's element data, per
     /// Solidity's own dynamic-array storage convention (length at the slot
     /// itself, elements packed starting at the hash of the slot).
@@ -1836,6 +2156,36 @@ impl<'a> Codegen<'a> {
         asm.op(asm::OP_KECCAK256);
     }
 
+    /// Revert unless `index < length`. Stack-neutral: it consumes only the two
+    /// words it pushes.
+    ///
+    /// The address math below is `keccak256(slot) + index * stride` with a
+    /// plain `ADD`, and `ADD` wraps mod 2^256, so a caller-supplied index
+    /// selected ANY storage slot: an unprivileged account landed the address
+    /// on `DEPLOYER_SLOT`, wrote its own address there, and then passed every
+    /// `only deployer` guard; the same primitive wrote a token's
+    /// `balances[attacker]` directly while `totalSupply` stayed put. Solidity
+    /// panics (0x32) past the end of a dynamic array; so do we, through the
+    /// shared `__revert__` handler.
+    ///
+    /// The list handle's own value IS the current length (it is the `SLoad` of
+    /// the field's slot, which is where the length lives -- the same fact
+    /// `Opcode::ListLength` relies on).
+    fn emit_list_bounds_check(
+        &mut self,
+        asm: &mut Assembler,
+        f: &IrFunction,
+        list_operand: Value,
+        index_operand: Value,
+    ) {
+        self.load_operand(asm, f, index_operand); // [index]
+        self.load_operand(asm, f, list_operand); // [index, length]
+        asm.op(asm::OP_GT); // length > index -> 1 when in bounds
+        asm.op(asm::OP_ISZERO); // 1 when index >= length
+        asm.push_label("__revert__");
+        asm.op(asm::OP_JUMPI); // []
+    }
+
     /// `keccak256(slot_number) + index * stride` -- the storage address of
     /// list element `index`. Leaves exactly that one word on the stack.
     fn emit_list_elem_addr(
@@ -1846,6 +2196,7 @@ impl<'a> Codegen<'a> {
         index_operand: Value,
         stride: u32,
     ) {
+        self.emit_list_bounds_check(asm, f, list_operand, index_operand);
         self.emit_list_base_addr(asm, f, list_operand);
         self.load_operand(asm, f, index_operand);
         if stride > 1 {
@@ -2049,10 +2400,32 @@ impl<'a> Codegen<'a> {
             }
         }
 
-        // Store non-indexed params in scratch memory 0x00, 0x20, ...
+        // Lay the non-indexed params out ABOVE this function's SSA region.
+        //
+        // They used to go at 0x00, 0x20, ... while SSA values live at
+        // `SSA_MEMORY_BASE + v * 32` = 0x80 upward, so data word 4 landed
+        // exactly on SSA value 0, word 5 on value 1, and so on. Everything
+        // read after the emit -- the indexed topic operands loaded just below,
+        // any later data operand, and the whole rest of the function body --
+        // then saw the log payload instead of the parameter. An `emit` of five
+        // values followed by `beneficiary = dest` credited the LAST event
+        // field instead of `dest`, so the caller chose the recipient; the
+        // topic of an `indexed address` was likewise replaced by the last data
+        // word. Four non-indexed params stayed under 0x80, which is why the
+        // threshold looked arbitrary.
+        //
+        // An event with no non-indexed parameters needs no buffer at all, so
+        // keep its offset at 0: pointing a zero-length region past the end of
+        // allocated memory is legal on a real EVM but pointlessly forces a
+        // memory expansion, and some interpreters index the region eagerly.
+        let data_base = if data_ops.is_empty() {
+            0
+        } else {
+            self.scratch_base(f)
+        };
         for (i, &op) in data_ops.iter().enumerate() {
             self.load_operand(asm, f, op);
-            asm.push_u32((i as u32) * 32);
+            asm.push_u32(data_base + (i as u32) * 32);
             asm.op(asm::OP_MSTORE);
         }
         let data_size = data_ops.len() as u32 * 32;
@@ -2066,7 +2439,7 @@ impl<'a> Codegen<'a> {
         }
         asm.push_bytes(topic_hash.to_vec()); // topic0 = event signature hash
         asm.push_u32(data_size);
-        asm.emit(AsmOp::Push0); // data offset = 0x00
+        asm.push_u32(data_base); // data offset
 
         let log_op = match 1 + indexed_ops.len() {
             1 => asm::OP_LOG1,
@@ -2180,6 +2553,45 @@ impl<'a> Codegen<'a> {
 /// `Unknown` fallback (treated as opaque word). False for text, bytes, list,
 /// map, struct, ciphertext-of-dynamic — those require head-tail decoding,
 /// which V0.2 will add.
+/// Whether `v` is read anywhere in `f`: as an instruction operand, as a
+/// terminator's value, or as a block argument.
+///
+/// Used to tell a consumed external-call return value from one the IR builder
+/// allocated only because it allocates one for every call. Conservative by
+/// construction: it scans every use site the IR has, so an unrecognised shape
+/// cannot make a live value look dead.
+fn value_is_consumed(f: &IrFunction, v: Value) -> bool {
+    for b in &f.blocks {
+        for instr in &b.instructions {
+            if instr.operands.contains(&v) {
+                return true;
+            }
+        }
+        let used_by_terminator = match &b.terminator {
+            Terminator::Jump { args, .. } => args.contains(&v),
+            Terminator::Branch {
+                cond,
+                then_args,
+                else_args,
+                ..
+            }
+            | Terminator::FheBranch {
+                cond,
+                then_args,
+                else_args,
+                ..
+            } => *cond == v || then_args.contains(&v) || else_args.contains(&v),
+            Terminator::Return(ret) => *ret == Some(v),
+            Terminator::Revert { args, .. } => args.contains(&v),
+            Terminator::Unreachable => false,
+        };
+        if used_by_terminator {
+            return true;
+        }
+    }
+    false
+}
+
 fn is_static_abi_ty(ty: &covenant_types::Ty) -> bool {
     use covenant_types::Ty::*;
     match ty {

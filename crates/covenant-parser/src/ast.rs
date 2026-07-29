@@ -583,6 +583,10 @@ pub enum LiteralExpr {
     Hex(Box<[u8]>, Span),
     Text(Box<str>, Span),
     Bool(bool, Span),
+    /// A duration literal. The `u64` is the value in **seconds** (`7 days`
+    /// carries 604800) and the `DurationUnit` is the unit as written, kept for
+    /// rendering only. Lowering must use the `u64` as-is: re-applying the unit
+    /// would scale the value twice. See `covenant_lexer::TokenKind::Duration`.
     Duration(u64, DurationUnit, Span),
 }
 

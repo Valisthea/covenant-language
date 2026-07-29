@@ -109,19 +109,29 @@ pub fn run(args: &Cli) -> anyhow::Result<i32> {
 
 /// Lint a source string directly and return all findings (used by integration tests and LSP).
 ///
-/// V0.9 Sprint 39 — runs the new source-scan pass FIRST (catches
-/// pseudo-Solidity / migration anti-patterns even when the source
-/// fails to parse), then runs the IR-based security detectors when
-/// the source DOES compile. Both sets of findings are merged.
+/// V0.9 Sprint 39: runs the source-scan pass FIRST (catches pseudo-Solidity /
+/// migration anti-patterns even when the source fails to parse), then runs the
+/// IR-based security detectors against whatever module the pipeline can build.
+/// Both sets of findings are merged.
 pub fn lint_source(source: &str, source_id: SourceId) -> Vec<framework::Finding> {
     // Always-on: source-text scan for anti-patterns. Works on raw text,
     // doesn't require successful IR build.
     let mut findings: Vec<_> = source_scan::scan(source);
 
-    // IR-dependent detectors: skip if compilation fails. The source-scan
-    // findings above already cover the common reasons compilation fails
-    // (// comments, mapping(), function keyword, etc.).
-    if let Ok(ir) = covenant_driver::compile_to_ir(source, source_id) {
+    // IR-dependent detectors. These run whenever there is a module to run them
+    // against, INCLUDING when IR construction itself raised errors: `build_ir`
+    // still returns the module, and refusing to report findings because some
+    // unrelated diagnostic fired is a fail-open. A linter that goes quiet on
+    // code the compiler just rejected is silent exactly when the code is least
+    // trustworthy, and "no findings" is indistinguishable from "clean" to the
+    // caller. E430/E431 made this concrete: an unbacked collection anywhere in
+    // the file used to suppress every C100/C700/C1100 finding in it.
+    //
+    // Only a frontend failure yields no module, and the source-text scan above
+    // already covers the common reasons for that (`//` comments, `mapping()`,
+    // the `function` keyword, and the rest of the migration anti-patterns).
+    let (ir_opt, _) = covenant_driver::compile_to_ir_for_analysis(source, source_id);
+    if let Some(ir) = ir_opt {
         let registry = DetectorRegistry::new();
         let detectors = registry.filtered(None, Severity::Info, false, None);
         findings.extend(detectors.iter().flat_map(|d| d.analyze(&ir, source)));

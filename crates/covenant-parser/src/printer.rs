@@ -673,7 +673,13 @@ fn literal_str(l: &LiteralExpr) -> String {
         LiteralExpr::Hex(bytes, _) => format!("0x{}", bytes_to_hex(bytes)),
         LiteralExpr::Text(s, _) => format!("\"{}\"", escape_text(s)),
         LiteralExpr::Bool(b, _) => if *b { "true" } else { "false" }.to_string(),
-        LiteralExpr::Duration(n, unit, _) => format!("{n} {}", duration_unit_str(*unit)),
+        // `n` is the value in seconds, not the count the author wrote (see
+        // `TokenKind::Duration`). Divide by the unit to print the literal back
+        // exactly as it appeared: the division is exact because the lexer built
+        // `n` as `written * unit.seconds()`.
+        LiteralExpr::Duration(n, unit, _) => {
+            format!("{} {}", n / unit.seconds(), duration_unit_str(*unit))
+        }
     }
 }
 

@@ -33,10 +33,39 @@ fn coin_runtime() -> Vec<u8> {
         .runtime_bytecode
 }
 
+/// The canonicality check codegen now interposes between `CALLDATALOAD` and
+/// the slot `PUSH`, for the two ABI types whose calldata word can be
+/// non-canonical. Returns the number of bytes to skip, or 0 when the next
+/// bytes are not one of these sequences.
+///
+/// `address`: `DUP1 PUSH1 160 SHR PUSH2 <label> JUMPI`: revert unless the
+/// top 96 bits are zero.
+/// `bool`: `DUP1 ISZERO ISZERO DUP2 EQ ISZERO PUSH2 <label> JUMPI`: revert
+/// unless the word is exactly 0 or 1.
+///
+/// Both leave the loaded word on the stack, so the `PUSH <slot> MSTORE` that
+/// follows is unchanged and this scanner still sees every offset/slot pair.
+fn skip_param_validation(code: &[u8], j: usize) -> usize {
+    let addr_check: [u8; 4] = [0x80, 0x60, 160, 0x1c]; // DUP1 PUSH1 160 SHR
+    let bool_check: [u8; 6] = [0x80, 0x15, 0x15, 0x81, 0x14, 0x15]; // DUP1 ISZERO ISZERO DUP2 EQ ISZERO
+    for prefix_len in [addr_check.len(), bool_check.len()] {
+        let matches = match prefix_len {
+            4 => code.get(j..j + 4) == Some(&addr_check[..]),
+            _ => code.get(j..j + 6) == Some(&bool_check[..]),
+        };
+        // The check always ends with PUSH2 <2 bytes> JUMPI (4 bytes).
+        if matches && code.get(j + prefix_len) == Some(&0x61) {
+            return prefix_len + 4;
+        }
+    }
+    0
+}
+
 /// Scan the runtime for the canonical param-load micro-sequence:
-/// `PUSH1 <off> CALLDATALOAD PUSH1/PUSH2 <slot> MSTORE`. Returns a Vec of
-/// (calldata_offset, memory_slot) pairs for every such pattern found. We skip
-/// over PUSH data so we don't mistake bytes inside literals for opcodes.
+/// `PUSH1 <off> CALLDATALOAD [validation] PUSH1/PUSH2 <slot> MSTORE`. Returns
+/// a Vec of (calldata_offset, memory_slot) pairs for every such pattern found.
+/// We skip over PUSH data so we don't mistake bytes inside literals for
+/// opcodes.
 fn find_param_copies(code: &[u8]) -> Vec<(u32, u32)> {
     let mut out: Vec<(u32, u32)> = Vec::new();
     let mut i = 0;
@@ -45,7 +74,7 @@ fn find_param_copies(code: &[u8]) -> Vec<(u32, u32)> {
         // Recognize PUSH1 <off>, CALLDATALOAD, PUSH{n} <slot>, MSTORE.
         if op == 0x60 && i + 5 < code.len() && code[i + 2] == 0x35 {
             let off = code[i + 1] as u32;
-            let j = i + 3;
+            let j = i + 3 + skip_param_validation(code, i + 3);
             // PUSH1..PUSH2 for the slot value.
             if j >= code.len() {
                 break;

@@ -1,7 +1,9 @@
 //! ABI type mapping, signature computation, selector computation, and JSON
 //! emission.
 
-use covenant_ir::{instr::Terminator, module::IrEvent, IrFunction, IrFunctionKind, IrModule};
+use covenant_ir::{
+    instr::Terminator, module::IrEvent, IrFunction, IrFunctionKind, IrModule, Opcode,
+};
 use covenant_types::Ty;
 use sha3::{Digest, Keccak256};
 
@@ -129,6 +131,33 @@ pub fn is_emitted_function(f: &IrFunction, include_test_actions: bool) -> bool {
     is_public_function(f) || (include_test_actions && matches!(f.kind, IrFunctionKind::Test))
 }
 
+/// Whether a function takes payment, i.e. whether its body reads `msg.value`.
+///
+/// Both halves of the artifact consult this, and they must agree. The ABI used
+/// to hardcode `nonpayable` for every action while the runtime emitted no
+/// CALLVALUE guard at all, so the published interface was a false statement
+/// about the bytecode produced in the same invocation: `no_value(42)` accepted
+/// 5 wei, and `deposit()`, whose body plainly reads `msg.value`, was declared
+/// unpayable and so unreachable with value through its own published ABI. Now
+/// codegen emits the CALLVALUE-must-be-zero guard for exactly the functions
+/// this reports `false` for.
+///
+/// `view`/`reveal` stay read-only regardless: they are STATICCALLed, where
+/// CALLVALUE is zero by construction.
+pub fn function_is_payable(f: &IrFunction) -> bool {
+    if matches!(
+        f.kind,
+        IrFunctionKind::View | IrFunctionKind::Reveal | IrFunctionKind::SelectiveDisclosure
+    ) {
+        return false;
+    }
+    f.blocks.iter().any(|b| {
+        b.instructions
+            .iter()
+            .any(|i| matches!(i.opcode, Opcode::LoadMsgValue))
+    })
+}
+
 /// Assemble the ABI JSON string.
 pub fn emit_abi(module: &IrModule, include_test_actions: bool) -> String {
     let mut items: Vec<String> = Vec::new();
@@ -172,8 +201,12 @@ pub fn emit_abi(module: &IrModule, include_test_actions: bool) -> String {
         let mutability = match f.kind {
             IrFunctionKind::View => "view",
             IrFunctionKind::Reveal => "view",
-            IrFunctionKind::Action => "nonpayable",
             IrFunctionKind::SelectiveDisclosure => "view",
+            // An action that reads `msg.value` is taking payment, so say so.
+            // Declaring it `nonpayable` made it unreachable with value through
+            // its own published interface: an ABI-driven client refuses to
+            // attach value to a nonpayable entry.
+            _ if function_is_payable(f) => "payable",
             _ => "nonpayable",
         };
         items.push(format!(

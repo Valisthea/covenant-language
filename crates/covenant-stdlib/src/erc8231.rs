@@ -47,6 +47,9 @@ use crate::builder::FuncBuilder;
 use crate::config::StdlibConfig;
 use crate::diag as d;
 
+/// Name used in the diagnostics this synthesizer raises.
+const STANDARD: &str = "ERC-8231";
+
 /// Algorithm IDs per FIPS 204 / ERC-8231 §3.
 const ALGORITHM_DILITHIUM_5: u128 = 1;
 
@@ -63,7 +66,7 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
     for name in STANDARD_FN_NAMES {
         if user_fns.contains(*name) {
             if config.strict_conflict_detection {
-                diags.push(d::user_fn_conflict(span, name));
+                diags.push(d::user_fn_conflict(span, STANDARD, name));
                 return;
             } else {
                 diags.push(d::warn_user_override(span, name));

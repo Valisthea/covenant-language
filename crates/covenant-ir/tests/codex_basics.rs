@@ -1,7 +1,7 @@
 //! Integration tests: build IR for each Codex Basics fixture.
 
 use covenant_diag::{Diagnostic, DiagnosticLevel, SourceId};
-use covenant_ir::{build_ir, validate, IrFunctionKind, IrModule, Opcode};
+use covenant_ir::{build_ir, codes, validate, IrFunctionKind, IrModule, Opcode};
 use covenant_lexer::tokenize;
 use covenant_parser::parse;
 use covenant_privacy::analyze_privacy;
@@ -111,7 +111,25 @@ fn example_4_shielded_counter_has_fhe_and_reveal() {
 fn example_5_quantum_board_has_pq_verify() {
     let src = include_str!("../../covenant-lexer/tests/fixtures/example_05_quantum_board.cov");
     let (m, diags) = pipeline(src);
-    assert!(diags.is_empty(), "{diags:?}");
+    // The board's `posts` collection has no storage field: nothing in the
+    // compiler allocates one. `append post { .. }` therefore built the element
+    // and dropped it (a successful, gas-burning, write-nothing call in a
+    // construct whose entire point is being append-only), and `posts[i].<field>`
+    // read storage slot 0, i.e. the construct's first declared field. Both are
+    // now refused, so this fixture no longer builds clean. Restore
+    // `assert!(diags.is_empty())` only once a board actually allocates `posts`.
+    assert!(
+        diags
+            .iter()
+            .any(|d| d.code == codes::E430_APPEND_UNBACKED_COLLECTION),
+        "expected E430 for `append post` with no storage field, got: {diags:?}"
+    );
+    assert!(
+        diags
+            .iter()
+            .any(|d| d.code == codes::E431_IMPLICIT_COLLECTION_UNBACKED),
+        "expected E431 for reads of `posts`, got: {diags:?}"
+    );
     let vdiags = validate(&m);
     assert!(vdiags.is_empty(), "validator: {vdiags:?}");
     let has_pq = m.functions.iter().any(|f| {

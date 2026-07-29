@@ -54,11 +54,77 @@ pub const E426_MEMBERSHIP_IN_UNIMPLEMENTED: DiagCode = DiagCode(426);
 /// array to iterate, so there is nothing correct to emit. List `.argmax` /
 /// `.argmin` still lower (`ListArgMax` / `ListArgMin`); this is map-only.
 pub const E427_MAP_ARG_REDUCTION_UNIMPLEMENTED: DiagCode = DiagCode(427);
+/// `append <collection> { .. }` where `collection` has no storage field. The
+/// persistence path (ListAppend + SStore of the new length) lives inside an
+/// `if let Some(field)`, so an unbacked collection skipped it entirely: the
+/// append executed, reported success and wrote nothing. A `board`'s `posts` is
+/// exactly this shape (no construct synthesizes it), which made the one
+/// operation the construct exists for a silent no-op.
+pub const E430_APPEND_UNBACKED_COLLECTION: DiagCode = DiagCode(430);
+/// A construct-implicit collection (`posts` on a `board`, `tally` on a
+/// `ballot`) read as a value. Nothing allocates a storage field for these, so
+/// `lower_lang_ident` answered with the integer 0 and the backend then treated
+/// that 0 as a list handle: `posts.length` read 0 forever and `posts[i].<field>`
+/// SLOADed storage slot 0, disclosing the construct's FIRST DECLARED FIELD
+/// verbatim for every index. Refusing is the only honest answer until the
+/// collection is actually allocated.
+pub const E431_IMPLICIT_COLLECTION_UNBACKED: DiagCode = DiagCode(431);
+/// `match` used as an expression has no lowering. It evaluated the scrutinee
+/// for its side effects and then produced the constant 0, so `n = match n { .. }`
+/// did not merely fail to update `n`, it destroyed the value already there.
+/// Unlike the statement form (which now lowers to a real comparison chain), the
+/// expression form has no answer for a scrutinee that matches no arm: the
+/// grammar has no wildcard pattern, so the default value cannot be written down.
+pub const E432_MATCH_EXPR_UNIMPLEMENTED: DiagCode = DiagCode(432);
+/// `try_action { .. } catch _ { .. }` has no lowering. The builder inlined the
+/// try body into the current block and dropped the catch body, so a failure
+/// inside the body reverted the whole transaction and the catch never ran.
+/// Trapping a revert on the EVM requires an external CALL boundary and a
+/// returndata check; there is no `TryCall` terminator anywhere in the IR.
+pub const E433_TRY_CATCH_UNIMPLEMENTED: DiagCode = DiagCode(433);
+/// A non-empty list literal (`xs = [10, 20, 30]`) has no lowering. It compiled
+/// to a placeholder `StructNew`, whose backend arm emits a single `PUSH0`, so
+/// the enclosing assignment stored one zero into the field's length word and
+/// none of the elements was written anywhere.
+pub const E434_LIST_LITERAL_UNIMPLEMENTED: DiagCode = DiagCode(434);
+/// `delete <target>` on a shape with no zeroing lowering. `delete` shared an
+/// empty match arm with `discard`, so a revocation action compiled to an empty
+/// function that still shipped in the ABI and reported success. The supported
+/// shapes now emit a real write; everything else must refuse rather than go
+/// back to reporting success for a revocation that did not happen.
+pub const E435_DELETE_UNSUPPORTED_TARGET: DiagCode = DiagCode(435);
+/// An `only <principal>` clause whose principal is not an address. The parser
+/// routes any non-keyword token to `Principal::Address(expr)` and the guard
+/// lowered `caller == <that value>` verbatim, so `only "owner"` became
+/// `caller == 0` and `only 42` became `caller == 42`. Named principals resolved
+/// by name only, so `field owner: map<address, bool>` compared the caller with
+/// the map's (never-written) base slot. Every one of these compiled clean and
+/// produced an action that reverts for every possible caller forever.
+pub const E436_PRINCIPAL_NOT_ADDRESS: DiagCode = DiagCode(436);
+/// `match` on an encrypted scrutinee. The statement form lowers to a plaintext
+/// compare-and-branch chain, which cannot be applied to a ciphertext handle:
+/// the branch would test the handle, not the value it hides. `encrypted_when`
+/// is the construct that carries encrypted control flow.
+pub const E437_MATCH_ENCRYPTED_SCRUTINEE: DiagCode = DiagCode(437);
 /// KSR-CVN-030: an annotation name is not in the canonical set. Warning,
 /// not error, because user-defined metadata annotations are legitimate —
 /// but a typo on a security-relevant name like `@non_reentrant` would
 /// otherwise silently downgrade the action to an unguarded no-op.
 pub const W850_UNKNOWN_ANNOTATION: DiagCode = DiagCode(850);
+/// `given <cond>` is compiled as a PRECONDITION, asserted before the body runs,
+/// and is byte-identical to `when <cond>`. The guide shipped in this tree
+/// describes it as a postcondition ("checked after the body executes"), so an
+/// author writing a conservation invariant gets the opposite of what they read.
+/// Warned, not refused: the check is real and enforced, it is just early, and
+/// the language has no postcondition construct to redirect them to. Only
+/// emitted when the two readings actually diverge, that is when the guard reads
+/// a field the body writes.
+///
+/// Numbered 440, not 430: the rendered prefix comes from the diagnostic LEVEL,
+/// not from the constant's name (E421 renders as `W421` because it is a
+/// warning), so reusing 430 here would make `E430` and `W430` the same code and
+/// send `covenant explain` to the wrong entry.
+pub const W440_GIVEN_IS_PRECONDITION: DiagCode = DiagCode(440);
 
 pub fn ssa_dominance(span: Span, value: &str) -> Diagnostic {
     Diagnostic::error(
@@ -209,6 +275,157 @@ pub fn map_arg_reduction_unimplemented(span: Span, member: &str) -> Diagnostic {
         ),
         span,
     )
+}
+
+/// `append` into a collection with no storage field. Refuse rather than build
+/// the element value and drop it, which reported success and wrote nothing.
+pub fn append_unbacked_collection(span: Span, collection: &str) -> Diagnostic {
+    Diagnostic::error(
+        E430_APPEND_UNBACKED_COLLECTION,
+        format!(
+            "`append {collection} {{ .. }}` cannot be compiled: `{collection}` has no storage \
+             field, so there is nowhere to write the element. It previously built the element \
+             and discarded it, so the append succeeded on chain and stored nothing. Declare the \
+             collection as a real field (e.g. `{collection}s: [Entry] = []` on a `record`, with a \
+             `struct Entry {{ .. }}`) and append into that."
+        ),
+        span,
+    )
+}
+
+/// A construct-implicit collection used as a value. Refuse rather than answer
+/// with the integer 0, which the backend reads as a handle onto storage slot 0.
+pub fn implicit_collection_unbacked(span: Span, name: &str) -> Diagnostic {
+    Diagnostic::error(
+        E431_IMPLICIT_COLLECTION_UNBACKED,
+        format!(
+            "`{name}` has no storage field and cannot be read. Nothing allocates a slot for it, \
+             so it previously lowered to the constant 0 and the backend then used that 0 as a \
+             list handle: `{name}.length` always read 0, and `{name}[i]` returned the contents of \
+             storage slot 0 (the construct's FIRST DECLARED FIELD) for every index. Declare the \
+             collection as an explicit field and read that instead."
+        ),
+        span,
+    )
+}
+
+/// `match` in expression position cannot be lowered. Refuse rather than answer
+/// with a constant 0, which overwrote the destination on assignment.
+pub fn match_expr_unimplemented(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E432_MATCH_EXPR_UNIMPLEMENTED,
+        "`match` used as an expression has no lowering and cannot be compiled. It previously \
+         evaluated the scrutinee and then produced the constant 0, so `n = match n { .. }` \
+         silently zeroed `n` instead of updating it, and a `match` inside a guard compared \
+         against 0. Covenant has no wildcard pattern, so a scrutinee matching no arm has no \
+         value to yield. Use an `if`/`else` expression chain, whose `else` you write \
+         explicitly: `if n == 1 { 10 } else if n == 2 { 20 } else { 0 }`. The STATEMENT form \
+         (`match n { 1 => { .. } }`) does compile."
+            .to_string(),
+        span,
+    )
+}
+
+/// `match` on a ciphertext cannot be lowered. The statement form compiles to a
+/// plaintext compare-and-branch chain, which would branch on the handle.
+pub fn match_encrypted_scrutinee(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E437_MATCH_ENCRYPTED_SCRUTINEE,
+        "`match` on an encrypted value has no lowering and cannot be compiled. The statement \
+         form lowers to a plaintext compare-and-branch chain, which would test the ciphertext \
+         HANDLE rather than the value it hides, and the resulting branch would also leak which \
+         arm was taken. Use `encrypted_when` for control flow over encrypted data."
+            .to_string(),
+        span,
+    )
+}
+
+/// `try_action` / `catch` cannot be lowered. Refuse rather than inline the try
+/// body and drop the catch body, which made a failure revert the whole call.
+pub fn try_catch_unimplemented(span: Span) -> Diagnostic {
+    Diagnostic::error(
+        E433_TRY_CATCH_UNIMPLEMENTED,
+        "`try_action { .. } catch { .. }` has no lowering and cannot be compiled. The try body \
+         was inlined into the surrounding block and the catch body was discarded, so a failure \
+         inside the body reverted the entire transaction and the catch never ran: the opposite \
+         of what the construct says. Trapping a revert on the EVM needs an external call \
+         boundary and a returndata check, which the IR has no terminator for. Check the failure \
+         condition up front instead (e.g. `when x != 0` before dividing by `x`)."
+            .to_string(),
+        span,
+    )
+}
+
+/// A non-empty list literal cannot be lowered. Refuse rather than store the
+/// single zero the placeholder produced.
+pub fn list_literal_unimplemented(span: Span, len: usize) -> Diagnostic {
+    Diagnostic::error(
+        E434_LIST_LITERAL_UNIMPLEMENTED,
+        format!(
+            "a list literal with {len} element(s) has no lowering and cannot be compiled. It \
+             previously compiled to a placeholder that the backend answered with a single zero, \
+             so `xs = [..]` wrote one 0 into the list's length word and stored none of the \
+             elements. Build the list with `append` instead, one element per statement. The \
+             empty literal `[]` still compiles: it is exactly the zero-length list."
+        ),
+        span,
+    )
+}
+
+/// `delete <target>` on a shape with no zeroing lowering. Refuse rather than
+/// compile the revocation to nothing and report success.
+pub fn delete_unsupported_target(span: Span, what: &str) -> Diagnostic {
+    Diagnostic::error(
+        E435_DELETE_UNSUPPORTED_TARGET,
+        format!(
+            "`delete` cannot be compiled here: {what}. `delete` used to be a no-op, so a \
+             revocation action compiled to an empty function that still shipped in the ABI and \
+             reported success on chain while the value survived. Supported targets are a plain \
+             field (`delete flag`), a map entry (`delete allowance[spender]`) and a list element \
+             (`delete xs[i]`)."
+        ),
+        span,
+    )
+}
+
+/// An `only` principal that is not an address. Refuse rather than emit
+/// `caller == <non-address>`, which no caller can ever satisfy.
+pub fn principal_not_address(span: Span, what: &str, rendered_ty: &str) -> Diagnostic {
+    Diagnostic::error(
+        E436_PRINCIPAL_NOT_ADDRESS,
+        format!(
+            "`only {what}` is not an address principal (it is `{rendered_ty}`), so it cannot be \
+             compiled. The guard lowered to `caller == <that value>` verbatim, which no caller \
+             can ever satisfy: the action compiled clean and then reverted for every caller \
+             forever, on an immutable contract. Use an `address`-typed principal (`only owner` \
+             with a `field owner: address`, `only deployer`, or `only <address expression>`). \
+             For an allowlist held in a map, write the lookup as an ordinary guard: \
+             `when allowlist[caller]`."
+        ),
+        span,
+    )
+}
+
+/// `given` is enforced before the body, not after. Warn only where the two
+/// readings diverge, that is where the guard reads a field the body writes.
+pub fn given_is_precondition(span: Span, field: &str) -> Diagnostic {
+    Diagnostic {
+        level: DiagnosticLevel::Warning,
+        code: W440_GIVEN_IS_PRECONDITION,
+        message: format!(
+            "`given` is compiled as a PRECONDITION, asserted before the body runs, and is \
+             byte-identical to `when`. This guard reads `{field}`, which the body writes, so \
+             the check sees the OLD value and the invariant is not enforced on the new one"
+        ),
+        span,
+        help: Some(
+            "the guide describes `given` as a postcondition checked after the body; the \
+             compiler has no postcondition construct. Write the condition over the post-state \
+             explicitly, e.g. `when n + v <= 10` instead of `given n <= 10` for a body that \
+             does `n = n + v`"
+                .to_string(),
+        ),
+    }
 }
 
 pub fn selective_disclosure_deferred(span: Span) -> Diagnostic {

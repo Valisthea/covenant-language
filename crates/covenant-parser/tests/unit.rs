@@ -485,8 +485,42 @@ fn expr_in_operator() {
 fn expr_duration_literal() {
     let e = parse_view_body("7 days");
     match e {
-        Expr::Literal(LiteralExpr::Duration(7, DurationUnit::Days, _)) => {}
-        other => panic!("expected Duration(7, Days), got {other:?}"),
+        // The AST carries the literal in seconds, so the value the IR lowers is
+        // already the full week (see `LiteralExpr::Duration`).
+        Expr::Literal(LiteralExpr::Duration(604_800, DurationUnit::Days, _)) => {}
+        other => panic!("expected Duration(604800, Days), got {other:?}"),
+    }
+}
+
+/// Every duration unit reaches the AST scaled by its own factor. This is the
+/// value handed to IR lowering, so it is the value that ends up in bytecode.
+#[test]
+fn expr_duration_units_reach_ast_in_seconds() {
+    for (src, expected) in [
+        ("1 seconds", 1u64),
+        ("1 minutes", 60),
+        ("1 hours", 3_600),
+        ("1 days", 86_400),
+        ("1 weeks", 604_800),
+        ("30 days", 2_592_000),
+    ] {
+        match parse_view_body(src) {
+            Expr::Literal(LiteralExpr::Duration(n, _, _)) => {
+                assert_eq!(n, expected, "wrong second count for `{src}`");
+            }
+            other => panic!("expected a duration literal for `{src}`, got {other:?}"),
+        }
+    }
+}
+
+/// The printer must render the literal the author wrote, not the second count:
+/// `fmt` is not allowed to rewrite `7 days` into `604800 days`.
+#[test]
+fn printer_renders_duration_as_written() {
+    use covenant_parser::printer::expr_str;
+    for src in ["7 days", "1 seconds", "30 days", "52 weeks", "2 hours"] {
+        let e = parse_view_body(src);
+        assert_eq!(expr_str(&e), src, "printer changed the duration literal");
     }
 }
 
