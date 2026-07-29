@@ -10,3 +10,7 @@ tsconfig.json
 package-lock.json
 RELEASE.md
 *.vsix
+# Build output from previous packaging runs. `*.vsix` caught the bundles but
+# not the checksum manifests beside them, so every extension shipped with
+# SHA256SUMS files listing v0.8.x artifacts that are not in the package.
+dist/vsix/**

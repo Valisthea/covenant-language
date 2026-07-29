@@ -340,7 +340,7 @@ jobs:
             echo "Release already has notes, leaving them alone."
             exit 0
           fi
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           # Plain prefix matching, not a regex: the version contains dots and
           # the headings contain brackets, and an escaped-bracket pattern
           # silently degrades into a character class that matches every
