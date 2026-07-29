@@ -4,9 +4,20 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  # Lets an already-tagged release be rebuilt without moving the tag, which
+  # is what a partial upload leaves you needing.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build, for example v0.9.7'
+        required: true
+        type: string
 
 permissions:
   contents: write
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   # ── Build covenant CLI binary ─────────────────────────────────────────────
@@ -24,7 +35,10 @@ jobs:
             target: aarch64-unknown-linux-gnu
             asset_name: covenant-linux-aarch64
             cross: true
-          - os: macos-13
+          # Apple Silicon runner cross-linking the Intel target. The macos-13
+          # Intel runners were retired, and a job asking for one queues
+          # forever instead of failing, which silently drops the asset.
+          - os: macos-latest
             target: x86_64-apple-darwin
             asset_name: covenant-macos-x86_64
           - os: macos-latest
@@ -36,7 +50,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -80,12 +95,28 @@ jobs:
         shell: pwsh
         run: Get-FileHash ${{ matrix.asset_name }} -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File ${{ matrix.asset_name }}.sha256
 
+      # Five matrix jobs race to attach assets to the same release, and a
+      # losing upload used to fail the job while leaving the release short an
+      # asset with nothing pointing at which one. --clobber makes the upload
+      # idempotent and the retry absorbs the race.
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ matrix.asset_name }}
-            ${{ matrix.asset_name }}.sha256
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if gh release upload "${RELEASE_TAG}" \
+                 "${{ matrix.asset_name }}" \
+                 "${{ matrix.asset_name }}.sha256" \
+                 --clobber --repo "${GITHUB_REPOSITORY}"; then
+              echo "uploaded ${{ matrix.asset_name }} on attempt ${attempt}"
+              exit 0
+            fi
+            echo "upload attempt ${attempt} failed, retrying"
+            sleep $((attempt * 10))
+          done
+          echo "::error::${{ matrix.asset_name }} could not be attached to ${RELEASE_TAG}"
+          exit 1
 
   # ── Build covenant-lsp binary (VS Code extension bundling) ────────────────
   build-lsp:
@@ -106,7 +137,8 @@ jobs:
             asset_name: covenant-lsp-linux-arm64
             binary: covenant-lsp
             cross: true
-          - os: macos-13
+          # See the note on the CLI matrix: macos-13 no longer exists.
+          - os: macos-latest
             target: x86_64-apple-darwin
             platform: darwin-x64
             asset_name: covenant-lsp-darwin-x64
@@ -124,7 +156,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -172,12 +205,28 @@ jobs:
         shell: pwsh
         run: Get-FileHash ${{ matrix.asset_name }} -Algorithm SHA256 | Select-Object -ExpandProperty Hash | Out-File ${{ matrix.asset_name }}.sha256
 
+      # Five matrix jobs race to attach assets to the same release, and a
+      # losing upload used to fail the job while leaving the release short an
+      # asset with nothing pointing at which one. --clobber makes the upload
+      # idempotent and the retry absorbs the race.
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ matrix.asset_name }}
-            ${{ matrix.asset_name }}.sha256
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if gh release upload "${RELEASE_TAG}" \
+                 "${{ matrix.asset_name }}" \
+                 "${{ matrix.asset_name }}.sha256" \
+                 --clobber --repo "${GITHUB_REPOSITORY}"; then
+              echo "uploaded ${{ matrix.asset_name }} on attempt ${attempt}"
+              exit 0
+            fi
+            echo "upload attempt ${attempt} failed, retrying"
+            sleep $((attempt * 10))
+          done
+          echo "::error::${{ matrix.asset_name }} could not be attached to ${RELEASE_TAG}"
+          exit 1
 
       - name: Upload artifact (for extension packaging)
         uses: actions/upload-artifact@v4
@@ -193,7 +242,8 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
@@ -218,3 +268,93 @@ jobs:
           publish covenant-driver
           publish covenant-lsp
           publish covenant-cli
+
+  # ── Refuse to call a release finished if it is missing a platform ─────────
+  # v0.9.7 shipped without covenant-linux-x86_64 and without either Intel
+  # macOS binary. Nothing failed loudly: one upload lost a race and two jobs
+  # queued forever on a retired runner label. The gap surfaced only when
+  # someone tried the download link. This job is the fail-loud rule the
+  # compiler applies to itself, applied to its own release.
+  verify-assets:
+    name: Verify every platform is attached
+    runs-on: ubuntu-latest
+    needs: [build, build-lsp]
+    steps:
+      - name: Check the release carries all expected assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          expected="
+          covenant-linux-x86_64
+          covenant-linux-aarch64
+          covenant-macos-x86_64
+          covenant-macos-aarch64
+          covenant-windows-x86_64.exe
+          covenant-lsp-linux-x64
+          covenant-lsp-linux-arm64
+          covenant-lsp-darwin-x64
+          covenant-lsp-darwin-arm64
+          covenant-lsp-win32-x64.exe
+          "
+          present=$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" \
+                      --json assets --jq '.assets[].name')
+          missing=0
+          for asset in ${expected}; do
+            if ! grep -qx -- "${asset}" <<< "${present}"; then
+              echo "::error::${RELEASE_TAG} is missing ${asset}"
+              missing=1
+            fi
+            if ! grep -qx -- "${asset}.sha256" <<< "${present}"; then
+              echo "::error::${RELEASE_TAG} is missing ${asset}.sha256"
+              missing=1
+            fi
+          done
+          if [ "${missing}" -ne 0 ]; then
+            echo "The download links on the install page would 404. Failing."
+            exit 1
+          fi
+          echo "All 10 platform binaries and their checksums are attached."
+
+  # ── Seed the release notes from the changelog ─────────────────────────────
+  # Left to itself the tag ships with an empty body, which is what happened
+  # to v0.9.5, v0.9.6 and v0.9.7. Only fills a body that is still empty, so a
+  # hand-written set of notes is never overwritten.
+  release-notes:
+    name: Seed release notes from CHANGELOG
+    runs-on: ubuntu-latest
+    needs: verify-assets
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - name: Fill the body if the release has none
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body=$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json body --jq .body)
+          if [ -n "${body//[[:space:]]/}" ]; then
+            echo "Release already has notes, leaving them alone."
+            exit 0
+          fi
+          version="${GITHUB_REF_NAME#v}"
+          # Plain prefix matching, not a regex: the version contains dots and
+          # the headings contain brackets, and an escaped-bracket pattern
+          # silently degrades into a character class that matches every
+          # heading, which hands back the wrong section.
+          section=$(awk -v v="${version}" '
+            substr($0, 1, 3) == "## " {
+              if (found) exit
+              head = substr($0, 4)
+              sub(/^\[/, "", head)
+              if (index(head, v) == 1) found = 1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+          if [ -z "${section//[[:space:]]/}" ]; then
+            echo "::warning::No CHANGELOG section for ${version}; leaving the body empty."
+            exit 0
+          fi
+          printf '%s\n' "${section}" > notes.md
+          gh release edit "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file notes.md
+          echo "Seeded release notes from the ${version} changelog section."
