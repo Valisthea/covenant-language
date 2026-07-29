@@ -8,7 +8,7 @@ repository.workspace = true
 # Bundled as a .mcpb, not consumed as a library. Keeping it out of the
 # registry also keeps rmcp out of the published dependency graph.
 publish = false
-description = "MCP server exposing Covenant V0.8 compiler tools to AI agents (Claude Code, Cursor, Claude Desktop)"
+description = "MCP server exposing the Covenant compiler to AI agents (Claude Code, Cursor, Claude Desktop)"
 
 [lib]
 name = "covenant_mcp"

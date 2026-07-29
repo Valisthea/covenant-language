@@ -1,6 +1,9 @@
 # covenant-mcp
 
-MCP (Model Context Protocol) server that exposes the Covenant V0.8 compiler to any MCP-compatible AI agent — Claude Code, Cursor, Claude Desktop.
+MCP (Model Context Protocol) server that exposes the Covenant compiler to any MCP-compatible AI agent: Claude Code, Cursor, Claude Desktop.
+
+The version it reports is the version of the compiler inside it. Covenant is
+testnet-only and its cryptographic primitives are mocked.
 
 ## Tools
 
@@ -54,8 +57,8 @@ cargo build -p covenant-mcp --release
 
 ## Protocol
 
-- **stdout** — MCP JSON-RPC wire protocol
-- **stderr** — structured logs (tracing)
-- **Transport** — stdio (stdin/stdout)
+- **stdout**: MCP JSON-RPC wire protocol
+- **stderr**: structured logs (tracing)
+- **Transport**: stdio (stdin/stdout)
 
 Set `RUST_LOG=debug` for verbose logging.

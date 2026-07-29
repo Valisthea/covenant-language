@@ -83,7 +83,7 @@ pub fn run() -> CallToolResult {
             },
             {
                 "keyword":       "module",
-                "auto_synth":    "Nothing — generic escape hatch",
+                "auto_synth":    "Nothing: generic escape hatch",
                 "use_when":      "Generic logic when no specialized keyword fits"
             },
             {
