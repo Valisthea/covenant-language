@@ -240,6 +240,10 @@ jobs:
     name: Publish to crates.io
     runs-on: ubuntu-latest
     needs: build
+    # A manual rebuild exists to repair missing binaries. crates.io refuses a
+    # version that already exists, so running this again would fail the run
+    # for a reason that is not a problem.
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
