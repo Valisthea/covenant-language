@@ -65,11 +65,21 @@ function downloadBinary(platform, version) {
     fs.rmSync(path.join(binDir, f));
   }
 
-  // Use gh CLI — handles auth for both public and private repos
+  // Use gh CLI, which handles auth for both public and private repos.
+  //
+  // A missing asset is expected, not fatal: CI does not build every platform in
+  // PLATFORMS (darwin-x64 has never been produced). Skip that platform and let
+  // the caller carry on, rather than aborting the whole run and shipping no
+  // VSIX at all.
   console.log(`  Downloading ${assetName} from v${version}`);
-  run(
-    `gh release download v${version} --repo ${REPO} --pattern "${assetName}" --dir "${binDir}" --clobber`
-  );
+  try {
+    run(
+      `gh release download v${version} --repo ${REPO} --pattern "${assetName}" --dir "${binDir}" --clobber`
+    );
+  } catch {
+    console.warn(`  ⚠  ${assetName} is not in release v${version}, skipping this platform`);
+    return null;
+  }
 
   // Rename asset to the expected bin/ name
   const downloaded = path.join(binDir, assetName);
@@ -100,11 +110,15 @@ function main() {
 
   const ext = path.resolve(__dirname, "..");
   const outputs = [];
+  const skipped = [];
 
   for (const platform of platforms) {
     console.log(`\n══ ${platform} ══`);
 
-    downloadBinary(platform, version);
+    if (downloadBinary(platform, version) === null) {
+      skipped.push(platform);
+      continue;
+    }
 
     const outFile = path.join(ext, `covenant-lang-${platform}-${version}.vsix`);
     run(`npx @vscode/vsce package --target ${platform} --out "${outFile}"`, {
@@ -121,6 +135,9 @@ function main() {
 
   console.log("\n══ Done ══\n");
   outputs.forEach((f) => console.log(`  ${path.basename(f)}`));
+  if (skipped.length) {
+    console.log(`\n  Skipped (no LSP binary in the release): ${skipped.join(", ")}`);
+  }
 }
 
 main();
