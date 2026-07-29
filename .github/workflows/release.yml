@@ -251,7 +251,26 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      # No CARGO_REGISTRY_TOKEN is configured, so no Covenant crate has ever
+      # reached crates.io: this job was skipped on v0.9.5, absent on v0.9.6
+      # and cancelled on v0.9.7, and it had never actually attempted a
+      # publish. On the first release where every build passes it would try
+      # one and fail on the missing token, turning a good release red.
+      # Nothing depends on crates.io today; the install page builds from
+      # source. Set the secret and this starts running on the next tag.
+      #
+      # The check is on a step rather than the job because the secrets
+      # context is not available in a job-level `if`.
+      - name: Report that crates.io publishing is not configured
+        if: env.CARGO_REGISTRY_TOKEN == ''
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          echo "::notice::CARGO_REGISTRY_TOKEN is not set; skipping crates.io."
+          echo "The GitHub release binaries and the from-source install path are unaffected."
+
       - name: Publish crates in dependency order
+        if: env.CARGO_REGISTRY_TOKEN != ''
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
