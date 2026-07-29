@@ -11,8 +11,8 @@
     {
       "name": "covenant",
       "source": "./editors/claude-code",
-      "description": "Agent-side expertise for Covenant v0.9.6, FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, defensive code review, and the compiler's fail-loud diagnostics.",
-      "version": "0.9.6",
+      "description": "Agent-side expertise for Covenant v0.9.7, FHE, ZK, post-quantum, cryptographic amnesia, Solidity migration, defensive code review, and the compiler's fail-loud diagnostics.",
+      "version": "0.9.7",
       "homepage": "https://github.com/Valisthea/covenant-language/tree/main/editors/claude-code",
       "category": "languages"
     }

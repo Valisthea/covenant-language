@@ -1,7 +1,7 @@
 {
   "name": "covenant",
-  "version": "0.9.6",
-  "description": "Agent-side expertise for Covenant v0.9.6, FHE, ZK, post-quantum, cryptographic amnesia, fail-loud compiler diagnostics, Solidity migration, and defensive code review.",
+  "version": "0.9.7",
+  "description": "Agent-side expertise for Covenant v0.9.7, FHE, ZK, post-quantum, cryptographic amnesia, fail-loud compiler diagnostics, Solidity migration, and defensive code review.",
   "author": {
     "name": "Valisthea",
     "url": "https://github.com/Valisthea/covenant-language"

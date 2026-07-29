@@ -22,7 +22,96 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 
 ## [Unreleased]
 
-(empty, V0.9.6 just shipped.)
+(empty, V0.9.7 just shipped.)
+
+---
+
+## [0.9.7], 2026-07-24 (remediation of the v0.9.6 adversarial review: 43 findings)
+
+> An adversarial review of v0.9.6 raised 48 candidates across eight independent
+> discovery lanes, handed every one to a refutation pass instructed to destroy it,
+> and published **43 surviving findings, 14 of them Critical**, deliberately
+> WITHOUT remediation, at
+> [covenant-security-reviews](https://github.com/Valisthea/covenant-security-reviews).
+> This release is the fix pass. **1257 tests, clippy-clean, fmt-clean.**
+
+The review's central result was not a list of edge cases. Several first-class
+constructs of the language compiled to nothing at all and emitted no diagnostic
+of any kind, while `check`, `build`, `build --release`, `lint` and
+`inspect diagnostics` all reported success and the transaction that did nothing
+returned status `0x1`.
+
+Each fix follows the project's own fail-loud doctrine. Implement the correct
+behaviour where a single right answer exists; refuse with a diagnostic where
+correct lowering would be feature work. Half-implementing a construct that
+currently compiles to nothing would recreate exactly the plausible-but-wrong
+bytecode the doctrine exists to prevent.
+
+### Fixed, implemented
+
+- **The `match` statement lowers its arms.** It was erased entirely: the runtime
+  for the reference probe was 62 bytes containing no comparison against the
+  scrutinee, so a `revert_with` arm failed open and a state mutation never
+  happened. It is now 122 bytes and contains the branch.
+- **Duration literals apply their unit.** `7 days` compiled to 7, so every
+  timelock, cooldown and deadline in the language was off by a factor of 86400.
+- **Shift operands are no longer reversed.** `a << b` computed `b << a`.
+- **Unary minus is no longer the identity function.** `-x` evaluated to `x`.
+- **`duration * amount` no longer lowers to an addition.**
+- **The synthesized ERC-721 `mint` is gated on the deployer** and rejects the
+  zero receiver. It was unauthenticated, so anyone could mint, and the
+  remediation its own header advised was unreachable through source.
+- **The external-call authorization guard requires `RETURNDATASIZE >= 32`.** It
+  checked only that the size was non-zero while reading the result from the same
+  scratch buffer that still held the outgoing calldata, so a gate answering
+  `false` in fewer than 32 bytes authorized the caller. The decision depended on
+  bytes of the caller's own address leaking out of the buffer.
+- **List element access is bounds-checked.** An unbounded index was an arbitrary
+  storage write, executed on chain to take over a contract.
+- **Dead-code elimination no longer deletes runtime traps.** A division-by-zero
+  guard and a checked-arithmetic revert were being removed.
+- **Short-circuit evaluation for the boolean operators.**
+
+### Fixed, refused (new diagnostics)
+
+`E040` over-long chains, `E041` over-large bodies, `E060` duration overflow,
+`E240` unknown field in an append literal, `E430` and `E431` append into and read
+from an unbacked collection, `E432` `match` in expression position, `E433`
+`try_action`/`catch`, `E434` non-empty list literals, `E435` `delete` on a shape
+with no zeroing lowering, `E436` a non-address `only` principal, `E437` `match`
+on an encrypted scrutinee, `E530` over-wide hex constants, `E531` bare
+struct-typed fields, `E532` dynamic `indexed` event parameters, `E640` a genesis
+supply granted to a non-deployer principal, `E641` a supply that contradicts a
+field default, `E642` an unrepresentable `decimals`, `E643` a shadowed
+synthesized shape, plus warnings `W440` and `W530`.
+
+### Also fixed, and not from the review
+
+- **The linter failed open.** `lint_source` ran its IR detectors only when
+  compilation produced no error at all, so it went silent on exactly the code the
+  compiler had just rejected, and "no findings" was indistinguishable from
+  "clean". Any IR-stage error triggered it, so this predates the review, which
+  did not catch it. The new `E430`/`E431` made it visible by dropping a fixture's
+  critical count from 4 to 0. It now analyses whatever module the pipeline can
+  build; only a frontend failure yields no module, and the source-text scan
+  already covers those cases.
+
+### Testing
+
+Every fix ships a regression test verified non-vacuous by negative control:
+neutralise the fix, the test fails; restore it, the test passes.
+
+Reconciling the existing suite surfaced three protections that would have been
+retired silently and were added rather than lost: `only_the_deployer_can_mint`
+(all seven ERC-721 setups would still pass if the mint gate were reverted),
+`registered_key_predicate_is_refused` (that predicate's `E518` was only ever
+exercised through a fixture that now stops earlier in the pipeline), and a
+source-level depth case. The two AST-depth tests now build their expression tree
+directly rather than through the parser, because the parser's new guard caps
+depth strictly below the resolver's and typechecker's, which would otherwise have
+left both of those guards untested through any parsed source.
+
+No assertion was weakened.
 
 ---
 

@@ -113,7 +113,7 @@ revert_with InsufficientBalance(needed, balances[caller])
 
 ## Compiler diagnostics (fail-loud)
 
-The Covenant v0.9.5 compiler is **fail-loud**: rather than silently emitting
+The Covenant v0.9.7 compiler is **fail-loud**: rather than silently emitting
 plausible-but-wrong bytecode, it **refuses and errors**. Do **not** generate the
 constructs below, they will not compile. If a user hits one of these, explain the
 error and pick a supported construct instead. Trust the error.
@@ -131,6 +131,27 @@ error and pick a supported construct instead. Trust the error.
 | **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
 | **E523** | `transfer <amt> from <src> to <dst>` | No faithful lowering → error. A native transfer compiles to a `CALL`, which spends the *contract's own* balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
 | **W508** | `only caller` | Warning, it is an allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
+| **E040** | an operator, field, index or call chain longer than the parser will build | Error. Split the expression. The old behaviour was a native stack overflow, an uncatchable crash the language server inherited. |
+| **E041** | a single body with more statements than the compiler will lower | Error. Split the action. Code generation was superlinear in body size, so a large body hung the compiler. |
+| **E060** | a duration literal whose value in seconds does not fit in u64 | Error. Use a smaller literal. |
+| **E240** | an `append` literal naming a field the element struct does not have | Error. It used to type-check and privacy-check nothing at all. |
+| **E430** | `append <collection> { .. }` where the collection has no storage field | Error. Nothing allocated a slot, so the append reported success and stored nothing. Declare the collection as a real field. |
+| **E431** | reading a construct-implicit collection that has no storage field | Error. It lowered to the constant 0, so the backend read storage slot 0, disclosing the first declared field for every index. |
+| **E432** | `match` in expression position | Error. It evaluated to the constant 0. The statement form now lowers correctly and is supported. |
+| **E433** | `try_action { .. } catch _ { .. }` | Error. The catch body was discarded and no error was trapped. |
+| **E434** | a non-empty list literal (`xs = [10, 20, 30]`) | Error. It compiled to nothing and left the list empty. |
+| **E435** | `delete <target>` on a shape with no zeroing lowering | Error. `delete` compiled to nothing, so a revocation action revoked nothing. |
+| **E436** | an `only <principal>` clause whose principal is not an address | Error. It emitted an unsatisfiable comparison with no diagnostic. |
+| **E437** | `match` on an encrypted scrutinee | Error. The statement form lowers to a plaintext comparison, which would leak the value. |
+| **E530** | a `hex` literal wider than 32 bytes | Error. A single PUSH carries at most 32 bytes, so the excess was emitted as executable bytecode. |
+| **E531** | a bare struct-typed field (`field cfg: Cfg`) | Error. Writes were dropped and reads returned the NEXT declared field. Use a list of structs. |
+| **E532** | an `indexed` event parameter of a dynamic type | Error. The topic was a zero placeholder, so two logs with different values had identical topics. |
+| **E640** | `supply: N to <principal>` where the principal is not `deployer` | Error. It minted nothing at all. Use `supply: N to deployer` plus a deployer-guarded action to move the balance. |
+| **E641** | a `total_supply` field default that contradicts the genesis mint | Error. The default silently won over the mint amount. |
+| **E642** | `decimals` outside the EIP-20 uint8 range | Error. |
+| **E643** | a user event or error shadowing a synthesized one with a different shape | Error. It produced a broken ABI. |
+| **W440** | `given <cond>` | Warning. It compiles as a PRECONDITION asserted before the body runs, which the shipped guide described differently. |
+| **W530** | a non-indexed event parameter of a dynamic type | Warning. The log data word is a zero placeholder, so a decoder reading offset plus length gets nothing. |
 
 Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
 earlier releases), a guard whose principal is unknown errors rather than silently
