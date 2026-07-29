@@ -129,7 +129,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "package:all": "node scripts/package-vsix.js",
+    "publish": "node scripts/publish-vsix.js",
+    "publish:check": "node scripts/publish-vsix.js --check"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
