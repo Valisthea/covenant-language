@@ -1,4 +1,4 @@
-//! KSR-CVN-011 end-to-end scenarios — `only <principal>` runtime enforcement.
+//! KSR-CVN-011 end-to-end scenarios: `only <principal>` runtime enforcement.
 //!
 //! Prior to this fix, an `only owner` / `only admin` / `only deployer` /
 //! `only <address-literal>` guard compiled down to `Assert(true)`, i.e. a
@@ -94,7 +94,7 @@ fn only_owner_allows_owner_caller() {
         &[alice.to_u256()],
     );
 
-    // Alice is owner — must succeed.
+    // Alice is owner: must succeed.
     let _ = h.call_ok(c, alice, "set_balance(uint256)", &[U256::from_u64(999)]);
 
     let bal = h.view_u256(c, alice, "get_balance()", &[]);
@@ -150,7 +150,7 @@ fn only_admin_allows_admin_caller() {
 }
 
 // ---------------------------------------------------------------------------
-// Ownership rotation — new owner can call, old owner cannot
+// Ownership rotation: new owner can call, old owner cannot
 // ---------------------------------------------------------------------------
 // Demonstrates that the guard reads the current SSTORE-backed field on every
 // invocation rather than caching an early value.

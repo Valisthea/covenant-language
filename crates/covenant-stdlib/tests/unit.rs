@@ -151,7 +151,7 @@ fn symbol_returns_constant_text() {
 
 #[test]
 fn name_defaults_to_construct_name_when_metadata_absent() {
-    // Coin source has `name: "Covenant Coin"` metadata — so the synthesized
+    // Coin source has `name: "Covenant Coin"` metadata, so the synthesized
     // name() returns that text, not the construct name.
     let ir = lower_coin();
     let f = find_fn(&ir, "name");

@@ -1,4 +1,4 @@
-//! REE — Reentrancy detectors (C001, C002, W003, I004).
+//! REE: Reentrancy detectors (C001, C002, W003, I004).
 
 use covenant_ir::{IrFunctionKind, IrModule, Opcode};
 
@@ -23,7 +23,7 @@ impl Detector for C001StateAfterTransfer {
         Category::Reentrancy
     }
     fn description(&self) -> &'static str {
-        "State is modified after an external Transfer — classic reentrancy pattern."
+        "State is modified after an external Transfer, classic reentrancy pattern."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -58,7 +58,7 @@ impl Detector for C001StateAfterTransfer {
                             Finding::new(
                                 "C001",
                                 instr.span,
-                                "state modified after external Transfer — reentrancy risk",
+                                "state modified after external Transfer: reentrancy risk",
                                 Severity::Critical,
                             )
                             .with_help("Move all state updates before the Transfer call"),
@@ -109,7 +109,7 @@ impl Detector for C002TransferInLoop {
                             Finding::new(
                                 "C002",
                                 instr.span,
-                                "Transfer inside a loop — reentrancy amplification risk",
+                                "Transfer inside a loop: reentrancy amplification risk",
                                 Severity::Critical,
                             )
                             .with_help("Prefer pull-over-push: let recipients claim funds"),

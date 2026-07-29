@@ -103,7 +103,7 @@ fn is_cse_eligible(op: &Opcode) -> bool {
 
 #[cfg(test)]
 mod tests {
-    //! KSR-CVN-032 regression — FHE arithmetic must not be CSE-merged.
+    //! KSR-CVN-032 regression: FHE arithmetic must not be CSE-merged.
 
     use std::collections::HashMap;
 
@@ -225,7 +225,7 @@ mod tests {
         // merge happens. Just verify CSE produced a replacement (function
         // mutated → return true was the contract).
         // We assert by checking that both result Values are no longer
-        // distinct as far as use-sites are concerned — but since this
+        // distinct as far as use-sites are concerned: but since this
         // function has no use-sites, just verify Keccak count unchanged.
         let count = f.blocks[0]
             .instructions

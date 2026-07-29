@@ -291,7 +291,7 @@ impl<'a> Parser<'a> {
     /// Also accepts type keywords (e.g. `duration`, `amount`) as identifiers,
     /// since the Basics fixtures use them in field-name and expression-reference
     /// positions. This matches Codex usage even though Doc 2 §1.5 lists them as
-    /// reserved — flagged as a spec ambiguity.
+    /// reserved: flagged as a spec ambiguity.
     pub(crate) fn expect_ident(&mut self, what: &str) -> Result<Ident, ParseError> {
         match self.peek() {
             Some(t) => {

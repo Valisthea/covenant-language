@@ -31,7 +31,7 @@ use covenant_types::typecheck;
 /// Compile a source string into an EVM artifact.
 ///
 /// Returns the artifact alongside any diagnostics collected along the way.
-/// A non-empty error list doesn't prevent an artifact being returned — the
+/// A non-empty error list doesn't prevent an artifact being returned, the
 /// caller can inspect both.
 pub fn compile(
     source: &str,
@@ -81,7 +81,7 @@ pub fn compile(
         return (None, diagnostics);
     }
 
-    // Phase 9 — stdlib lowering — runs between IR construction and the
+    // Phase 9: stdlib lowering: runs between IR construction and the
     // optimizer so synthesized functions benefit from the same passes.
     let (ir_with_std, std_diags) = lower_stdlib(ir, stdlib_config);
     diagnostics.extend(std_diags);
@@ -139,13 +139,13 @@ pub fn check(source: &str, source_id: SourceId) -> Vec<Diagnostic> {
 /// return every diagnostic, discarding the artifact.
 ///
 /// `check` stops at the frontend, so the editor never saw the fail-loud
-/// diagnostics that live in IR lowering and codegen — a developer writing
+/// diagnostics that live in IR lowering and codegen, a developer writing
 /// `max(a, b)` (E424), `m.length` (E425), `x / 0` (E519) or a 33-byte token
 /// name (E521) got a clean, green buffer that then refused to build. This is
 /// what the language server should surface instead.
 ///
 /// Uses the default (`MockChain`) target, whose runtime implements the crypto
-/// opcodes natively, so the helper-only E520 does not fire in-editor — which is
+/// opcodes natively, so the helper-only E520 does not fire in-editor, which is
 /// correct: E520 is a property of a helper *deploy* target, not of the source.
 pub fn check_deep(source: &str, source_id: SourceId) -> Vec<Diagnostic> {
     let (_artifact, diagnostics) = compile(

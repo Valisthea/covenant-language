@@ -620,7 +620,7 @@ fn multi_line_statements() {
 
 #[test]
 fn guards_in_any_order() {
-    // when, only, given — all permutations should parse.
+    // when, only, given: all permutations should parse.
     let b1 = parse_record("action f() when a, only owner, given b {}\n");
     let b2 = parse_record("action f() only owner, when a, given b {}\n");
     let b3 = parse_record("action f() given b, when a, only owner {}\n");

@@ -84,7 +84,7 @@ fn constant_folding_does_not_fold_sload() {
 #[test]
 fn constant_folding_checked_overflow_is_skipped() {
     // Folding `AddChecked(u128::MAX, 1)` would overflow. Make sure we don't
-    // silently fold to wrong value — the op must remain or be rewritten to
+    // silently fold to wrong value: the op must remain or be rewritten to
     // revert. For V0 we just assert the program still builds.
     let src = r#"record R { view s returns amount { 340282366920938463463374607431768211455 } }"#;
     // This is u128::MAX as a literal, so no runtime overflow risk.
@@ -284,7 +284,7 @@ fn sload_coalesce_same_field_twice() {
 
 #[test]
 fn sload_not_coalesced_across_sstore() {
-    // `x = 1; let y = x` — the SLoad between SStores cannot coalesce with a
+    // `x = 1; let y = x`: the SLoad between SStores cannot coalesce with a
     // prior cached SLoad because the store invalidated the cache.
     let src = r#"
 record R {

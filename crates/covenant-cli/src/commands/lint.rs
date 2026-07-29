@@ -1,4 +1,4 @@
-//! `covenant lint` — run the security linter on .cov source files.
+//! `covenant lint`: run the security linter on .cov source files.
 
 use std::path::PathBuf;
 

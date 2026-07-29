@@ -1,4 +1,4 @@
-//! `covenant layout diff <prev.json> <curr.json>` — compare two storage
+//! `covenant layout diff <prev.json> <curr.json>`: compare two storage
 //! layout sidecars and report removed, reordered, or type-changed fields.
 //!
 //! KSR-CVN-038: the compiler already emits `layout.json` as a build sidecar

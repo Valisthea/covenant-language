@@ -1,6 +1,6 @@
 //! JS-facing result types.
 //!
-//! These are pure `serde` shapes. Nothing wasm-bindgen-flavoured here —
+//! These are pure `serde` shapes. Nothing wasm-bindgen-flavoured here,
 //! the [`crate::lib`] entry points serialize them to `JsValue` via
 //! `serde_wasm_bindgen::to_value`. That separation means every type in
 //! this module is also returned directly from native `cargo test` runs,
@@ -38,7 +38,7 @@ pub enum JsLevel {
 /// One diagnostic, with line/column already resolved from the byte span.
 ///
 /// The compiler's `Diagnostic` carries a half-open byte range
-/// (`Span { start, end }`) — Monaco wants 1-indexed line/column, so the
+/// (`Span { start, end }`): Monaco wants 1-indexed line/column, so the
 /// adapter pre-computes both and passes them across the bridge already
 /// resolved. The raw byte offsets are kept too for callers (e.g. the
 /// Inspector) that want byte-precise highlights.
@@ -66,7 +66,7 @@ pub struct JsTiming {
     pub total: f64, // milliseconds, browser high-res clock
 }
 
-/// Function selector entry — useful for the Output panel's "Functions"
+/// Function selector entry: useful for the Output panel's "Functions"
 /// tab so the user can see the 4-byte selector for each public action.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsSelector {
@@ -84,7 +84,7 @@ pub struct JsStorageEntry {
     pub ty_desc: String,
 }
 
-/// Compilation metadata — the same fields the CLI prints in `metadata.json`.
+/// Compilation metadata: the same fields the CLI prints in `metadata.json`.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsMetadata {
     pub covenant_version: String,
@@ -136,7 +136,7 @@ pub struct JsCompileResult {
     pub timing: JsTiming,
 }
 
-/// Result of `check()` — frontend-only pass.
+/// Result of `check()`: frontend-only pass.
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsCheckResult {
     pub diagnostics: Vec<JsDiagnostic>,
@@ -145,9 +145,9 @@ pub struct JsCheckResult {
 
 /// Result of `compile_to_ir_text()`.
 ///
-/// `ir_text` uses the IR module's `Debug` impl for v1 — the playground
+/// `ir_text` uses the IR module's `Debug` impl for v1, the playground
 /// shows it monospaced. A proper `Display` impl is a follow-up in the
-/// IR crate (filed as DEBT — not Sprint 22 scope).
+/// IR crate (filed as DEBT: not Sprint 22 scope).
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsIrResult {
     pub ok: bool,
@@ -156,7 +156,7 @@ pub struct JsIrResult {
     pub timing: JsTiming,
 }
 
-/// One row in the diagnostic explanations table — used by the
+/// One row in the diagnostic explanations table, used by the
 /// Inspector's "Why this error?" feature. Today the long form is
 /// the same as the short form (the compiler doesn't yet ship prose
 /// explanations); the field is reserved so the playground UI can

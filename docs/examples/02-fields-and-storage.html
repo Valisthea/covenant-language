@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -371,12 +371,12 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <hr class="chapter-divider">
     
     <p class="prose">Covenant's type system maps cleanly to EVM storage slots while adding
-semantic types that prevent common mistakes — for example, using <code>amount</code>
+semantic types that prevent common mistakes, for example, using <code>amount</code>
 instead of <code>u256</code> for ether values makes units explicit.</p>
     <div class="code-wrap"><div class="code-label">storage_types.cov</div><pre class="code-block" data-lang="covenant">record Catalog {
     // Semantic primitives
     owner:      address;
-    balance:    amount;       // wei — prevents unit confusion
+    balance:    amount;       // wei: prevents unit confusion
     created:    time;         // unix timestamp
     lock_for:   duration;     // seconds
     checksum:   hash;         // bytes32
@@ -422,14 +422,14 @@ instead of <code>u256</code> for ether values makes units explicit.</p>
 <p class="takeaways-heading" style="margin-top:44px">Annotations</p>
 <table class="notes-table">
 <tr><td><code>amount</code></td><td>compiles to <code>uint256</code> but the compiler rejects arithmetic that mixes amounts with bare integers.</td></tr>
-<tr><td><code>time</code> / <code>duration</code></td><td>prevent accidental subtraction of timestamps and durations — the compiler enforces dimensional compatibility.</td></tr>
+<tr><td><code>time</code> / <code>duration</code></td><td>prevent accidental subtraction of timestamps and durations, the compiler enforces dimensional compatibility.</td></tr>
 <tr><td><code>map(K => V)</code></td><td>compiles to a Solidity mapping; nested maps compile to nested mappings.</td></tr>
 <tr><td><code>[T; N]</code></td><td>is a fixed-size array stored packed into adjacent slots when possible.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Semantic types (<code>amount</code>, <code>time</code>, <code>duration</code>) prevent an entire class of unit bugs at compile time.</li>
 <li>Maps and arrays have familiar syntax but compile to efficient EVM layouts.</li>
-<li>Field initialization to zero is implicit — no constructor boilerplate needed.</li></ul>
+<li>Field initialization to zero is implicit, no constructor boilerplate needed.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="01-hello-contract"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Hello Contract</span></a><a class="chapter-nav-btn next" href="03-actions-events-errors"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Actions, Events & Errors</span></a></nav>
   </main>
 </div>

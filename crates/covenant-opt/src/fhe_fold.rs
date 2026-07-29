@@ -16,7 +16,7 @@ pub fn run_function(func: &mut IrFunction) -> bool {
     // KSR-CVN-033: key = (constant_fingerprint, from_lift, ciphertext type,
     // privacy domain). Two FheEncryptTrivial whose plaintexts print
     // identically but target distinct FHE parameter sets / privacy domains
-    // MUST NOT collapse — that would be a type-confusion bug across keys.
+    // MUST NOT collapse: that would be a type-confusion bug across keys.
     let mut first: HashMap<(String, bool, String, String), Value> = HashMap::new();
 
     for block in &func.blocks {

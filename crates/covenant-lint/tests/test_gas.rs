@@ -14,7 +14,7 @@ fn c1100_fires_collection_iter_no_batch_up_to() {
     // ListLength triggers collection-iteration detection (see
     // ir_utils::has_collection_iter). This used to use `map.length`, but map
     // introspection is now refused at lowering (E425) because it silently
-    // compiled to 0 — so the vehicle changed while the detector under test
+    // compiled to 0: so the vehicle changed while the detector under test
     // did not.
     let src = r#"
 record R {
@@ -43,7 +43,7 @@ record R {
 
 #[test]
 fn c1100_clean_with_batch_up_to() {
-    // @batch_up_to is valid on action functions — should suppress C1100.
+    // @batch_up_to is valid on action functions: should suppress C1100.
     let src = r#"
 record R {
     votes: [address] = []

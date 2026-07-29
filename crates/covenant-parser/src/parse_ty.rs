@@ -72,7 +72,7 @@ impl<'a> Parser<'a> {
             }
             TokenKind::KwChoice => {
                 self.advance();
-                // Inline form `choice = [ "a", "b" ]` is handled by the field parser —
+                // Inline form `choice = [ "a", "b" ]` is handled by the field parser,
                 // the type itself is just `choice` here.
                 Ok(Type::Choice(start, Vec::new()))
             }

@@ -66,7 +66,7 @@ fn parses_example_2_coin() {
             _ => None,
         })
         .collect();
-    // symbol, name, decimals, supply — 4 metadata entries.
+    // symbol, name, decimals, supply: 4 metadata entries.
     assert_eq!(metadata.len(), 4);
     let names: Vec<_> = metadata.iter().map(|m| m.name.name.as_ref()).collect();
     assert!(names.contains(&"symbol"));
@@ -106,7 +106,7 @@ fn parses_example_3_open_ballot() {
                 actions += 1;
                 if a.name.name.as_ref() == "cast" {
                     // Action has two guards: when, only. (The `given pick in options`
-                    // guard was removed with F01/E426 — the `in` operator is now fail-loud.)
+                    // guard was removed with F01/E426: the `in` operator is now fail-loud.)
                     assert_eq!(a.guards.len(), 2);
                 }
             }

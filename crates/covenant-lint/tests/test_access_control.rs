@@ -100,7 +100,7 @@ record R {
 
 #[test]
 fn w102_no_finding_without_admin_guard() {
-    // W102 only fires on `only admin` functions — we don't use `admin` here.
+    // W102 only fires on `only admin` functions: we don't use `admin` here.
     let src = r#"
 record R {
     x: amount
@@ -180,7 +180,7 @@ record R {
 }
 "#;
     let f = run(&C100NoAccessGuard, src);
-    // Only `set_x` lacks a guard — exactly one finding.
+    // Only `set_x` lacks a guard: exactly one finding.
     assert_eq!(f.len(), 1, "expected exactly one C100: {f:?}");
 }
 

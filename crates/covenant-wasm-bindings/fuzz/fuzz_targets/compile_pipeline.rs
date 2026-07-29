@@ -12,7 +12,7 @@
 //!
 //! Coverage targets (informal): the lexer + parser + resolver + types
 //! + privacy + IR + opt + EVM codegen. Anything that triggers a panic
-//! in any of those is a real bug — the compiler should always either
+//! in any of those is a real bug: the compiler should always either
 //! succeed or return diagnostics, never crash.
 
 #![no_main]

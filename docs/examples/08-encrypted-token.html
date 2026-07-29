@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -369,7 +369,7 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <h1 class="chapter-title">Encrypted Token (ERC-8227)</h1>
     <p class="chapter-subtitle">Private balances with selective disclosure.</p>
     <hr class="chapter-divider">
-    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
+    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only, the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
     <p class="prose">ERC-8227 is Covenant's encrypted fungible token standard. Balances are stored
 as ciphertexts; transfers are homomorphic additions that never expose amounts
 on-chain. <code>selective_disclosure</code> lets the owner grant viewing access
@@ -381,7 +381,7 @@ to specific parties (auditors, regulators) without exposing data to everyone.</p
     supply:   1_000_000;
     owner:    msg.sender;
 }</pre></div>
-<div class="code-wrap"><div class="code-label">private_token_auditable.cov — with selective disclosure</div><pre class="code-block" data-lang="covenant">encrypted token AuditableToken {
+<div class="code-wrap"><div class="code-label">private_token_auditable.cov, with selective disclosure</div><pre class="code-block" data-lang="covenant">encrypted token AuditableToken {
     name:     "Auditable Token";
     symbol:   "AT";
     decimals: 18;
@@ -400,7 +400,7 @@ to specific parties (auditors, regulators) without exposing data to everyone.</p
         reveal totalSupply to public;
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">Reading a private balance</div><pre class="code-block" data-lang="covenant">// Off-chain — using covenant-sdk (TypeScript)
+<div class="code-wrap"><div class="code-label">Reading a private balance</div><pre class="code-block" data-lang="covenant">// Off-chain, using covenant-sdk (TypeScript)
 
 import { CovenantClient } from '@covenant-lang/sdk';
 
@@ -421,12 +421,12 @@ const balance = await token.balanceOf(
 <tr><td><code>encrypted token</code></td><td>is the ERC-8227 form of <code>token</code>. It generates a homomorphic transfer function in addition to standard ERC-20 selectors.</td></tr>
 <tr><td><code>selective_disclosure</code></td><td>is a block that configures which parties receive a decryption key fragment for which fields.</td></tr>
 <tr><td><code>reveal X to Y</code></td><td>grants <code>Y</code> the ability to call the chain's disclosure precompile and obtain the plaintext of <code>X</code>.</td></tr>
-<tr><td>Transfers</td><td>are handled by <code>fhe_add</code> / <code>fhe_sub</code> on ciphertexts — the chain validates balance constraints via ZK range proofs without decrypting.</td></tr>
+<tr><td>Transfers</td><td>are handled by <code>fhe_add</code> / <code>fhe_sub</code> on ciphertexts, the chain validates balance constraints via ZK range proofs without decrypting.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li><code>encrypted token</code> gives you a fully private ERC-20 in one declaration.</li>
 <li>Selective disclosure enables compliance (auditability) without full transparency.</li>
-<li>Balance integrity is enforced by the chain's ZK proof layer — no plaintext ever leaves the ciphertext domain during transfer.</li></ul>
+<li>Balance integrity is enforced by the chain's ZK proof layer, no plaintext ever leaves the ciphertext domain during transfer.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="07-fhe-basics"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">FHE Basics</span></a><a class="chapter-nav-btn next" href="09-post-quantum-signatures"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Post-Quantum Signatures</span></a></nav>
   </main>
 </div>

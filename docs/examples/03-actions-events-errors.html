@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Actions, Events & Errors · Covenant By Example</title>
-<meta name="description" content="emit, transfer, revert_with — the full action vocabulary.">
+<meta name="description" content="emit, transfer, revert_with, the full action vocabulary.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/03-actions-events-errors">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/03-actions-events-errors">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Actions, Events & Errors · Covenant By Example">
-<meta property="og:description" content="emit, transfer, revert_with — the full action vocabulary.">
+<meta property="og:description" content="emit, transfer, revert_with, the full action vocabulary.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Actions, Events & Errors · Covenant By Example">
-<meta name="twitter:description" content="emit, transfer, revert_with — the full action vocabulary.">
+<meta name="twitter:description" content="emit, transfer, revert_with, the full action vocabulary.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,12 +367,12 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge fundamentals">Fundamentals</span>
     <p class="chapter-eyebrow">Chapter 3 / 15</p>
     <h1 class="chapter-title">Actions, Events & Errors</h1>
-    <p class="chapter-subtitle">emit, transfer, revert_with — the full action vocabulary.</p>
+    <p class="chapter-subtitle">emit, transfer, revert_with, the full action vocabulary.</p>
     <hr class="chapter-divider">
     
     <p class="prose">Actions in Covenant carry four responsibilities: validate inputs, update state,
 emit events, and transfer value. Covenant's <code>revert_with</code> attaches
-typed error payloads — readable by any ABI-aware client without extra decoding.</p>
+typed error payloads: readable by any ABI-aware client without extra decoding.</p>
     <div class="code-wrap"><div class="code-label">bank.cov</div><pre class="code-block" data-lang="covenant">record Bank {
     balances: map(address => amount);
 
@@ -415,15 +415,15 @@ typed error payloads — readable by any ABI-aware client without extra decoding
 <p class="takeaways-heading" style="margin-top:44px">Annotations</p>
 <table class="notes-table">
 <tr><td><code>event</code></td><td>declares a log event with named, typed fields. The ABI selector is derived automatically.</td></tr>
-<tr><td><code>error</code></td><td>declares a typed revert payload — EIP-838 compatible. Arguments are ABI-encoded into revert data.</td></tr>
+<tr><td><code>error</code></td><td>declares a typed revert payload, EIP-838 compatible. Arguments are ABI-encoded into revert data.</td></tr>
 <tr><td><code>revert_with E(...)</code></td><td>reverts the transaction and encodes the error payload. Equivalent to Solidity's <code>revert E(...)</code>.</td></tr>
 <tr><td><code>msg.value</code></td><td>the ether attached to the call, as an <code>amount</code>.</td></tr>
 <tr><td><code>transfer(to, value)</code></td><td>sends ether using <code>call{value: v}('')</code> with a forward-gas cap. Reverts on failure.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Events and errors are declared at the record level — they are part of the contract's public ABI.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Events and errors are declared at the record level, they are part of the contract's public ABI.</li>
 <li><code>revert_with</code> always carries a typed payload; bare <code>revert</code> is not idiomatic Covenant.</li>
-<li>Follow Checks-Effects-Interactions order — update state before calling <code>transfer()</code>.</li></ul>
+<li>Follow Checks-Effects-Interactions order, update state before calling <code>transfer()</code>.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="02-fields-and-storage"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Fields and Storage</span></a><a class="chapter-nav-btn next" href="04-guards"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Guards</span></a></nav>
   </main>
 </div>

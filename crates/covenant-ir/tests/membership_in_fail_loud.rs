@@ -4,7 +4,7 @@
 //! compiled to a single scalar `x == list[0]`: a `given x in options` guard
 //! passed only when `x` equalled the FIRST element and silently rejected every
 //! other legitimate member. Ordinary-looking source, wrong bytecode, no
-//! diagnostic — the same silent-miscompile class as E424/E425.
+//! diagnostic: the same silent-miscompile class as E424/E425.
 //!
 //! A real lowering is a `ListContains` loop (compare + branch over each
 //! element), which the single-opcode `choose_binop` cannot express. Until it
@@ -54,7 +54,7 @@ fn in_operator_is_refused() {
 }
 
 /// The regression that matters: the old placeholder made `in` lower to a scalar
-/// `Eq`. Nothing may lower to `Eq` behind the user's back again — this source
+/// `Eq`. Nothing may lower to `Eq` behind the user's back again, this source
 /// contains no other comparison, so any `Eq` opcode is the placeholder returning.
 #[test]
 fn in_does_not_lower_to_a_scalar_eq() {
@@ -67,6 +67,6 @@ fn in_does_not_lower_to_a_scalar_eq() {
     });
     assert!(
         !has_eq,
-        "`in` lowered to a scalar Eq — the silent-miscompile placeholder is back"
+        "`in` lowered to a scalar Eq: the silent-miscompile placeholder is back"
     );
 }

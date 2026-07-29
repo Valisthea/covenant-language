@@ -1,7 +1,7 @@
-//! Parser diagnostic codes (E020–E099, cf. Doc 5 §17.2).
+//! Parser diagnostic codes (E020-E099, cf. Doc 5 §17.2).
 //!
-//! E001–E010 are reserved by the lexer (Phase 1). The parser uses E020 upward so
-//! the numeric range stays debuggable — a diagnostic numbered `E02x` is always a
+//! E001-E010 are reserved by the lexer (Phase 1). The parser uses E020 upward so
+//! the numeric range stays debuggable: a diagnostic numbered `E02x` is always a
 //! parser error, never a lexer error.
 //!
 //! Not every helper here is used internally; some (`missing_closing_brace`,

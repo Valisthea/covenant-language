@@ -2,7 +2,7 @@
 //!
 //! Scope: this interpreter supports *exactly* the opcode subset emitted by
 //! `covenant-evm-backend` (see `codegen.rs`). It is not a general-purpose EVM
-//! — notably, CALL is only valid for precompile addresses and never forwards
+//!: notably, CALL is only valid for precompile addresses and never forwards
 //! to a second contract. Gas is not metered. Refunds, access lists, warm
 //! storage pricing, and EIP-2929 are all ignored. See Phase 10 for rationale.
 //!
@@ -396,7 +396,7 @@ pub fn execute(
                 // the existing OP_SSTORE check pattern. Pre-fix, the
                 // log was pushed to host.logs unconditionally; the
                 // chain.rs static_call boundary discarded it, so no
-                // information leaked — but the bytecode behaviour
+                // information leaked: but the bytecode behaviour
                 // diverged from real EVM, masking portability bugs
                 // until deploy.
                 if env.is_static {
@@ -476,7 +476,7 @@ pub fn execute(
                     push!(U256::ONE);
                 } else {
                     // Non-precompile STATICCALL targets are treated as inert no-ops.
-                    // Returndata size is 0 — the new precompile-boundary checks
+                    // Returndata size is 0: the new precompile-boundary checks
                     // (KSR-CVN-014) will detect this and revert.
                     last_returndatasize = 0;
                     push!(U256::ONE);

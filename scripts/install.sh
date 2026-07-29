@@ -62,7 +62,7 @@ if [ -f "$TMP/$ASSET.sha256" ]; then
     elif command -v shasum &>/dev/null; then
         ACTUAL=$(shasum -a 256 "$TMP/$BINARY_NAME" | awk '{print $1}')
     else
-        info "Checksum tool not found — skipping verification."
+        info "Checksum tool not found: skipping verification."
         ACTUAL="$EXPECTED"
     fi
     [ "$ACTUAL" = "$EXPECTED" ] || error "Checksum mismatch. Download may be corrupted."

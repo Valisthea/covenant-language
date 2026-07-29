@@ -58,7 +58,7 @@ fn extract_lesson_codes(ts_source: &str) -> Vec<(String, String, String)> {
         if let Some(rest) = ts_source.get(i..) {
             if let Some(captured) = id_re.captures(rest) {
                 if captured.start <= 80 {
-                    // Reasonably close to the cursor — accept.
+                    // Reasonably close to the cursor: accept.
                     current_id = captured.text.clone();
                 }
             }
@@ -68,7 +68,7 @@ fn extract_lesson_codes(ts_source: &str) -> Vec<(String, String, String)> {
                     // Skip the marker; find the opening backtick.
                     if let Some(tick_off) = after_marker.find('`') {
                         let body_start = i + marker.len() + tick_off + 1;
-                        // Find the closing backtick — may be many chars later.
+                        // Find the closing backtick: may be many chars later.
                         if let Some(close_rel) = ts_source[body_start..].find('`') {
                             let body_end = body_start + close_rel;
                             let body = ts_source[body_start..body_end].to_string();
@@ -96,7 +96,7 @@ fn inventory_tour_lessons() {
     let dir = match lessons_dir() {
         Some(d) => d,
         None => {
-            eprintln!("tour lessons dir not found — run from covenant repo root");
+            eprintln!("tour lessons dir not found: run from covenant repo root");
             return;
         }
     };
@@ -127,7 +127,7 @@ fn inventory_tour_lessons() {
                 continue;
             }
             // Some Tour starter codes deliberately have a TODO that the user
-            // is supposed to fill in — those will fail to compile by design.
+            // is supposed to fill in: those will fail to compile by design.
             // But a "solution" should always compile. We report both, the
             // operator separates "expected fail" from "actually broken".
             let r = compile_evm(&source);
@@ -141,7 +141,7 @@ fn inventory_tour_lessons() {
             } else {
                 let msg = errs
                     .first()
-                    .map(|d| format!("L{}:{} {} — {}", d.line, d.column, d.code, d.message))
+                    .map(|d| format!("L{}:{} {}: {}", d.line, d.column, d.code, d.message))
                     .unwrap_or_else(|| "(no error msg)".into());
                 fail.push((format!("{id} ({kind})"), msg));
             }

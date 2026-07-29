@@ -54,14 +54,14 @@ export async function activate(
   let serverPath: string | undefined;
   let source = "";
 
-  // 1 — Bundled binary (zero-config for Marketplace installs)
+  // 1: Bundled binary (zero-config for Marketplace installs)
   const bundled = getBundledBinaryPath(context.extensionPath);
   if (bundled) {
     serverPath = bundled;
     source = "bundled";
   }
 
-  // 2/3 — User config or PATH fallback (developer / manual install)
+  // 2/3: User config or PATH fallback (developer / manual install)
   if (!serverPath) {
     const configuredPath = config.get<string>("lsp.path", "covenant-lsp");
     // If the user pointed at an absolute path that exists, trust it directly.

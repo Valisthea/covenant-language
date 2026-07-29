@@ -17,7 +17,7 @@ pub enum AsmOp {
     Push0,
     /// Define a label at the current byte offset (emits JUMPDEST, 1 byte).
     LabelDef(Box<str>),
-    /// Push a label's byte offset (resolved in phase 2) — 3-byte PUSH2 by convention.
+    /// Push a label's byte offset (resolved in phase 2): 3-byte PUSH2 by convention.
     PushLabel(Box<str>),
 }
 

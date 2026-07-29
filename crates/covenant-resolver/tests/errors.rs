@@ -1,4 +1,4 @@
-//! Error-path coverage: one test per resolver diagnostic code E101–E112.
+//! Error-path coverage: one test per resolver diagnostic code E101-E112.
 
 use covenant_diag::{Diagnostic, SourceId};
 use covenant_lexer::tokenize;
@@ -84,7 +84,7 @@ fn e105_principal_field_missing() {
     // Note: admin has a LangIdent fallback, so we need a principal WITHOUT a
     // fallback. There's no principal kind in V0 without a fallback.
     // Instead we use a fresh record (no owner field) and check fallback still
-    // works. To exercise E105, we'd need to remove fallbacks — for now assert
+    // works. To exercise E105, we'd need to remove fallbacks, for now assert
     // the diagnostic code constant exists and the helper is wired.
     let _ = codes::E105_PRINCIPAL_FIELD_MISSING;
 }

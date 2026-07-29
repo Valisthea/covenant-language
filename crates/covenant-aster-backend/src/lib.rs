@@ -1,18 +1,18 @@
 //! Aster Chain native code generation for Covenant IR.
 //!
-//! **V0.7.0 — foundation with placeholder lowering.**
+//! **V0.7.0: foundation with placeholder lowering.**
 //! Full Aster bytecode emission requires Aster SDK (pending GA).
 //!
 //! This crate provides:
-//! - [`compile_module`] — public compilation entry point
-//! - [`AsterCompilationArtifact`] — output type
+//! - [`compile_module`]: public compilation entry point
+//! - [`AsterCompilationArtifact`]: output type
 //! - Placeholder emission that produces clear SDK-pending diagnostics
 //! - Structure ready for real lowering once the Aster SDK is available
 //!
 //! # Target chain
 //!
 //! Aster Chain (chainId 1996), PoSA Layer 1, 50 ms block time.
-//! Non-EVM architecture — see <https://asterdex.com>.
+//! Non-EVM architecture: see <https://asterdex.com>.
 
 pub mod bytecode;
 pub mod diagnostics;
@@ -74,7 +74,7 @@ impl Default for AsterMetadata {
 /// Errors returned by Aster backend compilation.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AsterError {
-    #[error("Aster SDK integration pending — cannot emit production bytecode")]
+    #[error("Aster SDK integration pending: cannot emit production bytecode")]
     SdkPending,
 
     #[error("Lowering failed: {0}")]

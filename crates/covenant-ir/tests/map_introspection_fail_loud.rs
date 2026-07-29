@@ -1,7 +1,7 @@
 //! `map.length` / `.keys` / `.values` must refuse to compile.
 //!
 //! The EVM backend answered all three with `PUSH0`, so `.length` always read
-//! 0 and `for each k in m.keys` always ran zero iterations — on source that
+//! 0 and `for each k in m.keys` always ran zero iterations, on source that
 //! compiled without a single diagnostic. A silent "empty" is indistinguishable
 //! from a genuinely empty map, which is the same false-negative shape as the
 //! authorization bypass this pass exists to eliminate.
@@ -76,7 +76,7 @@ fn map_values_is_refused() {
     assert_refused("values");
 }
 
-/// A list still supports `.length` — the refusal is specific to maps, which
+/// A list still supports `.length`: the refusal is specific to maps, which
 /// have no length word. Guards the blast radius of the fix.
 #[test]
 fn list_length_still_works() {

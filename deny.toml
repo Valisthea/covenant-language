@@ -46,7 +46,7 @@ exceptions = []
 multiple-versions = "warn"
 wildcards = "deny"
 highlight = "all"
-# Explicit hard denials — additions here must be motivated by a finding.
+# Explicit hard denials: additions here must be motivated by a finding.
 deny = []
 skip = []
 skip-tree = []

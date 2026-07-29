@@ -1,4 +1,4 @@
-//! `covenant fmt` — canonical source formatter.
+//! `covenant fmt`: canonical source formatter.
 //!
 //! Parses source → pretty-prints via covenant_parser::printer.
 //! Comments are discarded (the lexer does not preserve them).

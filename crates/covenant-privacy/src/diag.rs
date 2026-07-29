@@ -1,4 +1,4 @@
-//! Privacy analyzer diagnostic codes (E301–E320, W301–W310).
+//! Privacy analyzer diagnostic codes (E301-E320, W301-W310).
 #![allow(dead_code)]
 
 use covenant_diag::{DiagCode, Diagnostic, DiagnosticLevel, Span};

@@ -123,7 +123,7 @@ fn reachable_blocks(func: &IrFunction) -> HashSet<u32> {
         let Some(block) = func.blocks.iter().find(|b| b.id == bid) else {
             continue;
         };
-        // KSR-CVN-036: exhaustive match — adding a new Terminator variant
+        // KSR-CVN-036: exhaustive match: adding a new Terminator variant
         // must force the compiler to flag this site so successors are not
         // silently dropped from the reachability walk.
         match &block.terminator {
@@ -227,7 +227,7 @@ fn compute_live_set(func: &IrFunction, must_keep: &[Vec<bool>]) -> HashSet<Value
     live
 }
 
-/// Unused — kept for reachability helpers that may need parent info.
+/// Unused: kept for reachability helpers that may need parent info.
 #[allow(dead_code)]
 fn _bid_unused(_b: BlockId) {}
 
@@ -406,7 +406,7 @@ mod tests {
     fn ksr_026_dce_preserves_fhe_bootstrap() {
         let mut f = empty_action();
         let ct = Value(0);
-        let refreshed = Value(1); // unused — DCE would normally drop
+        let refreshed = Value(1); // unused: DCE would normally drop
         f.blocks[0]
             .instructions
             .push(instr(Opcode::FheBootstrap, vec![ct], Some(refreshed)));
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(
             count_op(&f, |o| matches!(o, Opcode::FheBootstrap)),
             1,
-            "FheBootstrap must survive DCE — removing it silently busts noise budget"
+            "FheBootstrap must survive DCE: removing it silently busts noise budget"
         );
     }
 

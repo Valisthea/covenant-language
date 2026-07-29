@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -391,7 +391,7 @@ interface IUniswapV2Pair {
     );
     view getReserves() -> (u112, u112, u32);
 }</pre></div>
-<div class="code-wrap"><div class="code-label">vault.cov — non-reentrant external calls</div><pre class="code-block" data-lang="covenant">record Vault {
+<div class="code-wrap"><div class="code-label">vault.cov, non-reentrant external calls</div><pre class="code-block" data-lang="covenant">record Vault {
     token:   address;
     shares:  map(address => u256);
     total:   u256;
@@ -406,13 +406,13 @@ interface IUniswapV2Pair {
         // Checks
         // (amount > 0 validated by the caller passing a nonzero value)
 
-        // Effects — update state BEFORE external call
+        // Effects: update state BEFORE external call
         let new_shares = amount;   // simplified 1:1 for illustration
         self.shares[msg.sender] += new_shares;
         self.total += amount;
         emit Deposited(msg.sender, amount, new_shares);
 
-        // Interactions — external call LAST
+        // Interactions: external call LAST
         erc20.transferFrom(msg.sender, self.addr(), amount);
     }
 
@@ -444,11 +444,11 @@ interface IUniswapV2Pair {
 <table class="notes-table">
 <tr><td><code>interface I { ... }</code></td><td>declares an external contract type. Calling <code>I(addr).method()</code> compiles to a <code>CALL</code> with the correct 4-byte selector.</td></tr>
 <tr><td><code>@non_reentrant</code></td><td>inserts a transient storage mutex (EIP-1153 where available, SSTORE otherwise). Reverts if the function is re-entered.</td></tr>
-<tr><td><code>self.addr()</code></td><td>returns the contract's own address — equivalent to Solidity's <code>address(this)</code>.</td></tr>
+<tr><td><code>self.addr()</code></td><td>returns the contract's own address, equivalent to Solidity's <code>address(this)</code>.</td></tr>
 <tr><td>CEI pattern</td><td>is not enforced at compile time in V0.7, but OMEGA lint rule <code>CEI-001</code> flags violations. Future versions will enforce it statically.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Declare interfaces explicitly — Covenant will generate the correct selectors and ABI types.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Declare interfaces explicitly, Covenant will generate the correct selectors and ABI types.</li>
 <li>Always use <code>@non_reentrant</code> on any action that makes external calls.</li>
 <li>State updates must precede external calls (CEI). OMEGA will flag violations.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="04-guards"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Guards</span></a><a class="chapter-nav-btn next" href="06-erc20-token"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">ERC-20 Token</span></a></nav>

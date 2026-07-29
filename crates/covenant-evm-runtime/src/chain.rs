@@ -15,7 +15,7 @@
 //! - The shared `HostState.storage` BTreeMap is keyed by `Address`,
 //!   so multi-contract storage isolation comes for free from the
 //!   underlying interpreter.
-//! - One `MockPrecompileState` is shared across all contracts —
+//! - One `MockPrecompileState` is shared across all contracts,
 //!   matches real precompile semantics (stateless from the contract's
 //!   point of view; precompile-internal handle counters bump globally).
 //!
@@ -71,7 +71,7 @@ pub const FIXED_GAS_ESTIMATE: u64 = 10_000;
 ///
 /// Storage and runtime bytecode are owned here. The `HostState` used
 /// during a call is built by copying `self.storage` into it on entry
-/// and copying it back on successful return — see [`Chain::call`].
+/// and copying it back on successful return: see [`Chain::call`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Contract {
     pub address: Address,
@@ -93,7 +93,7 @@ pub struct Account {
     pub label: String,
 }
 
-/// JS-friendly version of [`evm::LogEvent`] — topics + data come out
+/// JS-friendly version of [`evm::LogEvent`]: topics + data come out
 /// as `0x`-prefixed hex strings instead of raw byte arrays.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainLogEvent {
@@ -142,7 +142,7 @@ pub enum TxStatus {
         reason: Option<String>,
     },
     /// `INVALID` opcode, unknown opcode, or interpreter abort. Distinct
-    /// from `Reverted` because there's no return data to decode — the
+    /// from `Reverted` because there's no return data to decode, the
     /// inner string is the abort reason from the interpreter.
     Aborted {
         reason: String,
@@ -176,7 +176,7 @@ pub struct Chain {
     /// Monotonic deploy nonce per deployer; used for deterministic
     /// CREATE-style address derivation.
     pub deploy_nonces: BTreeMap<Address, u64>,
-    /// Shared precompile scratchpad — FHE handles, PQ counters, etc.
+    /// Shared precompile scratchpad: FHE handles, PQ counters, etc.
     /// Skipped from serialization because it'd cascade `HashMap` →
     /// non-Serialize and we don't yet need snapshot/restore parity for
     /// this auxiliary state.
@@ -386,7 +386,7 @@ impl Chain {
     /// appended. Used by `view` actions in the playground's
     /// InteractionPanel.
     ///
-    /// `&self` because we don't mutate the chain at all — including
+    /// `&self` because we don't mutate the chain at all, including
     /// `self.precompiles`. We clone the precompile state into a local
     /// scratch copy so the interpreter can mint FHE handles internally
     /// without leaving them in the global state.
@@ -491,7 +491,7 @@ impl Chain {
     }
 
     /// Replace the chain entirely. `Chain::default()` is the canonical
-    /// reset target — no need for snapshot/restore for the playground's
+    /// reset target: no need for snapshot/restore for the playground's
     /// "Reset" button.
     pub fn reset(&mut self) {
         *self = Chain::with_prefunded_accounts();
@@ -547,7 +547,7 @@ impl Default for Chain {
 /// Deterministic CREATE-style address derivation.
 ///
 /// Real Ethereum CREATE uses RLP(deployer || nonce). We don't depend
-/// on RLP here — `keccak256(deployer || nonce_be_bytes)[12..32]` is
+/// on RLP here: `keccak256(deployer || nonce_be_bytes)[12..32]` is
 /// deterministic and unambiguous, sufficient for the playground.
 /// Documented in the playground's "Why does my address differ from
 /// real Ethereum?" FAQ.
@@ -601,12 +601,12 @@ fn decode_revert_reason(data: &[u8]) -> Option<String> {
     String::from_utf8(data[str_start..str_start + len].to_vec()).ok()
 }
 
-// MockPrecompileState doesn't derive Clone — it has a HashMap inside.
+// MockPrecompileState doesn't derive Clone: it has a HashMap inside.
 // Add a manual Clone impl so static_call can scratch-clone it.
 impl Clone for MockPrecompileState {
     fn clone(&self) -> Self {
         // Field-by-field clone via Default + manual copy. Used only in
-        // static_call which discards the result — performance is not
+        // static_call which discards the result: performance is not
         // critical (a static_call already costs an EVM execution).
         let mut copy = MockPrecompileState::default();
         copy.fhe_handles = self.fhe_handles.clone();
@@ -659,7 +659,7 @@ mod tests {
         let a2 = r2.to.expect("deploy r2 returns address");
         assert_ne!(a1, a2);
         // And the same nonce-from-clean-state always yields the same
-        // address — predictable for tests.
+        // address: predictable for tests.
         let mut chain2 = Chain::with_prefunded_accounts();
         let r3 = chain2.deploy(alice(), &stop_only, &[]);
         assert_eq!(a1, r3.to.unwrap());
@@ -672,7 +672,7 @@ mod tests {
         chain.deploy(alice(), &[0x00], &[]);
         chain.deploy(alice(), &[0x00], &[]);
         assert_eq!(chain.deploy_nonces[&alice()], 2);
-        // Each call doesn't auto-mine a block — that's an explicit op.
+        // Each call doesn't auto-mine a block: that's an explicit op.
         assert_eq!(chain.block_number, initial_block);
         assert_eq!(chain.tx_log.len(), 2);
     }
@@ -692,7 +692,7 @@ mod tests {
         let target = Address::from_low_u64(0x99); // not deployed → revert
         let receipt = chain.static_call(alice(), target, &[]);
         assert!(matches!(receipt.status, TxStatus::Reverted { .. }));
-        // tx_log is on `&self` so we can't even append — the borrow checker
+        // tx_log is on `&self` so we can't even append, the borrow checker
         // enforces it. Nothing to assert beyond the type signature.
         assert_eq!(chain.tx_log.len(), 0);
     }

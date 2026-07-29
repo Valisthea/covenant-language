@@ -161,7 +161,7 @@ fn safe_transfer_address_arg_error_encodes_caller() {
         &data[0..4]
     );
 
-    // Arg: caller address — ABI-encoded as 32 bytes (left-padded, 20 bytes right).
+    // Arg: caller address: ABI-encoded as 32 bytes (left-padded, 20 bytes right).
     // alice's address should be in the last 20 bytes of data[4..36].
     let alice_bytes = alice.to_u256().to_be_bytes();
     assert_eq!(
@@ -230,7 +230,7 @@ fn second_initialize_reverts_ksr_cvn_012() {
     let alice = h.addrs.alice;
     let bob = h.addrs.bob;
 
-    // First initialize(alice) — expected to succeed and set owner = alice.
+    // First initialize(alice): expected to succeed and set owner = alice.
     let _ = h.call_ok(
         c,
         h.addrs.deployer,
@@ -244,7 +244,7 @@ fn second_initialize_reverts_ksr_cvn_012() {
         "first initialize must set owner to alice"
     );
 
-    // Second initialize(bob) — the attack. Must revert, not rebind owner.
+    // Second initialize(bob): the attack. Must revert, not rebind owner.
     let result = h.call(c, bob, "initialize(address)", &[bob.to_u256()]);
     assert!(
         result.is_revert(),

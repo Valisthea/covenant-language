@@ -1,4 +1,4 @@
-//! The `Detector` trait — the contract every security detector implements.
+//! The `Detector` trait: the contract every security detector implements.
 
 use covenant_ir::IrModule;
 
@@ -27,7 +27,7 @@ pub trait Detector: Send + Sync {
 
     /// Analyze `ir` and return all findings for this module.
     ///
-    /// Called once per source file. Must not mutate any shared state — every
+    /// Called once per source file. Must not mutate any shared state, every
     /// detector is a pure function `IrModule → Vec<Finding>`.
     fn analyze(&self, ir: &IrModule, source: &str) -> Vec<Finding>;
 }

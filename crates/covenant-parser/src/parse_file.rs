@@ -106,7 +106,7 @@ impl<'a> Parser<'a> {
 
     fn try_parse_file_header(&mut self) -> Option<FileHeader> {
         // The file header is not part of the token stream (it was consumed as
-        // a line comment by the lexer). We leave this as a stub for Phase 2 —
+        // a line comment by the lexer). We leave this as a stub for Phase 2,
         // pragma-style headers aren't used by Basics fixtures. Returning
         // `None` is always valid.
         None
@@ -307,7 +307,7 @@ impl<'a> Parser<'a> {
             }
             let p_start = self.current_span();
             let ty = self.parse_type()?;
-            // Optional parameter name — may be any ident or keyword (Solidity names
+            // Optional parameter name: may be any ident or keyword (Solidity names
             // like `token`, `to`, `from` coincide with Covenant keywords).
             let param_name = if !self.at(&TokenKind::Comma) && !self.at(&TokenKind::RParen) {
                 Some(self.expect_ident_or_any_keyword("parameter name")?)

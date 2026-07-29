@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * package-vsix.js — Download covenant-lsp binaries from GitHub Releases and
+ * package-vsix.js: Download covenant-lsp binaries from GitHub Releases and
  * package one platform-specific .vsix per target.
  *
  * Usage:
@@ -105,7 +105,7 @@ function main() {
   );
   const version = versionOverride ?? pkg.version;
 
-  console.log(`\nCovenant VS Code Extension — packaging v${version}`);
+  console.log(`\nCovenant VS Code Extension: packaging v${version}`);
   console.log(`Platforms: ${platforms.join(", ")}\n`);
 
   const ext = path.resolve(__dirname, "..");

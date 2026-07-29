@@ -75,7 +75,7 @@ pub enum Terminator {
         else_target: BlockId,
         else_args: Vec<Value>,
     },
-    /// Encrypted conditional branch — both targets "execute" and merge via
+    /// Encrypted conditional branch: both targets "execute" and merge via
     /// `FheSelect` in `merge_target`. Phase 8 lowers to real FHE branching.
     FheBranch {
         cond: Value,

@@ -3,7 +3,7 @@
 //! V0 lowering strategy uses the MemoryMapped allocator: every SSA value
 //! lives at `0x80 + value.0 * 32` in memory. Operands are `MLOAD`ed onto the
 //! stack when needed; results are `MSTORE`d back. Simple, verbose, and
-//! auditable — gas-inefficient but correct. Phase 7/8 revisions can add
+//! auditable: gas-inefficient but correct. Phase 7/8 revisions can add
 //! stack packing later.
 
 use std::collections::BTreeMap;
@@ -32,7 +32,7 @@ pub fn value_memory_offset(v: Value) -> u32 {
     SSA_MEMORY_BASE + v.0 * 32
 }
 
-/// A `map` whose value type is itself a `map` — i.e. `map(K, map(...))`. The V0
+/// A `map` whose value type is itself a `map`: i.e. `map(K, map(...))`. The V0
 /// map codegen only implements a single keccak(key ‖ slot) level, so these
 /// cannot be lowered correctly (F09).
 fn is_nested_map_ty(t: &Ty) -> bool {
@@ -59,7 +59,7 @@ impl<'a> Codegen<'a> {
     /// F04: reject non-anonymous events with more than 3 `indexed` parameters.
     /// topic0 is the event-signature hash, so only 3 topics remain for indexed
     /// args. Beyond that, `emit_log` used to fall through to an unconditional
-    /// REVERT while the ABI advertised the extra indexed fields — a clean
+    /// REVERT while the ABI advertised the extra indexed fields, a clean
     /// compile that bricks on first `emit` and ships an invalid ABI.
     fn check_events(&mut self) {
         for e in &self.module.events {
@@ -336,7 +336,7 @@ impl<'a> Codegen<'a> {
     /// V0.9: this canary applies ONLY when the target uses native
     /// precompiles (MockChain). For helper-contract targets (Sepolia,
     /// AsterTestnet) the helpers ARE deployed at those addresses, so a
-    /// non-zero EXTCODESIZE is expected — the inverse check (verify the
+    /// non-zero EXTCODESIZE is expected: the inverse check (verify the
     /// expected helper bytecode hash) is added in Sprint 32 as a separate
     /// gate. For V0.9.0 the canary is simply skipped.
     fn emit_precompile_extcodesize_canary(&self, asm: &mut Assembler) {
@@ -365,7 +365,7 @@ impl<'a> Codegen<'a> {
             }
         }
         // The genesis-mint path uses FheEncryptTrivial implicitly when the
-        // construct is Confidential — make sure that address is canaried too.
+        // construct is Confidential: make sure that address is canaried too.
         if matches!(
             self.module.construct_privacy,
             Some(PrivacyQualifier::Confidential)
@@ -379,7 +379,7 @@ impl<'a> Codegen<'a> {
             asm.op(asm::OP_EXTCODESIZE);
             // We want to JUMPI to __revert__ when size != 0.
             // ISZERO(size) returns 1 when size==0, 0 when size!=0. So JUMPI
-            // when ISZERO(ISZERO(size)) — which is `size != 0`.
+            // when ISZERO(ISZERO(size)): which is `size != 0`.
             asm.op(asm::OP_ISZERO);
             asm.op(asm::OP_ISZERO);
             asm.push_label("__revert__");
@@ -390,7 +390,7 @@ impl<'a> Codegen<'a> {
     /// Map an opcode to its target precompile address, if any. Returns None
     /// for non-precompile opcodes.
     ///
-    /// V0.8 returned `Option<u16>` because all precompiles fit in `0x100`–
+    /// V0.8 returned `Option<u16>` because all precompiles fit in `0x100`-
     /// `0x1FF`. V0.9 returns `Option<EvmAddress>` (`[u8; 20]`) so the same
     /// helper can return either a V0.8 short address (lifted to 20 bytes)
     /// or a deployed helper-contract address on Sepolia/Aster.
@@ -466,7 +466,7 @@ impl<'a> Codegen<'a> {
 
         // Lay out scratch memory for the keyed-slot hash:
         //   mem[0..32]  = deployer address, right-aligned
-        //   mem[32..64] = map slot NUMBER — **must match the runtime convention**
+        //   mem[32..64] = map slot NUMBER: **must match the runtime convention**
         //                  used by `emit_map_slot`, which now hashes
         //                  `keccak(key || slot_number)` (KSR-CVN-029, V0.9.2).
         //                  Both sides must stay aligned, so the genesis balance
@@ -507,9 +507,9 @@ impl<'a> Codegen<'a> {
                                     // V0.9: 20-byte EvmAddress pushed via PUSH20 (push_bytes auto-emits PUSH<n>).
             let fhe_addr = self.config.precompile_addresses.fhe.encrypt_trivial;
             asm.push_u32(32); // retSize
-            asm.push_u32(0x80); // retOffset — handle lands at mem[0x80]
+            asm.push_u32(0x80); // retOffset: handle lands at mem[0x80]
             asm.push_u32(36); // argsSize = 4 + 32
-            asm.push_u32(0x5C); // argsOffset — the 4 selector bytes
+            asm.push_u32(0x5C); // argsOffset: the 4 selector bytes
             asm.push_bytes(fhe_addr.to_vec()); // addr (PUSH20)
             asm.push_bytes(vec![0xff, 0xff, 0xff, 0xff]); // gas (TOS)
             asm.op(asm::OP_STATICCALL); // [slot, success]
@@ -550,7 +550,7 @@ impl<'a> Codegen<'a> {
             IrConstant::Address(bytes) => bytes.to_vec(),
             IrConstant::Hash(bytes) => bytes.to_vec(),
             IrConstant::ZeroAddress => vec![0u8; 20],
-            _ => vec![0], // Text / Hex / Duration require more complex ABI layout — deferred
+            _ => vec![0], // Text / Hex / Duration require more complex ABI layout, deferred
         };
         asm.push_bytes(bytes);
         asm.push_u32(slot);
@@ -563,7 +563,7 @@ impl<'a> Codegen<'a> {
         // degenerate principal with NO diagnostic, unlike every other
         // unenforceable `only` principal (which already warns). Surface it so
         // an accidental no-op guard is no longer silent. (Not fail-loud: the
-        // bytecode is not wrong — it faithfully means "no restriction" — and
+        // bytecode is not wrong: it faithfully means "no restriction", and
         // `only caller` is a widely-used explicit "anyone" marker; a hard
         // error would break existing examples/tests for no correctness gain.)
         for g in &f.guards {
@@ -613,7 +613,7 @@ impl<'a> Codegen<'a> {
 
         // KSR-CVN-012: proxy-initializer re-init guard. A public action
         // named `initialize` (or tagged `@initializer`) must be callable
-        // exactly once — subsequent calls revert. Without this every
+        // exactly once: subsequent calls revert. Without this every
         // Covenant-compiled UUPS/Transparent proxy exposes an open
         // owner-hijack primitive.
         let is_initializer = is_initializer_action(f);
@@ -713,7 +713,7 @@ impl<'a> Codegen<'a> {
         asm.emit(AsmOp::Push0);
         asm.emit(AsmOp::Push0);
         asm.op(asm::OP_REVERT);
-        // ok_label: lock is free — acquire it.
+        // ok_label: lock is free: acquire it.
         asm.label_def(ok_label);
         asm.push_bytes(vec![1]); // value = 1
         asm.push_u32(REENTRANT_LOCK_SLOT);
@@ -757,7 +757,7 @@ impl<'a> Codegen<'a> {
 
         for (i, param) in f.params.iter().enumerate() {
             if !is_static_abi_ty(&param.ty) {
-                // Skip dynamic types — their slots stay zero until V0.2.
+                // Skip dynamic types: their slots stay zero until V0.2.
                 continue;
             }
             let calldata_off = 4u32 + (i as u32) * 32;
@@ -929,7 +929,7 @@ impl<'a> Codegen<'a> {
                 asm.op(asm::OP_SSTORE);
             }
 
-            // ---- Map operations — runtime keccak for keyed slot ----
+            // ---- Map operations: runtime keccak for keyed slot ----
             Opcode::MapGet => {
                 // Operands: [map_base (SLoad of the field), key].
                 // emit_map_slot traces map_base back to the field's slot number
@@ -1105,7 +1105,7 @@ impl<'a> Codegen<'a> {
                 self.emit_keccak(asm, f, instr);
             }
 
-            // ---- ABI encode / decode — placeholder ----
+            // ---- ABI encode / decode: placeholder ----
             Opcode::AbiEncode | Opcode::AbiDecode | Opcode::AbiPack => {
                 // Copy first operand's slot to result slot as a no-op stand-in.
                 if let Some(op0) = instr.operands.first().copied() {
@@ -1464,7 +1464,7 @@ impl<'a> Codegen<'a> {
                 self.mstore_result(asm, instr);
             }
 
-            // ---- ChoiceMatch — placeholder ----
+            // ---- ChoiceMatch: placeholder ----
             Opcode::ChoiceMatch(_) => {
                 asm.emit(AsmOp::Push0);
                 self.mstore_result(asm, instr);
@@ -1482,7 +1482,7 @@ impl<'a> Codegen<'a> {
                 asm.op(asm::OP_MSTORE);
             }
 
-            // ---- Coerce — no-op at IR → pass through ----
+            // ---- Coerce: no-op at IR → pass through ----
             Opcode::Coerce(_) => {
                 if let Some(op0) = instr.operands.first().copied() {
                     self.load_operand(asm, f, op0);
@@ -1507,8 +1507,8 @@ impl<'a> Codegen<'a> {
     /// Emit a CALL or STATICCALL to an external Solidity contract.
     ///
     /// Calldata layout in scratch memory (starting at 0x00):
-    ///   mem[0x00..0x04]          — 4-byte ABI selector (in the high bytes of a word)
-    ///   mem[0x04..0x04+n*32]     — ABI-encoded arguments
+    ///   mem[0x00..0x04]: 4-byte ABI selector (in the high bytes of a word)
+    ///   mem[0x04..0x04+n*32]: ABI-encoded arguments
     ///
     /// Return value (32 bytes) is placed at mem[0x00] and then stored into the
     /// result's SSA slot. Operands: `[addr, arg0, arg1, ...]`.
@@ -1587,7 +1587,7 @@ impl<'a> Codegen<'a> {
         // STATICCALL leaves whatever was at mem[0] beforehand (here, our
         // outgoing calldata's selector || arg0) which the caller would
         // otherwise read as a "return value". `ISZERO ; PUSH __revert__ ;
-        // JUMPI` propagates the failure deterministically — parity with
+        // JUMPI` propagates the failure deterministically, parity with
         // emit_transfer's pattern (CRT-013).
         asm.op(asm::OP_ISZERO);
         asm.push_label("__revert__");
@@ -1789,7 +1789,7 @@ impl<'a> Codegen<'a> {
                     asm.emit(AsmOp::Push0);
                     asm.op(asm::OP_REVERT);
                 } else {
-                    // Unknown error — fall back to empty revert.
+                    // Unknown error: fall back to empty revert.
                     asm.emit(AsmOp::Push0);
                     asm.emit(AsmOp::Push0);
                     asm.op(asm::OP_REVERT);
@@ -1874,7 +1874,7 @@ impl<'a> Codegen<'a> {
 
     fn binop(&mut self, asm: &mut Assembler, f: &IrFunction, instr: &Instr, op: u8) {
         // EVM non-commutative opcodes (SUB, DIV, MOD, LT, GT, SHL, SHR, …) are
-        // specified as `op(top, below_top)` — i.e. the top of the stack is the
+        // specified as `op(top, below_top)`: i.e. the top of the stack is the
         // *first* argument. For `SUB` the Yellow Paper / evm.codes give the
         // result as `a - b` where `a` is popped first (top) and `b` is popped
         // second.
@@ -1882,7 +1882,7 @@ impl<'a> Codegen<'a> {
         // If the IR operand order is `[lhs, rhs]` and we want `lhs OP rhs`,
         // we must push `rhs` first and `lhs` last so the stack ends up
         // `[rhs, lhs]` with `lhs` on top. SUB then computes `lhs - rhs`,
-        // LT then computes `lhs < rhs`, etc. — matching the IR semantics.
+        // LT then computes `lhs < rhs`, etc.: matching the IR semantics.
         self.load_operand(asm, f, instr.operands[1]);
         self.load_operand(asm, f, instr.operands[0]);
         asm.op(op);
@@ -1979,7 +1979,7 @@ impl<'a> Codegen<'a> {
     ///
     /// The EVM's `DIV`/`MOD` are *total*: `x / 0` yields `0` instead of
     /// trapping. The previous bare lowering therefore made
-    /// `pot / participants` silently evaluate to 0 on an empty set —
+    /// `pot / participants` silently evaluate to 0 on an empty set,
     /// ordinary-looking source, wrong on-chain result, no diagnostic.
     /// Solidity reverts here, and so do we.
     ///
@@ -2002,14 +2002,14 @@ impl<'a> Codegen<'a> {
         what: &str,
     ) {
         match self.as_const(f, instr.operands[1]) {
-            // Provably safe divisor — emit the bare op, as before.
+            // Provably safe divisor: emit the bare op, as before.
             Some(IrConstant::Integer(n)) if n != 0 => {}
-            // Provably wrong — refuse to compile.
+            // Provably wrong: refuse to compile.
             Some(IrConstant::Integer(_)) => {
                 self.diagnostics
                     .push(d::div_by_zero_literal(instr.span, what));
             }
-            // Unknown at compile time — guard it at runtime.
+            // Unknown at compile time: guard it at runtime.
             _ => {
                 self.load_operand(asm, f, instr.operands[1]); // [rhs]
                 asm.op(asm::OP_ISZERO); // [rhs == 0]
@@ -2058,7 +2058,7 @@ impl<'a> Codegen<'a> {
         self.mstore_result(asm, instr);
     }
 
-    /// Trace a Map* opcode's base operand (operand 0 — the `SLoad` of the map
+    /// Trace a Map* opcode's base operand (operand 0, the `SLoad` of the map
     /// field) back to the field's storage slot NUMBER. Returns `None` when the
     /// operand is not a direct `SLoad(GlobalId)` result, in which case callers
     /// fall back to the operand's runtime value.
@@ -2083,7 +2083,7 @@ impl<'a> Codegen<'a> {
         // slot NUMBER, not the value loaded from that slot. Every freshly
         // deployed map's metadata slot reads 0, so the old `keccak(key || 0)`
         // convention made any two maps that share a key VALUE alias the same
-        // entry slot (e.g. ERC-721 `owners[id]` vs `token_approvals[id]` — an
+        // entry slot (e.g. ERC-721 `owners[id]` vs `token_approvals[id]`: an
         // `approve` then silently overwrote ownership). Operand 0 is the
         // `SLoad` of the map field, which we trace back to the slot number;
         // operand 1 is the key.
@@ -2244,7 +2244,7 @@ impl<'a> Codegen<'a> {
         // STATICCALL argsOffset = 0x3C, argsSize = 4 + n*32 so the chain-side
         // precompile reads `selector || operand0 || operand1 || ...`.
         //
-        // retOffset = 0, retSize = 32 — unchanged (every precompile routed
+        // retOffset = 0, retSize = 32: unchanged (every precompile routed
         // through this helper returns a 32-byte handle or bool word).
 
         // Step 1: zero the return slot.
@@ -2263,7 +2263,7 @@ impl<'a> Codegen<'a> {
         // reads it).
         // FAIL-LOUD GATE (E520). On helper-contract targets, an opcode absent
         // from `helper_selector_for_opcode` used to fall back to the V0.8
-        // namespaced selector `keccak("covenant.precompile.<Op>:v1")[0..4]` —
+        // namespaced selector `keccak("covenant.precompile.<Op>:v1")[0..4]`:
         // which matches NO function on the deployed Mocked*/Ceremony helper.
         // Those helpers have no fallback function, so the CALL cannot dispatch
         // and always reverts: the contract compiles clean, deploys clean, and
@@ -2304,10 +2304,10 @@ impl<'a> Codegen<'a> {
 
         // Step 4: CALL or STATICCALL based on target.
         //
-        // V0.8 native precompiles (MockChain) are conceptually stateless —
+        // V0.8 native precompiles (MockChain) are conceptually stateless,
         // STATICCALL is semantically correct. V0.9 helper contracts include
         // stateful methods (CeremonyHelper.amnesiaSetup writes storage)
-        // — STATICCALL would revert. For helper-contract targets, use CALL
+        //: STATICCALL would revert. For helper-contract targets, use CALL
         // (superset of STATICCALL behavior; allows state mutations but
         // doesn't require them).
         //
@@ -2460,9 +2460,9 @@ impl<'a> Codegen<'a> {
     /// Emit ABI-encoded dynamic string return for a compile-time `Text` constant.
     ///
     /// Return layout (96 bytes):
-    ///   mem[0x00..0x20] — ABI offset = 0x20 (points to the length word)
-    ///   mem[0x20..0x40] — string byte length
-    ///   mem[0x40..0x60] — string bytes, left-aligned in the 32-byte word
+    ///   mem[0x00..0x20]: ABI offset = 0x20 (points to the length word)
+    ///   mem[0x20..0x40]: string byte length
+    ///   mem[0x40..0x60]: string bytes, left-aligned in the 32-byte word
     ///
     /// MSTORE right-aligns its argument, so we left-shift the bytes by
     /// `(32 - len) * 8` bits before storing to achieve left-alignment.
@@ -2474,7 +2474,7 @@ impl<'a> Codegen<'a> {
         let len = bytes.len();
         if len > 32 {
             // Was a bare `assert!`, which aborted the entire compiler with an
-            // ICE on input as ordinary as a 33-byte token name — found by the
+            // ICE on input as ordinary as a 33-byte token name, found by the
             // cargo-fuzz `compile_pipeline` target. Report and bail instead.
             self.diagnostics.push(d::text_constant_too_long(span, len));
             return false;
@@ -2551,7 +2551,7 @@ impl<'a> Codegen<'a> {
 ///
 /// True for address / uint-ish / bool / hash / duration / amount and their
 /// `Unknown` fallback (treated as opaque word). False for text, bytes, list,
-/// map, struct, ciphertext-of-dynamic — those require head-tail decoding,
+/// map, struct, ciphertext-of-dynamic: those require head-tail decoding,
 /// which V0.2 will add.
 /// Whether `v` is read anywhere in `f`: as an instruction operand, as a
 /// terminator's value, or as a block argument.
@@ -2605,7 +2605,7 @@ fn is_static_abi_ty(ty: &covenant_types::Ty) -> bool {
 /// KSR-CVN-012: detect whether a function should carry the proxy
 /// initializer re-init guard. Matches by name (`initialize`) or by an
 /// explicit `@initializer` annotation. Only public Action kinds qualify
-/// — views, reveals and internal kinds are never initializers.
+///: views, reveals and internal kinds are never initializers.
 pub(crate) fn is_initializer_action(f: &IrFunction) -> bool {
     if !matches!(f.kind, covenant_ir::IrFunctionKind::Action) {
         return false;

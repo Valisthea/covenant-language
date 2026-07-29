@@ -73,7 +73,7 @@ pub enum LangIdent {
     Deployer,
     This,
     ZeroAddress,
-    /// `owner` — either the user's `owner: address` field if declared, or the
+    /// `owner`: either the user's `owner: address` field if declared, or the
     /// implicit deployer-by-convention binding.
     Owner,
 
@@ -284,7 +284,7 @@ pub enum DeclKind {
     View,
     Reveal,
     SelectiveDisclosure,
-    /// V0.9.1 — `external contract IFoo { ... }` interface declarations.
+    /// V0.9.1: `external contract IFoo { ... }` interface declarations.
     ExternalContract,
 }
 

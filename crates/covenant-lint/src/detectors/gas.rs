@@ -1,4 +1,4 @@
-//! GAS — Gas & DOS detectors (C1100, W1101, W1102, I1103).
+//! GAS: Gas & DOS detectors (C1100, W1101, W1102, I1103).
 
 use covenant_ir::{IrModule, Opcode};
 
@@ -28,7 +28,7 @@ impl Detector for C1100UnboundedLoop {
         Category::GasAndDOS
     }
     fn description(&self) -> &'static str {
-        "Loop or collection iteration without a `@batch_up_to` bound — DOS via gas exhaustion."
+        "Loop or collection iteration without a `@batch_up_to` bound, DOS via gas exhaustion."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -78,7 +78,7 @@ impl Detector for W1101ExpensiveView {
         Category::GasAndDOS
     }
     fn description(&self) -> &'static str {
-        "View function has a high instruction count — callers may hit gas limits."
+        "View function has a high instruction count: callers may hit gas limits."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -125,7 +125,7 @@ impl Detector for W1102StoreInLoop {
         Category::GasAndDOS
     }
     fn description(&self) -> &'static str {
-        "Storage write inside a loop — gas cost grows linearly with input size."
+        "Storage write inside a loop: gas cost grows linearly with input size."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -145,7 +145,7 @@ impl Detector for W1102StoreInLoop {
                             Finding::new(
                                 "W1102",
                                 instr.span,
-                                "storage write inside a loop — unbounded gas cost",
+                                "storage write inside a loop: unbounded gas cost",
                                 Severity::Warning,
                             )
                             .with_help(
@@ -178,7 +178,7 @@ impl Detector for I1103HighInstructionCount {
         Category::GasAndDOS
     }
     fn description(&self) -> &'static str {
-        "Function has an unusually high total instruction count — review for complexity."
+        "Function has an unusually high total instruction count, review for complexity."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {

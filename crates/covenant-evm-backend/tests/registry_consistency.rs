@@ -26,7 +26,7 @@ fn addr_to_lower_hex(a: &[u8; 20]) -> String {
 /// Look for a hex-encoded address as a value associated with the given key
 /// in the registry. The check is permissive about whitespace between the
 /// key and the value (the JSON uses aligned-column formatting with multiple
-/// spaces). Plain string scan — no JSON parser dep.
+/// spaces). Plain string scan: no JSON parser dep.
 fn json_contains_address(key: &str, addr: &[u8; 20]) -> bool {
     let registry_lc = REGISTRY_JSON.to_lowercase();
     let key_marker = format!(r#""{key}""#);
@@ -49,7 +49,7 @@ fn ceremony_helper_address_matches_json() {
     assert!(
         json_contains_address("ceremony_helper", &CEREMONY_HELPER_V090),
         "Rust constant CEREMONY_HELPER_V090 ({}) does not match \
-         config/helper-addresses-v0.9.0.json — fix one or both in lockstep",
+         config/helper-addresses-v0.9.0.json: fix one or both in lockstep",
         addr_to_lower_hex(&CEREMONY_HELPER_V090)
     );
 }
@@ -59,7 +59,7 @@ fn fhe_helper_address_matches_json() {
     assert!(
         json_contains_address("fhe_helper", &FHE_HELPER_V090),
         "Rust constant FHE_HELPER_V090 ({}) does not match \
-         config/helper-addresses-v0.9.0.json — fix one or both in lockstep",
+         config/helper-addresses-v0.9.0.json: fix one or both in lockstep",
         addr_to_lower_hex(&FHE_HELPER_V090)
     );
 }
@@ -69,7 +69,7 @@ fn pq_helper_address_matches_json() {
     assert!(
         json_contains_address("pq_helper", &PQ_HELPER_V090),
         "Rust constant PQ_HELPER_V090 ({}) does not match \
-         config/helper-addresses-v0.9.0.json — fix one or both in lockstep",
+         config/helper-addresses-v0.9.0.json: fix one or both in lockstep",
         addr_to_lower_hex(&PQ_HELPER_V090)
     );
 }
@@ -79,18 +79,18 @@ fn zk_helper_address_matches_json() {
     assert!(
         json_contains_address("zk_helper", &ZK_HELPER_V090),
         "Rust constant ZK_HELPER_V090 ({}) does not match \
-         config/helper-addresses-v0.9.0.json — fix one or both in lockstep",
+         config/helper-addresses-v0.9.0.json: fix one or both in lockstep",
         addr_to_lower_hex(&ZK_HELPER_V090)
     );
 }
 
 #[test]
 fn registry_version_matches_v090() {
-    // The registry must claim to be V0.9.0 — if someone bumps the JSON to
+    // The registry must claim to be V0.9.0: if someone bumps the JSON to
     // 0.9.1 without updating Rust constants, this test fires.
     assert!(
         REGISTRY_JSON.contains(r#""version": "0.9.0""#),
-        "config/helper-addresses-v0.9.0.json version field is not \"0.9.0\" — \
+        "config/helper-addresses-v0.9.0.json version field is not \"0.9.0\", \
          either bump the Rust constants and rename this test, or revert the JSON"
     );
 }

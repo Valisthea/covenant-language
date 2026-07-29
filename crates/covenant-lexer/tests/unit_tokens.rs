@@ -275,7 +275,7 @@ fn integer_u64_max() {
 
 #[test]
 fn integer_overflow_emits_e005() {
-    // 2^128 — overflows u128 by 1.
+    // 2^128: overflows u128 by 1.
     let src = "340282366920938463463374607431768211456";
     let (toks, diags) = tokenize(src, SourceId::new(0));
     assert!(toks.iter().any(|t| t.kind == TokenKind::Error));
@@ -466,7 +466,7 @@ fn duration_at_u64_boundary_is_accepted() {
 
 #[test]
 fn non_unit_keeps_integer_and_ident() {
-    // `42 foo` should NOT fuse — it's Integer then Ident.
+    // `42 foo` should NOT fuse: it's Integer then Ident.
     let ks = kinds("42 foo");
     assert_eq!(ks[0], TokenKind::Integer(42));
     assert_eq!(ks[1], TokenKind::Ident("foo".into()));
@@ -588,7 +588,7 @@ fn user_identifier_pascal_case() {
 
 #[test]
 fn keyword_is_not_an_ident() {
-    // `caller` is a context-dependent special identifier — NOT reserved at the
+    // `caller` is a context-dependent special identifier, NOT reserved at the
     // lexer level, so it should come through as an ordinary Ident.
     assert_eq!(
         first_non_trivial("caller"),

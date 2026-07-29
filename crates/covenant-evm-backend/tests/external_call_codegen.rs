@@ -1,4 +1,4 @@
-//! EVM codegen tests for Phase 17 – external contract CALL/STATICCALL emission.
+//! EVM codegen tests for Phase 17 - external contract CALL/STATICCALL emission.
 
 use covenant_diag::SourceId;
 use covenant_evm_backend::{abi, codegen_evm, storage, EvmConfig};
@@ -323,7 +323,7 @@ record R {
     let (_, runtime) = compile(src);
     assert!(
         contains_subseq(&runtime, &[0xf1, 0x15]),
-        "expected CALL (0xF1) immediately followed by ISZERO (0x15) — \
+        "expected CALL (0xF1) immediately followed by ISZERO (0x15): \
          success-flag check missing (KSR-CVN-027)"
     );
     // And ISZERO must be followed (after the PUSH of the revert label) by JUMPI (0x57).
@@ -348,7 +348,7 @@ record R {
     let (_, runtime) = compile(src);
     assert!(
         contains_subseq(&runtime, &[0xfa, 0x15]),
-        "expected STATICCALL (0xFA) immediately followed by ISZERO (0x15) — \
+        "expected STATICCALL (0xFA) immediately followed by ISZERO (0x15): \
          success-flag check missing on view path (KSR-CVN-027)"
     );
 }
@@ -371,7 +371,7 @@ record R {
     let (_, runtime) = compile(src);
     assert!(
         !contains_subseq(&runtime, &[0xf1, 0x50]),
-        "regression: CALL ; POP pattern reintroduced — KSR-CVN-027 fix lost"
+        "regression: CALL ; POP pattern reintroduced, KSR-CVN-027 fix lost"
     );
 }
 
@@ -380,7 +380,7 @@ record R {
 #[test]
 fn ksr_030_external_view_call_reads_returndata_not_wiped() {
     // M3 milestone bug: the post-call code used to `MSTORE(0,0)` AFTER the
-    // STATICCALL — wiping the very return word the call wrote to retOffset=0,
+    // STATICCALL: wiping the very return word the call wrote to retOffset=0,
     // so every `IFoo.at(addr).method()` view returned 0/default. The fix reads
     // the value the call left in place, guarded by RETURNDATASIZE (0x3d) so an
     // empty return still yields 0. Assert the return path now consults
@@ -399,7 +399,7 @@ record R {
     assert!(runtime.contains(&0xfa), "expected STATICCALL (0xfa)");
     assert!(
         runtime.contains(&0x3d),
-        "expected RETURNDATASIZE (0x3d) in the external-call return path — \
+        "expected RETURNDATASIZE (0x3d) in the external-call return path, \
          the post-call MSTORE-wipe regression (M3 reads return 0) is back"
     );
 }

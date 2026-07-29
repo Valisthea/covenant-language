@@ -1,4 +1,4 @@
-//! KSR-CVN-016 / KSR-CVN-017 regression — `Opcode::has_randomness_or_state`
+//! KSR-CVN-016 / KSR-CVN-017 regression: `Opcode::has_randomness_or_state`
 //! must return true for every opcode that carries randomness or hidden state,
 //! and false for pure deterministic primitives. Optimizer CSE keys off this
 //! predicate (covenant-opt/src/cse.rs).
@@ -11,7 +11,7 @@ fn randomness_opcodes_are_marked() {
     for op in randomness {
         assert!(
             op.has_randomness_or_state(),
-            "{op:?} carries randomness — must NOT be CSE-eligible (KSR-CVN-016/017)"
+            "{op:?} carries randomness: must NOT be CSE-eligible (KSR-CVN-016/017)"
         );
     }
 }
@@ -31,7 +31,7 @@ fn stateful_opcodes_are_marked() {
     for op in stateful {
         assert!(
             op.has_randomness_or_state(),
-            "{op:?} carries hidden state — must NOT be CSE-eligible"
+            "{op:?} carries hidden state: must NOT be CSE-eligible"
         );
     }
 }
@@ -45,7 +45,7 @@ fn pure_opcodes_are_not_marked() {
         Opcode::Eq,
         Opcode::Lt,
         Opcode::Keccak,
-        Opcode::FheEncryptTrivial, // deterministic encryption — CSE-eligible
+        Opcode::FheEncryptTrivial, // deterministic encryption, CSE-eligible
         Opcode::FheAdd,
         Opcode::FheCmpEq,
         Opcode::FheCmpNe,
@@ -58,7 +58,7 @@ fn pure_opcodes_are_not_marked() {
     for op in pure {
         assert!(
             !op.has_randomness_or_state(),
-            "{op:?} is pure/deterministic — must remain CSE-eligible"
+            "{op:?} is pure/deterministic: must remain CSE-eligible"
         );
     }
 }

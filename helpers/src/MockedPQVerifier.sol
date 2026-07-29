@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * ⚠ V0.9 PLACEHOLDER — NOT FOR PRODUCTION SECRETS ⚠
+ * ⚠ V0.9 PLACEHOLDER: NOT FOR PRODUCTION SECRETS ⚠
  *
  * This contract implements the Covenant V0.9 PQ helper interface
  * with MOCKED logic. It is suitable ONLY for:
@@ -12,7 +12,7 @@ pragma solidity ^0.8.20;
  *
  * It is NOT suitable for:
  *   - Verifying real Dilithium-5 signatures (this is a parity check,
- *     NOT a cryptographic verifier — forgeries are accepted)
+ *     NOT a cryptographic verifier: forgeries are accepted)
  *   - Generating production keys (deterministic stub)
  *   - Production randomness (block.prevrandao + nonce; not VRF)
  *

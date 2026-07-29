@@ -29,7 +29,7 @@ impl Default for OptimizerConfig {
 }
 
 impl OptimizerConfig {
-    /// All passes disabled — useful for testing that disabling flags preserves IR.
+    /// All passes disabled: useful for testing that disabling flags preserves IR.
     pub fn none() -> Self {
         Self {
             enable_precompute: false,

@@ -26,7 +26,7 @@
 //!     synthesis of any user-declared name).
 //!   - `algorithm_id()` returns 1 (Dilithium-5 per FIPS 204). V1.0 may
 //!     add 2 (Falcon-512), 3 (SPHINCS+), etc.
-//!   - `register` is open-access — anyone can register their own key.
+//!   - `register` is open-access: anyone can register their own key.
 //!     `revoke` clears the caller's registration only.
 
 use std::collections::HashSet;
@@ -125,7 +125,7 @@ const STANDARD_FN_NAMES: &[&str] = &[
     "algorithm_id",
     "register",
     "revoke",
-    // Reserved (Sprint 35.c) — flagged so user-declared overrides are detected:
+    // Reserved (Sprint 35.c): flagged so user-declared overrides are detected:
     "update_key",
 ];
 
@@ -165,7 +165,7 @@ fn inject_events(module: &mut IrModule, span: Span) {
         });
     }
     if !existing.contains("KeyUpdated") {
-        // Reserved for Sprint 35.c — schema fixed now so user-declared
+        // Reserved for Sprint 35.c: schema fixed now so user-declared
         // overrides match this signature exactly.
         module.events.push(IrEvent {
             name: i("KeyUpdated"),

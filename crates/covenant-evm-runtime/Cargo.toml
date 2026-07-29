@@ -17,5 +17,5 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# Tests inside this crate stay minimal — the heavy compiler-side
+# Tests inside this crate stay minimal: the heavy compiler-side
 # integration suite lives in covenant-testing, which depends on this.

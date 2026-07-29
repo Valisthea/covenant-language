@@ -33,7 +33,7 @@ pub fn run_function(func: &mut IrFunction) -> bool {
                 }
                 Opcode::MapSet | Opcode::MapDelete | Opcode::ListAppend | Opcode::ListSet => {
                     // Conservative: invalidate the entire cache for any
-                    // collection mutation — we don't track which field the
+                    // collection mutation: we don't track which field the
                     // mutated collection came from without more book-keeping.
                     cache.clear();
                 }

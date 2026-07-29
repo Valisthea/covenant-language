@@ -1,4 +1,4 @@
-//! IR lowering tests for Phase 17 – external contract interop.
+//! IR lowering tests for Phase 17 - external contract interop.
 
 use covenant_diag::{Diagnostic, DiagnosticLevel, SourceId};
 use covenant_ir::{build_ir, IrModule, Opcode};
@@ -329,5 +329,5 @@ record R {
             .flat_map(|b| b.instructions.iter())
             .any(|i| matches!(&i.opcode, Opcode::ExternalCall { is_view, .. } if *is_view))
     });
-    assert!(!is_view, "set() is not a view — is_view should be false");
+    assert!(!is_view, "set() is not a view: is_view should be false");
 }

@@ -141,7 +141,7 @@ fn privatedao_initial_tallies_are_zero() {
     let deployer = h.addrs.deployer;
     let yes = h.view_u256(c, deployer, "yes_votes()", &[]);
     let no = h.view_u256(c, deployer, "no_votes()", &[]);
-    // No votes cast yet — tallies should decrypt to 0.
+    // No votes cast yet: tallies should decrypt to 0.
     // (The zero-bytes handle resolves to U256::ZERO in the mock.)
     assert_eq!(yes, U256::ZERO, "initial yes tally must be zero");
     assert_eq!(no, U256::ZERO, "initial no tally must be zero");

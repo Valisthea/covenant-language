@@ -1,4 +1,4 @@
-//! KSR-CVN-012 regression tests — proxy initializer re-init guard.
+//! KSR-CVN-012 regression tests: proxy initializer re-init guard.
 //!
 //! Verifies that every public `action initialize(...)` emitted by the EVM
 //! backend is wrapped in a re-initialization guard:
@@ -106,7 +106,7 @@ fn initializer_guard_has_sload_iszero_jumpi_revert_sstore() {
     let sites = find_push32_sites(&runtime, &slot);
     assert!(
         !sites.is_empty(),
-        "no initializer flag PUSH32 found — guard missing entirely"
+        "no initializer flag PUSH32 found: guard missing entirely"
     );
 
     // First site: PUSH32 slot → SLOAD → ISZERO → PUSH2 label → JUMPI → PUSH0 PUSH0 REVERT
@@ -184,7 +184,7 @@ fn initializer_flag_slot_is_keccak_derived_not_sequential() {
     assert!(
         !is_sequential_shape,
         "initializer flag slot must be keccak-derived (EIP-7201 style), \
-         not a small sequential slot — else it can collide with user fields. \
+         not a small sequential slot: else it can collide with user fields. \
          Got: 0x{}",
         hex::encode(slot)
     );

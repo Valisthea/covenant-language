@@ -64,7 +64,7 @@ pub fn user_fn_conflict(span: Span, standard: &str, name: &str) -> Diagnostic {
 pub fn warn_user_override(span: Span, name: &str) -> Diagnostic {
     warn(
         W602_USER_OVERRIDE,
-        format!("synthesized `{name}` skipped — user's declaration shadows it; verify it conforms to the standard signature"),
+        format!("synthesized `{name}` skipped: user's declaration shadows it; verify it conforms to the standard signature"),
         span,
     )
 }
@@ -219,7 +219,7 @@ pub fn shadowed_synth_shape(
 pub fn warn_missing_metadata(span: Span, key: &str) -> Diagnostic {
     warn(
         W601_MISSING_METADATA,
-        format!("token construct missing `{key}` metadata — using default"),
+        format!("token construct missing `{key}` metadata, using default"),
         span,
     )
 }
@@ -227,7 +227,7 @@ pub fn warn_missing_metadata(span: Span, key: &str) -> Diagnostic {
 pub fn warn_synth_not_impl(span: Span, construct: &str) -> Diagnostic {
     warn(
         W606_SYNTH_NOT_IMPL,
-        format!("{construct} standard-interface synthesis not yet implemented — passing construct through unchanged"),
+        format!("{construct} standard-interface synthesis not yet implemented, passing construct through unchanged"),
         span,
     )
 }
@@ -235,7 +235,7 @@ pub fn warn_synth_not_impl(span: Span, construct: &str) -> Diagnostic {
 pub fn warn_erc8227_unexercised(span: Span) -> Diagnostic {
     warn(
         W605_ERC8227_UNEXERCISED,
-        "ERC-8227 synthesis implemented but not validated on V0 Basics — exercise via Intermediate fixtures",
+        "ERC-8227 synthesis implemented but not validated on V0 Basics, exercise via Intermediate fixtures",
         span,
     )
 }
@@ -243,7 +243,7 @@ pub fn warn_erc8227_unexercised(span: Span) -> Diagnostic {
 pub fn warn_empty_symbol(span: Span) -> Diagnostic {
     warn(
         W610_EMPTY_SYMBOL,
-        "token `symbol` is empty — wallets may display as \"Unknown\"",
+        "token `symbol` is empty: wallets may display as \"Unknown\"",
         span,
     )
 }

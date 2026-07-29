@@ -1,4 +1,4 @@
-//! `covenant-lint` — security linter for Covenant smart contracts.
+//! `covenant-lint`: security linter for Covenant smart contracts.
 //!
 //! The library exposes `run()` for use by the CLI binary and by the
 //! `covenant-cli` `lint` / `build --release` subcommands.
@@ -55,7 +55,7 @@ pub fn run(args: &Cli) -> anyhow::Result<i32> {
             Ok(ir) => ir,
             Err(diags) => {
                 eprintln!(
-                    "covenant-lint: {} compile error(s) in {source_path} — skipping",
+                    "covenant-lint: {} compile error(s) in {source_path}: skipping",
                     diags.len()
                 );
                 continue;

@@ -1,4 +1,4 @@
-//! `covenant check` — frontend-only compilation (no codegen).
+//! `covenant check`: frontend-only compilation (no codegen).
 
 use std::path::PathBuf;
 

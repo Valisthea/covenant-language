@@ -114,7 +114,7 @@ fn bridge_unlock_reverts_when_insufficient() {
     let (mut h, c) = setup();
     let alice = h.addrs.alice;
     let _ = h.call_ok(c, alice, "lock(uint256)", &[U256::from_u64(100)]);
-    // Attempt to unlock more than locked — the `when` guard must revert.
+    // Attempt to unlock more than locked: the `when` guard must revert.
     let result = h.call(c, alice, "unlock(uint256)", &[U256::from_u64(200)]);
     assert!(
         result.is_revert(),

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cryptographic Amnesia (ERC-8228) · Covenant By Example</title>
-<meta name="description" content="amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.">
+<meta name="description" content="amnesia&lt;T&gt;, destroy(), vdf_proof, verifiable data deletion.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/11-cryptographic-amnesia">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/11-cryptographic-amnesia">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Cryptographic Amnesia (ERC-8228) · Covenant By Example">
-<meta property="og:description" content="amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.">
+<meta property="og:description" content="amnesia&lt;T&gt;, destroy(), vdf_proof, verifiable data deletion.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Cryptographic Amnesia (ERC-8228) · Covenant By Example">
-<meta name="twitter:description" content="amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.">
+<meta name="twitter:description" content="amnesia&lt;T&gt;, destroy(), vdf_proof, verifiable data deletion.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,15 +367,15 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge advanced">Advanced</span>
     <p class="chapter-eyebrow">Chapter 11 / 15</p>
     <h1 class="chapter-title">Cryptographic Amnesia (ERC-8228)</h1>
-    <p class="chapter-subtitle">amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.</p>
+    <p class="chapter-subtitle">amnesia&lt;T&gt;, destroy(), vdf_proof, verifiable data deletion.</p>
     <hr class="chapter-divider">
-    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
+    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only, the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
     <p class="prose">ERC-8228 introduces <em>cryptographic amnesia</em>: a contract can provably
 commit to destroying secret data after a delay enforced by a Verifiable Delay
-Function (VDF). Once the destruction ceremony completes, no party — including
-the chain operator — can recover the data. This enables use cases like
+Function (VDF). Once the destruction ceremony completes, no party, including
+the chain operator: can recover the data. This enables use cases like
 time-limited secret auctions, ephemeral keys, and GDPR-compliant on-chain storage.</p>
-    <div class="code-wrap"><div class="code-label">amnesia_ceremony.cov — 4-phase destruction protocol</div><pre class="code-block" data-lang="covenant">record SecretAuction {
+    <div class="code-wrap"><div class="code-label">amnesia_ceremony.cov, 4-phase destruction protocol</div><pre class="code-block" data-lang="covenant">record SecretAuction {
     // amnesia<T> wraps T in a destruction-trackable envelope
     sealed_bid:  amnesia<u256>;
     bidder:      address;
@@ -395,7 +395,7 @@ time-limited secret auctions, ephemeral keys, and GDPR-compliant on-chain storag
         self.phase = 1;
     }
 
-    // Phase 1 → 2: lock — no more reads after this
+    // Phase 1 → 2: lock: no more reads after this
     action lock()
         when(self.phase == 1)
         when(block.timestamp >= self.reveal_at)
@@ -405,7 +405,7 @@ time-limited secret auctions, ephemeral keys, and GDPR-compliant on-chain storag
     }
 
     // Phase 2 → 3: destroy with VDF proof (prevents last-minute reads)
-    // vdf_proof(t) requires t sequential squarings — ~1 million ≈ 30 seconds
+    // vdf_proof(t) requires t sequential squarings, ~1 million ≈ 30 seconds
     action destroy()
         when(self.phase == 2)
         when(block.timestamp >= self.destroy_at)
@@ -429,13 +429,13 @@ time-limited secret auctions, ephemeral keys, and GDPR-compliant on-chain storag
 <table class="notes-table">
 <tr><td><code>amnesia&lt;T&gt;</code></td><td>wraps <code>T</code> in a destruction-trackable envelope. The compiler tracks all read paths and enforces phase guards.</td></tr>
 <tr><td><code>destroy(field)</code></td><td>zeroes the storage slot and writes a tombstone hash that proves destruction occurred at a specific block.</td></tr>
-<tr><td><code>vdf_proof(t = N)</code></td><td>compiles to a STATICCALL to the VDF precompile (<code>0x0502</code>). The sequentiality of the VDF prevents parallel pre-computation of the proof — you cannot rush destruction.</td></tr>
+<tr><td><code>vdf_proof(t = N)</code></td><td>compiles to a STATICCALL to the VDF precompile (<code>0x0502</code>). The sequentiality of the VDF prevents parallel pre-computation of the proof, you cannot rush destruction.</td></tr>
 <tr><td>ERC-8228 compliance</td><td>requires: (a) amnesia wrapping, (b) locked phase before destruction, (c) VDF proof in the destruction action, (d) a tombstone event emitted on-chain.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Cryptographic amnesia provides a <em>verifiable</em> guarantee of deletion — not just a promise.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Cryptographic amnesia provides a <em>verifiable</em> guarantee of deletion, not just a promise.</li>
 <li>The VDF delay prevents an adversary from watching mempool and reading the data right before the destroy transaction mines.</li>
-<li>After <code>destroy()</code>, the amnesia slot is tombstoned — any subsequent read attempt reverts.</li></ul>
+<li>After <code>destroy()</code>, the amnesia slot is tombstoned, any subsequent read attempt reverts.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="10-zero-knowledge-proofs"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Zero-Knowledge Proofs</span></a><a class="chapter-nav-btn next" href="12-uups-upgradeable"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">UUPS Upgradeable</span></a></nav>
   </main>
 </div>

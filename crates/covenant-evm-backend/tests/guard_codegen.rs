@@ -1,4 +1,4 @@
-//! KSR-CVN-011 regression tests — `only(principal)` guard lowering.
+//! KSR-CVN-011 regression tests: `only(principal)` guard lowering.
 //!
 //! Verifies that every `action f() only <principal>` lowers to real
 //! authorization bytecode rather than the pre-fix `Assert(true)` no-op.
@@ -153,7 +153,7 @@ module G {
 "#;
     let runtime = compile(src);
 
-    // Same pattern as owner — SLOAD, CALLER, EQ, Assert.
+    // Same pattern as owner: SLOAD, CALLER, EQ, Assert.
     let has_sload = runtime.contains(&OP_SLOAD);
     let has_caller = runtime.contains(&OP_CALLER);
     let has_eq = runtime.contains(&OP_EQ);
@@ -190,7 +190,7 @@ module G {
     // `only caller` is trivially true (caller == caller). It MAY add metadata
     // but MUST NOT add extra CALLER+EQ+JUMPI checks relative to no guard.
     //
-    // Count EQ opcodes outside PUSH payloads in both — the counts should match.
+    // Count EQ opcodes outside PUSH payloads in both, the counts should match.
     let eq_with = find_pattern(&rt_with, &[OP_EQ]).len();
     let eq_without = find_pattern(&rt_without, &[OP_EQ]).len();
     assert_eq!(
@@ -244,7 +244,7 @@ module G {
         runtime.contains(&OP_ISZERO) && runtime.contains(&OP_JUMPI),
         "Assert(false) must lower to ISZERO + JUMPI + revert"
     );
-    // PUSH0 should appear (as the revert arg) — Covenant uses the post-Shanghai PUSH0.
+    // PUSH0 should appear (as the revert arg): Covenant uses the post-Shanghai PUSH0.
     assert!(
         runtime.contains(&OP_PUSH0),
         "PUSH0 must appear (constant 0 / revert-data offsets)"
@@ -308,7 +308,7 @@ module G {
 
 #[test]
 fn only_address_expr_emits_caller_eq_expr_check() {
-    // `only 0x1111...1111` — a literal address. The guard must compare caller
+    // `only 0x1111...1111`: a literal address. The guard must compare caller
     // to the literal rather than no-op.
     let src = r#"
 module G {

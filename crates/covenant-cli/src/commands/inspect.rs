@@ -1,4 +1,4 @@
-//! `covenant inspect` — dump AST, IR, bytecode, ABI, storage, or diagnostics.
+//! `covenant inspect`: dump AST, IR, bytecode, ABI, storage, or diagnostics.
 
 use std::path::PathBuf;
 
@@ -42,7 +42,7 @@ pub fn run(args: InspectArgs, verbose: u8) -> Result<(), CliError> {
         "storage" => run_storage(&source, sid),
         "diagnostics" => run_diagnostics(&source, sid, verbose),
         other => Err(CliError::Usage(format!(
-            "unknown artifact kind '{other}' — expected one of: ast, ir, bytecode, abi, storage, diagnostics"
+            "unknown artifact kind '{other}': expected one of: ast, ir, bytecode, abi, storage, diagnostics"
         ))),
     }
 }
@@ -410,7 +410,7 @@ mod tests {
         };
         // hello.cov is valid; diagnostics should succeed (no errors)
         let result = run(args, 0);
-        // May have warnings/info but no errors — just verify it doesn't panic.
+        // May have warnings/info but no errors: just verify it doesn't panic.
         let _ = result;
     }
 

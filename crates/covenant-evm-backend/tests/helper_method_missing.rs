@@ -6,14 +6,14 @@
 //! matches no function on the deployed MockedFHEHelper / MockedZKVerifier /
 //! MockedPQVerifier. Those helpers have no fallback function, so the CALL
 //! could never dispatch: the contract compiled clean, deployed clean, and
-//! bricked on first use — the primitive was neither real NOR mocked.
+//! bricked on first use: the primitive was neither real NOR mocked.
 //!
 //! The concrete case this caught: `confidential token` lowers its balance
 //! check through `FheCmpGe`, which is NOT in the table. So every confidential
 //! token ever compiled for Sepolia would have shipped a contract that reverts
 //! on the first `transferEncrypted`. It now refuses to compile (E520).
 //!
-//! Native-precompile targets are deliberately unaffected — their runtime
+//! Native-precompile targets are deliberately unaffected, their runtime
 //! implements these opcodes, so the namespaced selector is correct there.
 //! That asymmetry is the point of the test: same source, two targets, one
 //! compiles and one refuses.

@@ -1,4 +1,4 @@
-//! ACC — Access Control detectors (C100, C101, W102, W103, I104).
+//! ACC: Access Control detectors (C100, C101, W102, W103, I104).
 
 use std::collections::HashSet;
 
@@ -101,7 +101,7 @@ impl Detector for C101BlockConditionAsAuth {
                         Finding::new(
                             "C101",
                             block.span,
-                            "block timestamp/number used as authorization condition — \
+                            "block timestamp/number used as authorization condition, \
                              miners can manipulate block values",
                             Severity::Critical,
                         )
@@ -182,7 +182,7 @@ impl Detector for W103OwnerZeroRisk {
         Category::AccessControl
     }
     fn description(&self) -> &'static str {
-        "Action guarded by `only(owner)` — risk of bricking the contract if owner is zero."
+        "Action guarded by `only(owner)`: risk of bricking the contract if owner is zero."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -198,7 +198,7 @@ impl Detector for W103OwnerZeroRisk {
                         "W103",
                         func.span,
                         format!(
-                            "action `{}` uses `only(owner)` — zero-address owner risk",
+                            "action `{}` uses `only(owner)`: zero-address owner risk",
                             func.name.name
                         ),
                         Severity::Warning,
@@ -259,7 +259,7 @@ impl Detector for I104SingleStepOwnerTransfer {
                             Finding::new(
                                 "I104",
                                 instr.span,
-                                "ownership transferred in a single step — new owner not confirmed",
+                                "ownership transferred in a single step: new owner not confirmed",
                                 Severity::Info,
                             )
                             .with_help("Use two-step transfer: propose new owner, then accept"),

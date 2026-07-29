@@ -16,7 +16,7 @@ fn has_code(src: &str, code: covenant_diag::DiagCode) -> bool {
 
 #[test]
 fn e020_unexpected_token_generic() {
-    // Two opening braces in a row — the parser can't recover into a sensible
+    // Two opening braces in a row: the parser can't recover into a sensible
     // field decl.
     assert!(has_code(
         "record R { { x: amount } }\n",

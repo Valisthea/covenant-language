@@ -69,7 +69,7 @@ impl EvmConfig {
 
 /// Resolved precompile / helper addresses, full 20-byte form.
 ///
-/// V0.8 used `u16` because every precompile lived in `0x100`–`0x1FF`. V0.9
+/// V0.8 used `u16` because every precompile lived in `0x100`-`0x1FF`. V0.9
 /// added Sepolia and Aster targets where helpers live at full 20-byte
 /// CREATE2 addresses, so the field type is `EvmAddress = [u8; 20]`. V0.8
 /// MockChain addresses are lifted via [`lift_v08_addr`].

@@ -3,7 +3,7 @@
 //! The output is guaranteed to be idempotent:
 //!   `pretty_print(parse(pretty_print(parse(src)))) == pretty_print(parse(src))`
 //!
-//! **Comments are not preserved** — the lexer discards them during tokenisation.
+//! **Comments are not preserved**: the lexer discards them during tokenisation.
 
 use covenant_lexer::DurationUnit;
 

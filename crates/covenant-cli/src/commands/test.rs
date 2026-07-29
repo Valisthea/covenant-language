@@ -1,4 +1,4 @@
-//! `covenant test` — run inline test blocks via the MockChain harness.
+//! `covenant test`: run inline test blocks via the MockChain harness.
 //!
 //! Discovers actions with names starting with `test_` (or annotated `@test`)
 //! in the source file, compiles and deploys the construct, then calls each
@@ -30,13 +30,13 @@ pub struct TestArgs {
     #[arg(long)]
     pub list: bool,
 
-    /// Print a gas usage report after each test (stub — not yet metered).
+    /// Print a gas usage report after each test (stub, not yet metered).
     #[arg(long)]
     pub gas_report: bool,
 
     /// Print an action-level coverage report after the test run.
     ///
-    /// V0.9.0 — name-heuristic coverage : for every non-test action in the
+    /// V0.9.0: name-heuristic coverage : for every non-test action in the
     /// contract, check whether at least one `test_*` action's name contains
     /// the action name. Reports covered / uncovered counts and lists the
     /// uncovered actions. V0.9.x will replace this with IR-instrumented
@@ -73,7 +73,7 @@ pub fn run(args: TestArgs, verbose: u8) -> Result<(), CliError> {
         return Ok(());
     }
 
-    // V0.9 Sprint 40 — test isolation.
+    // V0.9 Sprint 40: test isolation.
     //
     // Each test runs against a FRESH harness (= fresh MockChain instance,
     // fresh contract deploy). This guarantees state set by `test_a` cannot
@@ -83,7 +83,7 @@ pub fn run(args: TestArgs, verbose: u8) -> Result<(), CliError> {
     //
     // Why per-test fresh harness instead of MockChain snapshot/revert :
     // CovenantTestHarness doesn't yet expose snapshot/revert (V1.0 backlog
-    // — adding it requires plumbing through the WASM runtime). Fresh
+    //: adding it requires plumbing through the WASM runtime). Fresh
     // harness is the V0.9.0 pragmatic alternative; semantically equivalent
     // for test isolation.
 
@@ -91,7 +91,7 @@ pub fn run(args: TestArgs, verbose: u8) -> Result<(), CliError> {
     let mut fail = 0usize;
 
     for sig in &test_sigs {
-        // Fresh harness — fresh world for each test.
+        // Fresh harness: fresh world for each test.
         let mut harness = CovenantTestHarness::new();
         let deployer = harness.addrs.deployer;
         let contract = match harness.deploy(&source, deployer) {
@@ -146,7 +146,7 @@ pub fn run(args: TestArgs, verbose: u8) -> Result<(), CliError> {
     }
 }
 
-/// V0.9.0 — name-heuristic action coverage.
+/// V0.9.0: name-heuristic action coverage.
 ///
 /// For every non-test action declared in the contract, check whether at
 /// least one `test_*` action's name contains it (case-insensitive substring).
@@ -183,7 +183,7 @@ fn emit_coverage_report(source: &str) {
     let total = action_names.len();
     let pct = (covered.len() as f64 / total as f64) * 100.0;
     println!(
-        "\ncoverage: {} / {} actions covered ({:.0}%) — name-heuristic",
+        "\ncoverage: {} / {} actions covered ({:.0}%): name-heuristic",
         covered.len(),
         total,
         pct

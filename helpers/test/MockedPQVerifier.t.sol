@@ -43,7 +43,7 @@ contract MockedPQVerifierTest is Test {
         // Just verify it returns without revert when lengths are correct.
         // The bool return is meaningless in V0.9 (parity check).
         bool _ok = helper.pqVerify(bytes32("msg"), sig, pk);
-        // Doesn't matter if true or false — V0.9 banner explicitly disclaims this.
+        // Doesn't matter if true or false: V0.9 banner explicitly disclaims this.
         _ok; // silence unused
     }
 

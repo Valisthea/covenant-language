@@ -2,7 +2,7 @@
 //! pin the exact known critical-finding count so regressions are caught.
 //!
 //! Note: several fixtures intentionally use unguarded public actions (e.g.
-//! hello.cov's `update`, shielded_counter.cov's `bump`) — these are real
+//! hello.cov's `update`, shielded_counter.cov's `bump`): these are real
 //! security findings; the counts below are the current stable baseline.
 
 use covenant_diag::SourceId;
@@ -79,7 +79,7 @@ fn shielded_counter_known_criticals() {
 #[test]
 fn quantum_board_known_criticals() {
     // quantum_board.cov's `submit` uses `pq_signed(...)` without a nullifier
-    // map — C700 (KSR-CVN-024) now correctly flags this as a replayable PQ
+    // map: C700 (KSR-CVN-024) now correctly flags this as a replayable PQ
     // verify, raising the baseline from 3 → 4.
     let src = include_str!("../../covenant-lexer/tests/fixtures/example_05_quantum_board.cov");
     assert_eq!(

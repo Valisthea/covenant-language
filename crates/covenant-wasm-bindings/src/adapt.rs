@@ -1,7 +1,7 @@
 //! Adapter between the strongly-typed compiler pipeline and the
 //! `serde`-friendly shapes the playground consumes.
 //!
-//! Everything here is `cfg`-agnostic — it builds and runs on native
+//! Everything here is `cfg`-agnostic: it builds and runs on native
 //! (so `cargo test` exercises the same code path the WASM binary will)
 //! and on `wasm32-unknown-unknown`. The only WASM-specific behaviour
 //! lives in [`crate`] (`lib.rs`), which wraps these functions in
@@ -20,7 +20,7 @@ use crate::result::{
 
 // ─── Public entry points ──────────────────────────────────────────────
 
-/// Run the full pipeline targeting EVM. Always returns a result —
+/// Run the full pipeline targeting EVM. Always returns a result,
 /// success is conveyed via the `ok` field, never via panic.
 ///
 /// Defaults to the V0.8-compatible MockChain target. Use [`compile_evm_for_target`]
@@ -110,7 +110,7 @@ pub fn compile_evm_for_target(source: &str, target_str: &str) -> JsCompileResult
 }
 
 /// Frontend-only check (lex → parse → resolve → typecheck → privacy).
-/// No backend, no codegen — cheap enough for keystroke-rate calls.
+/// No backend, no codegen: cheap enough for keystroke-rate calls.
 pub fn check_only(source: &str) -> JsCheckResult {
     let started = now_ms();
     let line_idx = LineIndex::new(source);
@@ -133,7 +133,7 @@ pub fn compile_ir(source: &str) -> JsIrResult {
         Ok(ir) => JsIrResult {
             ok: true,
             // The IR crate doesn't yet ship a `Display` impl; using
-            // `{:#?}` for v1. Filed in DEBT.md as "IR Display impl" —
+            // `{:#?}` for v1. Filed in DEBT.md as "IR Display impl",
             // when it lands, swap to `{}` here without changing the
             // playground.
             ir_text: Some(format!("{ir:#?}")),
@@ -157,11 +157,11 @@ pub fn compile_ir(source: &str) -> JsIrResult {
 ///
 /// The compiler doesn't yet ship per-code prose explanations, so we
 /// surface only the codes that have actually appeared in any diagnostic
-/// emitted during this process's lifetime — populated lazily as a
+/// emitted during this process's lifetime: populated lazily as a
 /// best-effort. The Inspector renders a "click for full explanation"
 /// link that gracefully degrades to "no extra info available yet".
 pub fn all_diagnostic_explanations() -> Vec<JsDiagExplanation> {
-    // Reserved surface — the registry crate would supply these once
+    // Reserved surface: the registry crate would supply these once
     // CR-DIAG-001 lands. Returning an empty vec keeps the playground
     // happy (it falls back to the inline `message + help` shown in the
     // diagnostic itself).
@@ -258,12 +258,12 @@ fn adapt_source_map(sm: &EvmSourceMap) -> JsSourceMap {
     // The compiler emits one entry per generated instruction. We have
     // no per-source line index here because spans already point into a
     // single buffer (SourceId::new(0)), so we recompute inline using a
-    // local LineIndex over the source — but the source isn't carried
+    // local LineIndex over the source: but the source isn't carried
     // in the artifact. Workaround: we expose `source_line/column = 0`
     // when we can't resolve, and the playground synthesises with
     // its own line index from the source string the user typed.
     //
-    // This is intentional — it means the bridge stays stateless and
+    // This is intentional: it means the bridge stays stateless and
     // the playground retains the canonical source text.
     JsSourceMap {
         mappings: sm

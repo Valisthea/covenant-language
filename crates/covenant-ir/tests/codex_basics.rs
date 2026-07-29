@@ -50,7 +50,7 @@ fn example_2_coin_builds() {
     assert!(diags.is_empty(), "{diags:?}");
     let vdiags = validate(&m);
     assert!(vdiags.is_empty(), "validator: {vdiags:?}");
-    // Coin has no actions/views — only metadata.
+    // Coin has no actions/views: only metadata.
     assert_eq!(m.functions.len(), 0);
     assert!(m.metadata.contains_key("symbol"));
     assert!(m.metadata.contains_key("decimals"));

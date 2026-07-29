@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 /// `"0x"`-prefixed minimal-length hex string everything in EVM tooling
 /// uses for u256 values (balances, slot keys, return data lengths).
 /// Deriving would expose the internal little-endian limb array, which
-/// the playground would then have to re-pack — friction we don't need.
+/// the playground would then have to re-pack: friction we don't need.
 #[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct U256 {
     /// Little-endian limbs (limbs[0] is LSB).
@@ -98,7 +98,7 @@ impl U256 {
     }
 
     /// Try to return as usize, clamped to `u32::MAX` on overflow. Intended for
-    /// memory offsets — callers typically further bound the result.
+    /// memory offsets: callers typically further bound the result.
     pub fn as_usize_saturating(&self) -> usize {
         if !self.fits_u64() {
             return usize::MAX;
@@ -298,7 +298,7 @@ impl Serialize for U256 {
         let first_nonzero = bytes.iter().position(|b| *b != 0).unwrap_or(31);
         let trimmed = &bytes[first_nonzero..];
         let hex_str = hex::encode(trimmed);
-        // Strip a single leading zero if the first nibble is 0 — keeps
+        // Strip a single leading zero if the first nibble is 0, keeps
         // single-digit values as `"0x1"` instead of `"0x01"`.
         let stripped = hex_str.strip_prefix('0').unwrap_or(&hex_str);
         let display = if stripped.is_empty() { "0" } else { stripped };

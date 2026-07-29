@@ -1,6 +1,6 @@
 //! Source-level anti-pattern scanner (V0.9 Sprint 39 Phase 39.1).
 //!
-//! The existing `framework::Detector` trait operates on `IrModule` —
+//! The existing `framework::Detector` trait operates on `IrModule`:
 //! which means the source must compile through lex → parse → resolve →
 //! typecheck → privacy → IR-build before any detector runs. That's the
 //! right place for security analyses (you need types and control-flow),
@@ -14,7 +14,7 @@
 //! LSP code action.
 //!
 //! Sprint 39 ships 6 high-frequency anti-patterns (the PRELIM-009
-//! greatest hits). The set is append-only — adding a new rule is safe;
+//! greatest hits). The set is append-only: adding a new rule is safe;
 //! removing one risks breaking outstanding LSP code-action references.
 
 use covenant_diag::{SourceId, Span};
@@ -37,7 +37,7 @@ pub const L006_STRING_TYPE: &str = "L006";
 
 /// Run the source-scan pass on raw text. Returns one `Finding` per
 /// anti-pattern occurrence. Findings are produced even when the source
-/// is unparseable — that's the whole point of this pass.
+/// is unparseable: that's the whole point of this pass.
 pub fn scan(source: &str) -> Vec<Finding> {
     let mut out = Vec::new();
     out.extend(scan_slash_slash_comments(source));
@@ -48,7 +48,7 @@ pub fn scan(source: &str) -> Vec<Finding> {
         source,
         "uint256",
         L005_UINT256_TYPE,
-        "Solidity `uint256` is not a Covenant type. Use `amount` instead — \
+        "Solidity `uint256` is not a Covenant type. Use `amount` instead, \
          it's the canonical 256-bit unsigned integer in Covenant.",
         "rename `uint256` → `amount`",
     ));
@@ -56,7 +56,7 @@ pub fn scan(source: &str) -> Vec<Finding> {
         source,
         "string",
         L006_STRING_TYPE,
-        "Solidity `string` is not a Covenant type. Use `text` instead — \
+        "Solidity `string` is not a Covenant type. Use `text` instead, \
          the same UTF-8 semantics, renamed for consistency with Covenant's \
          semantic-type discipline.",
         "rename `string` → `text`",
@@ -91,7 +91,7 @@ fn scan_slash_slash_comments(source: &str) -> Vec<Finding> {
                     L001_SLASH_SLASH_COMMENT,
                     span_at(i as u32, j as u32),
                     "Covenant uses `--` for line comments, not `//`. \
-                     This is intentional — the language deliberately \
+                     This is intentional: the language deliberately \
                      diverges from C-family syntax.",
                     Severity::Warning,
                 )
@@ -141,7 +141,7 @@ fn scan_mapping_keyword(source: &str) -> Vec<Finding> {
                 L002_MAPPING_KEYWORD,
                 span_at(occ.start as u32, occ.end as u32),
                 "Solidity `mapping(K => V)` is not Covenant syntax. \
-                 Use `map<K, V>` instead — same semantics, generics-style.",
+                 Use `map<K, V>` instead: same semantics, generics-style.",
                 Severity::Warning,
             )
             .with_help("replace with `field name: map<K, V>`"),
@@ -161,7 +161,7 @@ fn scan_function_keyword(source: &str) -> Vec<Finding> {
                 span_at(occ.start as u32, occ.end as u32),
                 "Solidity `function` is not a Covenant keyword. Use \
                  `action` for state-mutating functions or `view` for \
-                 read-only queries — the type system tracks them \
+                 read-only queries: the type system tracks them \
                  separately.",
                 Severity::Warning,
             )

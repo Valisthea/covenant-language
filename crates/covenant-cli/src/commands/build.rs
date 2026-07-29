@@ -1,4 +1,4 @@
-//! `covenant build` — compile .cov source to EVM artifacts.
+//! `covenant build`: compile .cov source to EVM artifacts.
 //!
 //! Supports two modes:
 //!   - Single-file: `covenant build path/to/file.cov --out dir/`
@@ -128,7 +128,7 @@ pub fn build_single_file(
     // Release mode: run linter before compilation and block on Critical findings.
     if args.release && super::lint::lint_for_release(source_path) {
         eprintln!(
-            "error: linter found critical security findings in `{}` — \
+            "error: linter found critical security findings in `{}`: \
              release build blocked (use `covenant lint` for details)",
             source_path.display()
         );
@@ -250,7 +250,7 @@ pub fn build_single_file(
     match format {
         OutputFormat::Human => {
             println!(
-                "ok: {stem} — deploy {} bytes, runtime {} bytes → {}",
+                "ok: {stem}: deploy {} bytes, runtime {} bytes → {}",
                 artifact.deploy_bytecode.len(),
                 artifact.runtime_bytecode.len(),
                 out_dir.display()
@@ -368,7 +368,7 @@ fn build_aster_target(
     format: OutputFormat,
 ) -> Result<(), CliError> {
     eprintln!(
-        "warning[aster-sdk-pending]: Aster target is V0.7 foundation mode — \
+        "warning[aster-sdk-pending]: Aster target is V0.7 foundation mode, \
          artifact is placeholder, not deployable. Full emission requires Aster SDK."
     );
 
@@ -418,7 +418,7 @@ fn build_aster_target(
     match format {
         OutputFormat::Human => {
             println!(
-                "ok[aster]: {stem} — {} bytes → {} (chain 1996, sdk_lowering=false)",
+                "ok[aster]: {stem}: {} bytes → {} (chain 1996, sdk_lowering=false)",
                 artifact.bytecode.len(),
                 out_dir.display()
             );

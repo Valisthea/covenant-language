@@ -4,7 +4,7 @@
 //!
 //! Invariants:
 //! * every node carries (or transitively contains) a `Span`;
-//! * the tree is immutable after construction — downstream passes build parallel
+//! * the tree is immutable after construction, downstream passes build parallel
 //!   structures keyed by AST nodes rather than mutating them.
 
 use covenant_diag::{SourceId, Span};

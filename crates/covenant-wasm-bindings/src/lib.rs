@@ -17,7 +17,7 @@
 //! All `#[wasm_bindgen]` functions return a `JsValue` produced by
 //! `serde_wasm_bindgen::to_value`. The JS side gets idiomatic objects
 //! (no JSON.parse round-trip). Native callers (`cargo test`) consume
-//! the same shapes via [`adapt`] directly — see `tests/smoke.rs`.
+//! the same shapes via [`adapt`] directly: see `tests/smoke.rs`.
 
 #![deny(rust_2018_idioms)]
 

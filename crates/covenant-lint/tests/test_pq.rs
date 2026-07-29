@@ -1,4 +1,4 @@
-//! KSR-CVN-024 — C700 `pq_verify_without_nonce` regression tests.
+//! KSR-CVN-024: C700 `pq_verify_without_nonce` regression tests.
 //!
 //! These tests construct an `IrModule` directly because the lint pipeline's
 //! source-level driver does not register the synthetic ops we need
@@ -151,7 +151,7 @@ fn c700_fires_when_mapset_present_but_no_preceding_maphas() {
     f.blocks[0]
         .instructions
         .push(instr(Opcode::PqVerifyDilithium, vec![msg, sig, pk], None));
-    // MapSet uses sig as key (derives from verify) — but no preceding MapHas.
+    // MapSet uses sig as key (derives from verify): but no preceding MapHas.
     f.blocks[0].instructions.push(instr(
         Opcode::MapSet,
         vec![nullifier_map, sig, null_val],
@@ -240,7 +240,7 @@ fn c700_silent_when_key_derives_via_keccak_of_sig() {
     let key = Value(4); // = Keccak(sig)
     let has_result = Value(5);
     let true_val = Value(6);
-    // key = Keccak(sig) — sig is operand → forward taint propagates to key.
+    // key = Keccak(sig): sig is operand → forward taint propagates to key.
     f.blocks[0]
         .instructions
         .push(instr(Opcode::Keccak, vec![sig], Some(key)));

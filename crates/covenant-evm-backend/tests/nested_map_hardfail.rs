@@ -1,4 +1,4 @@
-//! F09 regression — nested map (`map(_, map(...))`) fails loud.
+//! F09 regression: nested map (`map(_, map(...))`) fails loud.
 //!
 //! A nested-map write `ab[a][b] = v` was never lowered: the write emitted ZERO
 //! SSTORE (the statement was silently dropped) and the read hashed against the
@@ -34,7 +34,7 @@ fn codegen_diags(src: &str) -> Vec<Diagnostic> {
 #[test]
 fn nested_map_field_is_rejected() {
     // Note the space before the final `>`: `map<..., map<...> >`. Without it the
-    // lexer reads `>>` as a right-shift and the type fails to parse — nested
+    // lexer reads `>>` as a right-shift and the type fails to parse, nested
     // maps are only even *expressible* with the space.
     let src = r#"
 record Nested {

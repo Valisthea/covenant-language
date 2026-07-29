@@ -3,11 +3,11 @@
 //! They fell through the map `FieldAccess` arm to `Opcode::StructGet(0)`, so the
 //! reduction never iterated: it read field 0 of the map handle and returned a
 //! constant, never the key holding the maximum/minimum value. Clean-compiling
-//! source, wrong key, no diagnostic — the same silent-miscompile class as E425.
+//! source, wrong key, no diagnostic: the same silent-miscompile class as E425.
 //!
 //! A Covenant map is a bare `keccak(key ‖ slot)` mapping with no key array to
 //! iterate, so there is nothing correct to emit. List `.argmax` / `.argmin`
-//! still lower (`ListArgMax` / `ListArgMin`) — the refusal is map-only.
+//! still lower (`ListArgMax` / `ListArgMin`): the refusal is map-only.
 //!
 //! If someone implements an enumerable-map reduction, delete the map cases here
 //! and add a semantic test. Do not "fix" this by restoring `StructGet(0)`.
@@ -60,7 +60,7 @@ record R {{
     });
     assert!(
         !has_struct_get,
-        "`map.{member}` lowered to StructGet — the silent-miscompile placeholder is back"
+        "`map.{member}` lowered to StructGet: the silent-miscompile placeholder is back"
     );
 }
 
@@ -74,7 +74,7 @@ fn map_argmin_is_refused() {
     assert_map_refused("argmin");
 }
 
-/// A list still supports `.argmax` / `.argmin` — the refusal is specific to
+/// A list still supports `.argmax` / `.argmin`: the refusal is specific to
 /// maps, which have no key array. Guards the blast radius of the fix.
 #[test]
 fn list_argmax_still_works() {

@@ -43,7 +43,7 @@ fn fixture(name: &str) -> PathBuf {
 fn run(args: &[&str]) -> (i32, String, String) {
     let bin = binary();
     if !bin.exists() {
-        // Binary not built yet — skip by returning a sentinel.
+        // Binary not built yet: skip by returning a sentinel.
         return (-1, String::new(), "binary not found".into());
     }
     let out = Command::new(&bin)
@@ -101,7 +101,7 @@ fn unknown_subcommand_exits_code_2() {
 }
 
 // ---------------------------------------------------------------------------
-// covenant build — single-file mode
+// covenant build: single-file mode
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -457,7 +457,7 @@ version = "0.1.0"
 }
 
 // ---------------------------------------------------------------------------
-// covenant build — project mode
+// covenant build: project mode
 // ---------------------------------------------------------------------------
 
 #[test]
@@ -530,7 +530,7 @@ fn test_missing_file_exits_nonzero() {
 
 #[test]
 fn test_list_flag_exits_zero() {
-    // Use a fixture with no test actions — should print "no tests found" and exit 0.
+    // Use a fixture with no test actions: should print "no tests found" and exit 0.
     let src = fixture("example_01_hello.cov");
     if !src.exists() {
         return;
@@ -553,7 +553,7 @@ fn fmt_valid_file_exits_zero() {
     // Use --check so we don't modify the fixture in-place.
     let (code, _, _) = run(&["fmt", "--check", src.to_str().unwrap()]);
     require_bin!((code, "", ""));
-    // Exit 0 (already formatted) or 1 (needs reformatting) — never crashes.
+    // Exit 0 (already formatted) or 1 (needs reformatting): never crashes.
     assert!(
         code == 0 || code == 1,
         "fmt --check should exit 0 or 1, got {code}"

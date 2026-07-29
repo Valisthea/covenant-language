@@ -2,7 +2,7 @@
 //!
 //! Diagnostics emitted by the compiler carry a numeric `DiagCode` (e.g.
 //! `E020`, `E421`, `W606`). The short message attached to a diagnostic is
-//! intentionally tight — it has to fit inline next to the squiggle. The
+//! intentionally tight: it has to fit inline next to the squiggle. The
 //! long-form explanation lives here.
 //!
 //! Two consumers :
@@ -73,7 +73,7 @@ const EXPLANATIONS: &[Explanation] = &[
         category: "lex",
         summary: "C-style line comment `//` is not valid Covenant syntax",
         body: r#"Covenant uses `--` for single-line comments (Haskell / Ada
-style), not `//`. This is intentional — Covenant deliberately diverges
+style), not `//`. This is intentional: Covenant deliberately diverges
 from C-family syntax to signal a different mental model.
 
 Wrong:
@@ -103,7 +103,7 @@ Quick check: every `{` should have a matching `}` at the same indentation
 level. If you intentionally split a record across multiple lines, make
 sure the final `}` is at the start of its own line.
 
-Editor tip: most editors highlight matching braces — place your cursor
+Editor tip: most editors highlight matching braces, place your cursor
 on the `{` that opens the block and look for the missing `}` below."#,
     },
     Explanation {
@@ -123,11 +123,11 @@ the `//` and press the lightbulb menu → "Replace `//` with `--`"."#,
         summary: "precompile address unset for this opcode",
         body: r#"The EVM backend tried to emit a `CALL` to a precompile
 address that was not configured in the active `PrecompileMap`. This is a
-compiler bug — every cryptographic opcode (FHE / PQ / ZK / Amnesia) must
+compiler bug: every cryptographic opcode (FHE / PQ / ZK / Amnesia) must
 have an address in `PrecompileAddresses` before codegen runs.
 
 If you hit this in an end-user contract, please file a bug:
-github.com/Valisthea/covenant-language/issues — include the opcode name and the
+github.com/Valisthea/covenant-language/issues, include the opcode name and the
 target chain you're compiling for."#,
     },
     Explanation {
@@ -164,7 +164,7 @@ shadow the standard.
 Two common fixes :
   1. If you meant to override : pass `strict_conflict_detection: false`
      to `StdlibConfig` (only available via `covenant build` API; not
-     a CLI flag yet — V0.9.x).
+     a CLI flag yet: V0.9.x).
   2. If you didn't mean to override : rename your function. Common
      mistake : a custom `transfer` that doesn't follow ERC-20 semantics."#,
     },
@@ -209,7 +209,7 @@ contract regardless."#,
                                      at parse time.
 
 If your target name has a typo, this error catches it. If you want a
-chain that's not listed (e.g. Polygon, Optimism), open an issue —
+chain that's not listed (e.g. Polygon, Optimism), open an issue, 
 V0.9.x can add new EVM-compatible testnets cheaply once the helper
 contracts deploy there."#,
     },

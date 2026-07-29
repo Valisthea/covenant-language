@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beacon Proxy Pattern · Covenant By Example</title>
-<meta name="description" content="@proxy_compatible, deploy_proxy — upgrading many instances atomically.">
+<meta name="description" content="@proxy_compatible, deploy_proxy, upgrading many instances atomically.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/13-beacon-proxy">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/13-beacon-proxy">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Beacon Proxy Pattern · Covenant By Example">
-<meta property="og:description" content="@proxy_compatible, deploy_proxy — upgrading many instances atomically.">
+<meta property="og:description" content="@proxy_compatible, deploy_proxy, upgrading many instances atomically.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Beacon Proxy Pattern · Covenant By Example">
-<meta name="twitter:description" content="@proxy_compatible, deploy_proxy — upgrading many instances atomically.">
+<meta name="twitter:description" content="@proxy_compatible, deploy_proxy, upgrading many instances atomically.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,7 +367,7 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge advanced">Advanced</span>
     <p class="chapter-eyebrow">Chapter 13 / 15</p>
     <h1 class="chapter-title">Beacon Proxy Pattern</h1>
-    <p class="chapter-subtitle">@proxy_compatible, deploy_proxy — upgrading many instances atomically.</p>
+    <p class="chapter-subtitle">@proxy_compatible, deploy_proxy, upgrading many instances atomically.</p>
     <hr class="chapter-divider">
     
     <p class="prose">The beacon proxy pattern (EIP-1967) lets one upgrade transaction update the
@@ -375,7 +375,7 @@ logic for hundreds of proxy instances simultaneously. Covenant's
 <code>@proxy_compatible</code> decorator ensures the implementation contract
 has no constructor-side effects (safe for delegate calls), and
 <code>deploy_proxy</code> deploys a new proxy pointing at the beacon.</p>
-    <div class="code-wrap"><div class="code-label">implementation.cov — proxy-safe logic</div><pre class="code-block" data-lang="covenant">// @proxy_compatible disables the constructor and adds
+    <div class="code-wrap"><div class="code-label">implementation.cov, proxy-safe logic</div><pre class="code-block" data-lang="covenant">// @proxy_compatible disables the constructor and adds
 // an initializer pattern instead
 @proxy_compatible
 record Vault {
@@ -400,7 +400,7 @@ record Vault {
         transfer(to, value);
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">beacon.cov — single upgrade point</div><pre class="code-block" data-lang="covenant">record VaultBeacon {
+<div class="code-wrap"><div class="code-label">beacon.cov, single upgrade point</div><pre class="code-block" data-lang="covenant">record VaultBeacon {
     implementation: address;
     owner:          address;
 
@@ -415,7 +415,7 @@ record Vault {
         return self.implementation;
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">factory.cov — deploy many proxies</div><pre class="code-block" data-lang="covenant">record VaultFactory {
+<div class="code-wrap"><div class="code-label">factory.cov, deploy many proxies</div><pre class="code-block" data-lang="covenant">record VaultFactory {
     beacon:  address;
     vaults:  map(address => address);   // user => vault proxy
     count:   u64;
@@ -443,12 +443,12 @@ record Vault {
 <table class="notes-table">
 <tr><td><code>@proxy_compatible</code></td><td>adds a compile-time check that the implementation has no immutable constructor arguments and uses an initializer pattern.</td></tr>
 <tr><td><code>deploy_proxy(beacon)</code></td><td>deploys a minimal EIP-1967 proxy whose implementation slot points at the beacon's <code>get_implementation()</code> result.</td></tr>
-<tr><td>Atomic upgrade</td><td>Calling <code>VaultBeacon.upgrade(newImpl)</code> immediately affects all proxies — they delegate to the new implementation on the next call.</td></tr>
+<tr><td>Atomic upgrade</td><td>Calling <code>VaultBeacon.upgrade(newImpl)</code> immediately affects all proxies, they delegate to the new implementation on the next call.</td></tr>
 <tr><td>Storage slots</td><td>All proxies share the same storage layout as the implementation. Never change field order in an implementation upgrade.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Beacon proxy is ideal for protocols that deploy many identical contract instances (lending pools, vaults, subgraphs).</li>
-<li>One upgrade transaction affects all instances — a huge operational advantage over per-proxy upgrades.</li>
+<li>One upgrade transaction affects all instances, a huge operational advantage over per-proxy upgrades.</li>
 <li>Use <code>@proxy_compatible</code> to catch constructor-safety issues at compile time.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="12-uups-upgradeable"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">UUPS Upgradeable</span></a><a class="chapter-nav-btn next" href="14-oracle-integration"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Oracle Integration</span></a></nav>
   </main>

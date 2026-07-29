@@ -5,7 +5,7 @@
  *
  * The playground imports this module directly. Keeping the .d.ts hand-
  * written (instead of letting wasm-bindgen generate it) means we can
- * keep the public shape stable across compiler versions — adding a new
+ * keep the public shape stable across compiler versions, adding a new
  * field to the underlying Rust type is a non-breaking change as long as
  * we don't also change this file.
  *
@@ -158,7 +158,7 @@ export function compile_to_evm(source: string): CompileResult;
 
 /**
  * Run only the frontend stages (lex → parse → resolve → typecheck →
- * privacy). Cheap enough for keystroke-rate calls — used by Monaco's
+ * privacy). Cheap enough for keystroke-rate calls, used by Monaco's
  * live diagnostics.
  */
 export function check(source: string): CheckResult;
@@ -174,25 +174,25 @@ export function compile_to_ir_text(source: string): IrResult;
 export function diagnostic_explanations(): DiagnosticExplanation[];
 
 // ════════════════════════════════════════════════════════════════════
-// Sprint 23 — MockChain bindings.
+// Sprint 23: MockChain bindings.
 // ════════════════════════════════════════════════════════════════════
 //
 // In-tab EVM. Every `chain_*` function calls into a singleton
-// `Chain` living in WASM memory. There is one chain per page load —
+// `Chain` living in WASM memory. There is one chain per page load, 
 // reloading the tab resets it. The chain holds 5 prefunded accounts
 // (1000 ETH each), an event log, a clock, and a block counter.
 //
 // Argument convention: every state-mutating entry point that needs
 // "complex args" takes a single JSON string. Build it via
 // `JSON.stringify({ ... })`. Returns are always JS objects (not
-// JSON strings) — `serde-wasm-bindgen::to_value` builds them
+// JSON strings): `serde-wasm-bindgen::to_value` builds them
 // natively, no second `JSON.parse` needed.
 //
 // Hex convention: every byte field is a `"0x"`-prefixed lowercase
 // hex string. U256 values are minimal-length hex (no leading zeros
 // beyond the single `"0x0"` for zero).
 
-/** Snapshot of the chain state — fits the playground's status bar. */
+/** Snapshot of the chain state: fits the playground's status bar. */
 export interface ChainState {
   block_number: number;
   timestamp: number;          // unix seconds
@@ -240,7 +240,7 @@ export type ChainTxStatus =
   | { status: 'reverted'; reason: string | null }
   | { status: 'aborted'; reason: string };
 
-/** Full transaction receipt — what every chain_deploy / chain_call returns. */
+/** Full transaction receipt: what every chain_deploy / chain_call returns. */
 export interface ChainTxReceipt {
   hash: string;               // "0x" + 64 hex chars
   block_number: number;
@@ -248,7 +248,7 @@ export interface ChainTxReceipt {
   from: string;
   to: string | null;          // null when a deploy reverted
   kind: ChainTxKind;
-  gas_used: number;           // fixed estimate (10000) — see chain.rs
+  gas_used: number;           // fixed estimate (10000): see chain.rs
   status: ChainTxStatus;
   return_data: string;        // "0x" + 2N hex chars
   logs: ChainLogEvent[];
@@ -295,13 +295,13 @@ export function chain_advance_time(seconds: number): void;
  */
 export function chain_mine_blocks(count: number): void;
 
-/** Snapshot of the chain — block number, timestamp, counters. */
+/** Snapshot of the chain: block number, timestamp, counters. */
 export function chain_get_state(): ChainState;
 
 /** All 5 prefunded accounts with their current balances. */
 export function chain_get_accounts(): ChainAccount[];
 
-/** All deployed contracts (slim view — no bytecode payload). */
+/** All deployed contracts (slim view: no bytecode payload). */
 export function chain_get_contracts(): ChainContract[];
 
 /** Ordered transaction history since chain init. */

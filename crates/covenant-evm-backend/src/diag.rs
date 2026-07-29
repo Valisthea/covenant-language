@@ -1,4 +1,4 @@
-//! EVM backend diagnostic codes (E501–E520, W501–W510).
+//! EVM backend diagnostic codes (E501-E520, W501-W510).
 #![allow(dead_code)]
 
 use covenant_diag::{DiagCode, Diagnostic, DiagnosticLevel, Span};
@@ -44,8 +44,8 @@ pub const E521_TEXT_CONSTANT_TOO_LONG: DiagCode = DiagCode(521);
 /// one `keccak(key ‖ slot)` level: the inner assignment `m[a][b] = v` was
 /// never lowered at all (the write emitted ZERO SSTORE and the whole statement
 /// was silently dropped), and the matching read hashed the key against the
-/// outer entry's stored value — which is always 0 for a never-written nested
-/// map — so `m[a][b]` returned 0. A well-typed nested-map program therefore
+/// outer entry's stored value: which is always 0 for a never-written nested
+/// map: so `m[a][b]` returned 0. A well-typed nested-map program therefore
 /// compiled to bytecode that silently discarded every write. Refuse to compile
 /// rather than ship that. (OMEGA F09.)
 pub const E522_NESTED_MAP_UNSUPPORTED: DiagCode = DiagCode(522);
@@ -99,7 +99,7 @@ pub const W504_LARGE_RUNTIME: DiagCode = DiagCode(504);
 pub const W505_EVENT_NO_INDEX: DiagCode = DiagCode(505);
 pub const W506_MANY_PARAMS: DiagCode = DiagCode(506);
 pub const W507_DYNAMIC_RETURN_NOT_ENCODED: DiagCode = DiagCode(507);
-/// `only caller` — a guard that lowers to `msg.sender == msg.sender`, i.e. a
+/// `only caller`: a guard that lowers to `msg.sender == msg.sender`, i.e. a
 /// tautology that imposes NO restriction. It is not a miscompile (the bytecode
 /// faithfully implements "no restriction"), but it USED to be the one
 /// degenerate principal that produced no diagnostic at all, while every other
@@ -183,7 +183,7 @@ pub fn dynamic_return_not_encoded(span: Span, ty_name: &str) -> Diagnostic {
     // pattern in the language (it's literally the "Hello World" example),
     // so hard-failing it would make routine, widely-relied-upon code
     // uncompilable rather than fixing an edge case. The audit's own
-    // severity call was Medium specifically because of this — the fix for
+    // severity call was Medium specifically because of this, the fix for
     // "silently wrong with zero diagnostics" is "stop being silent," not
     // "block compilation" before dynamic-bytes/text/list ABI support
     // (tracked in DEBT.md) actually lands.
@@ -280,20 +280,20 @@ pub fn unresolved_label(span: Span, name: &str) -> Diagnostic {
 
 /// A statically-known zero divisor. `DIV`/`MOD` on the EVM return 0 rather
 /// than trapping, so this would otherwise compile to bytecode that silently
-/// evaluates to 0 — never what the author meant.
+/// evaluates to 0: never what the author meant.
 pub fn div_by_zero_literal(span: Span, op: &str) -> Diagnostic {
     Diagnostic::error(
         E519_DIV_BY_ZERO_LITERAL,
         format!(
             "`{op}` by a literal zero. The EVM returns 0 instead of trapping, so this \
-             would silently evaluate to 0 rather than fail — rejected at compile time."
+             would silently evaluate to 0 rather than fail, rejected at compile time."
         ),
         span,
     )
 }
 
 /// An opcode with no method on the target's helper contract. Emitting the
-/// V0.8 namespaced selector here produced a CALL that cannot dispatch — the
+/// V0.8 namespaced selector here produced a CALL that cannot dispatch, the
 /// primitive is then neither real NOR mocked, and the action reverts on
 /// chain. Refuse to compile: "deploy no code" beats "deploy broken code",
 /// the same doctrine as E516/E517/E518.
@@ -464,7 +464,7 @@ pub fn warn_only_caller_noop(span: Span) -> Diagnostic {
 pub fn warn_near_collision(span: Span, a: &str, b: &str) -> Diagnostic {
     warn(
         W503_SELECTOR_NEAR_COLLISION,
-        format!("selectors of `{a}` and `{b}` differ by only one byte — near-collision"),
+        format!("selectors of `{a}` and `{b}` differ by only one byte, near-collision"),
         span,
     )
 }
@@ -472,7 +472,7 @@ pub fn warn_near_collision(span: Span, a: &str, b: &str) -> Diagnostic {
 pub fn warn_large_runtime(span: Span, size: usize) -> Diagnostic {
     warn(
         W504_LARGE_RUNTIME,
-        format!("runtime bytecode size {size} exceeds 20 KB — approaching EIP-170 limit"),
+        format!("runtime bytecode size {size} exceeds 20 KB, approaching EIP-170 limit"),
         span,
     )
 }

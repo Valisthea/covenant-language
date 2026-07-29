@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zero-Knowledge Proofs · Covenant By Example</title>
-<meta name="description" content="selective_disclosure, verified_by — proving properties without revealing data.">
+<meta name="description" content="selective_disclosure, verified_by, proving properties without revealing data.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/10-zero-knowledge-proofs">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/10-zero-knowledge-proofs">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Zero-Knowledge Proofs · Covenant By Example">
-<meta property="og:description" content="selective_disclosure, verified_by — proving properties without revealing data.">
+<meta property="og:description" content="selective_disclosure, verified_by, proving properties without revealing data.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Zero-Knowledge Proofs · Covenant By Example">
-<meta name="twitter:description" content="selective_disclosure, verified_by — proving properties without revealing data.">
+<meta name="twitter:description" content="selective_disclosure, verified_by, proving properties without revealing data.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,15 +367,15 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge standards">Standards</span>
     <p class="chapter-eyebrow">Chapter 10 / 15</p>
     <h1 class="chapter-title">Zero-Knowledge Proofs</h1>
-    <p class="chapter-subtitle">selective_disclosure, verified_by — proving properties without revealing data.</p>
+    <p class="chapter-subtitle">selective_disclosure, verified_by, proving properties without revealing data.</p>
     <hr class="chapter-divider">
-    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
-    <p class="prose">ZK proofs let a contract verify a claim — "the user is over 18", "the balance
-exceeds 1000 USDC", "the merkle path is valid" — without the contract ever
+    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only, the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
+    <p class="prose">ZK proofs let a contract verify a claim, "the user is over 18", "the balance
+exceeds 1000 USDC", "the merkle path is valid", without the contract ever
 seeing the underlying data. Covenant's <code>zk_proof</code> type and
 <code>verified_by</code> clause compile to STATICCALL into the chain's ZK
-precompile (<code>0x0500</code>–<code>0x0501</code>).</p>
-    <div class="code-wrap"><div class="code-label">age_gate.cov — prove age without revealing it</div><pre class="code-block" data-lang="covenant">interface IZKVerifier {
+precompile (<code>0x0500</code>-<code>0x0501</code>).</p>
+    <div class="code-wrap"><div class="code-label">age_gate.cov, prove age without revealing it</div><pre class="code-block" data-lang="covenant">interface IZKVerifier {
     // Returns true if proof is valid for the given public inputs
     view verify(proof: zk_proof, inputs: [field; 4]) -> bool;
 }
@@ -404,7 +404,7 @@ record AgeGate {
         return self.members[who];
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">merkle_drop.cov — airdrop via Merkle proof</div><pre class="code-block" data-lang="covenant">record MerkleDrop {
+<div class="code-wrap"><div class="code-label">merkle_drop.cov, airdrop via Merkle proof</div><pre class="code-block" data-lang="covenant">record MerkleDrop {
     root:     hash;
     token:    address;
     claimed:  map(address => bool);
@@ -440,7 +440,7 @@ record AgeGate {
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>ZK proofs let you verify properties of private data without exposing the data itself.</li>
-<li>Covenant's <code>zk_proof</code> type is chain-agnostic — the proof system is selected by the precompile, not the language.</li>
+<li>Covenant's <code>zk_proof</code> type is chain-agnostic, the proof system is selected by the precompile, not the language.</li>
 <li>Merkle airdrops, age gates, and range proofs are the most common ZK patterns in production.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="09-post-quantum-signatures"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Post-Quantum Signatures</span></a><a class="chapter-nav-btn next" href="11-cryptographic-amnesia"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Cryptographic Amnesia (ERC-8228)</span></a></nav>
   </main>

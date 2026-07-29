@@ -1,4 +1,4 @@
-//! `covenant explain <code>` — print the long-form prose for a diagnostic code.
+//! `covenant explain <code>`: print the long-form prose for a diagnostic code.
 //!
 //! V0.9 Sprint 38 Phase 38.1.b. Backed by `covenant_diag::explanations`.
 
@@ -43,7 +43,7 @@ pub fn run(args: ExplainArgs) -> Result<(), CliError> {
         Some(exp) => {
             println!("{}", exp.to_terminal_string());
             println!();
-            println!("(more codes available — try `covenant explain --list`)");
+            println!("(more codes available: try `covenant explain --list`)");
             Ok(())
         }
         None => {
@@ -52,7 +52,7 @@ pub fn run(args: ExplainArgs) -> Result<(), CliError> {
                  \n\
                  The diagnostic was emitted but its prose is not yet curated. If\n\
                  you can describe what the message means in your case, please\n\
-                 contribute via github.com/Valisthea/covenant-language/issues — every\n\
+                 contribute via github.com/Valisthea/covenant-language/issues, every\n\
                  frequent-error code that lands here makes the language easier\n\
                  to learn.\n\
                  \n\

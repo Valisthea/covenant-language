@@ -1,4 +1,4 @@
-//! Detector registry — owns all detector instances and handles filtering.
+//! Detector registry: owns all detector instances and handles filtering.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -22,13 +22,13 @@ impl DetectorRegistry {
     }
 
     fn register_all(&mut self) {
-        // REE — Reentrancy
+        // REE: Reentrancy
         self.push(Arc::new(detectors::reentrancy::C001StateAfterTransfer));
         self.push(Arc::new(detectors::reentrancy::C002TransferInLoop));
         self.push(Arc::new(detectors::reentrancy::W003MissingNonReentrant));
         self.push(Arc::new(detectors::reentrancy::I004TransferInInitializer));
 
-        // ACC — Access Control
+        // ACC: Access Control
         self.push(Arc::new(detectors::access_control::C100NoAccessGuard));
         self.push(Arc::new(
             detectors::access_control::C101BlockConditionAsAuth,
@@ -39,7 +39,7 @@ impl DetectorRegistry {
             detectors::access_control::I104SingleStepOwnerTransfer,
         ));
 
-        // EXT — External calls
+        // EXT: External calls
         self.push(Arc::new(detectors::external_calls::C300TransferToZero));
         self.push(Arc::new(
             detectors::external_calls::C301UncheckedTransferParam,
@@ -52,21 +52,21 @@ impl DetectorRegistry {
             detectors::external_calls::I304TransferWithNoLogging,
         ));
 
-        // GAS — Gas & DOS
+        // GAS: Gas & DOS
         self.push(Arc::new(detectors::gas::C1100UnboundedLoop));
         self.push(Arc::new(detectors::gas::W1101ExpensiveView));
         self.push(Arc::new(detectors::gas::W1102StoreInLoop));
         self.push(Arc::new(detectors::gas::I1103HighInstructionCount));
 
-        // TIM — Timestamp
+        // TIM: Timestamp
         self.push(Arc::new(detectors::timestamp::W1200TimestampForRandomness));
         self.push(Arc::new(detectors::timestamp::W1201BlockNumberInBranch));
         self.push(Arc::new(detectors::timestamp::I1202TimestampDependency));
 
-        // PQ — Post-quantum invariants (KSR-CVN-024)
+        // PQ: Post-quantum invariants (KSR-CVN-024)
         self.push(Arc::new(detectors::pq::C700PqVerifyWithoutNonce));
 
-        // AMN — Amnesia ceremony invariants (KSR-CVN-025)
+        // AMN: Amnesia ceremony invariants (KSR-CVN-025)
         self.push(Arc::new(
             detectors::amnesia::C801CeremonyPhaseBackwardTransition,
         ));
@@ -130,8 +130,8 @@ impl Default for DetectorRegistry {
 #[cfg(test)]
 mod tests {
     //! KSR-CVN-005: registry self-test. Guarantees that a regression removing
-    //! a scope-documented detector — or silently reducing the set below the
-    //! 21-detector baseline — will fail CI rather than fly under the radar.
+    //! a scope-documented detector: or silently reducing the set below the
+    //! 21-detector baseline: will fail CI rather than fly under the radar.
 
     use super::*;
 
@@ -164,7 +164,7 @@ mod tests {
         for code in required {
             assert!(
                 r.get(code).is_some(),
-                "detector `{code}` is scope-documented but not registered — \
+                "detector `{code}` is scope-documented but not registered, \
                  see docs/diagnostic-codes.md"
             );
         }

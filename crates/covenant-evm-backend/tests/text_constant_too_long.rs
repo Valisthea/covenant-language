@@ -3,8 +3,8 @@
 //! `crash-e23701c003cf79fd2f50c0f9bc45efd0b6dd12cd`).
 //!
 //! `emit_text_return` asserted `len <= 32` and panicked otherwise, so the
-//! whole compiler aborted with an ICE — "internal compiler error, please
-//! report at ..." — on input as ordinary as a token whose `name:` runs past
+//! whole compiler aborted with an ICE: "internal compiler error, please
+//! report at ...": on input as ordinary as a token whose `name:` runs past
 //! 32 bytes. `covenant check` passed; only `covenant build` blew up.
 //!
 //! The fuzzer reached it by mutating the shipped `example_02_coin.cov` seed
@@ -27,7 +27,7 @@ use covenant_types::typecheck;
 
 const E521: u32 = 521;
 
-/// Runs the full pipeline. Must not panic for any input — that is the point.
+/// Runs the full pipeline. Must not panic for any input, that is the point.
 fn compile(src: &str) -> Vec<Diagnostic> {
     let (toks, _) = tokenize(src, SourceId::new(0));
     let (file, _) = parse(&toks, SourceId::new(0));
@@ -90,7 +90,7 @@ token Coin {{
     );
 }
 
-/// Exactly 32 bytes is the documented limit and must still compile — the
+/// Exactly 32 bytes is the documented limit and must still compile, the
 /// boundary the assert used to guard.
 #[test]
 fn exactly_32_bytes_still_compiles() {

@@ -46,7 +46,7 @@ mkdir -p "$OUT_DIR"
 #   --release            Strip debug info, run wasm-opt -Oz.
 #   --no-typescript      We hand-author the .d.ts to keep the surface
 #                        identical to what the playground expects.
-#   --no-pack            Skip generating package.json — playground
+#   --no-pack            Skip generating package.json, playground
 #                        imports the .js + .wasm directly, no npm.
 wasm-pack build \
     --target web \
@@ -63,7 +63,7 @@ cp "$CRATE_DIR/covenant_wasm_bindings.d.ts" "$OUT_DIR/"
 # Trim files that wasm-pack produces but we don't need.
 rm -f "$OUT_DIR/.gitignore"
 
-# Report the bundle size — useful for the size-budget gate in CI.
+# Report the bundle size: useful for the size-budget gate in CI.
 # Use `wc -c` (POSIX) instead of stat to dodge the BSD/GNU/MSYS
 # format-flag fragmentation.
 WASM_PATH="$OUT_DIR/covenant_wasm_bindings_bg.wasm"
@@ -80,7 +80,7 @@ echo "    JS  glue  : $JS_SIZE bytes ($((JS_SIZE / 1024)) KB)"
 echo
 ls -la "$OUT_DIR"
 
-# Sprint 22 size budget — fail the build if we blow past it.
+# Sprint 22 size budget: fail the build if we blow past it.
 if [[ "$WASM_SIZE" -gt 2621440 ]]; then
     echo "ERROR: WASM bundle exceeds 2.5 MB raw budget" >&2
     exit 1

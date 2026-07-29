@@ -1,4 +1,4 @@
-//! Type-checker diagnostic codes (E201–E230 per Doc 5 §17.2).
+//! Type-checker diagnostic codes (E201-E230 per Doc 5 §17.2).
 #![allow(dead_code)]
 
 use covenant_diag::{DiagCode, Diagnostic, DiagnosticLevel, Span};

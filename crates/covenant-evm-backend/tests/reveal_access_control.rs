@@ -1,7 +1,7 @@
-//! F07 / F08 regression — `reveal <field> to <target>` access control + ABI.
+//! F07 / F08 regression: `reveal <field> to <target>` access control + ABI.
 //!
 //! F07 (CRITICAL): `reveal total to owner` used to compile with ZERO caller
-//! check — the owner-only disclosure restriction was silently dropped at IR
+//! check: the owner-only disclosure restriction was silently dropped at IR
 //! lowering (`lower_reveal` ignored the `to <target>` clause). The fix lowers
 //! the target into the SAME authorization assertion `only <principal>` guards
 //! use, so a non-owner call reverts before anything is disclosed.
@@ -75,7 +75,7 @@ encrypted counter Shielded {
     reveal total to owner
 }
 "#;
-    // `to caller` is a public reveal (caller == caller) — no gate. Baseline.
+    // `to caller` is a public reveal (caller == caller): no gate. Baseline.
     let to_caller = r#"
 encrypted counter Shielded {
     total: amount
@@ -88,7 +88,7 @@ encrypted counter Shielded {
 
     // The owner-gated reveal must add a CALLER and an EQ that the public reveal
     // does not. (If the `to <target>` clause were dropped again, both counts
-    // would be equal — the negative control.)
+    // would be equal: the negative control.)
     assert!(
         count_op(&rt_owner, OP_CALLER) > count_op(&rt_caller, OP_CALLER),
         "`reveal ... to owner` must emit a CALLER check the public reveal does not: \

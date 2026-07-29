@@ -102,7 +102,7 @@ pub fn dispatch_binary(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Option<OpResult> {
         }
     }
 
-    // Bitwise — plaintext only in V0.
+    // Bitwise: plaintext only in V0.
     if matches!(op, BitAnd | BitOr | BitXor | Shl | Shr) {
         match (lhs, rhs) {
             (Amount, Amount) => return Some(OpResult::plain(Amount)),
@@ -144,7 +144,7 @@ fn arithmetic(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Option<OpResult> {
         }
     }
 
-    // FHE: mixed plaintext/ciphertext — auto-lift.
+    // FHE: mixed plaintext/ciphertext: auto-lift.
     if let (Ciphertext(a), b) = (lhs, rhs) {
         if **a == *b && matches!(op, Add | Sub | Mul) {
             return Some(OpResult::lift_right(Ciphertext(a.clone())));
@@ -188,7 +188,7 @@ fn comparison(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Option<OpResult> {
         }
     }
 
-    // Encrypted × plaintext — lift plaintext.
+    // Encrypted × plaintext: lift plaintext.
     if let (Ciphertext(a), b) = (lhs, rhs) {
         if **a == *b {
             if is_eq_op && a.is_eq_comparable() {

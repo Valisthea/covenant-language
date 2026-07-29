@@ -23,7 +23,7 @@ record R {
 
 #[test]
 fn w1200_no_finding_timestamp_not_hashed() {
-    // Timestamp read but not fed into a hash — should not trigger W1200.
+    // Timestamp read but not fed into a hash: should not trigger W1200.
     let src = r#"
 record R {
     deadline: time
@@ -58,7 +58,7 @@ record R {
     action go() when now < deadline {}
 }
 "#;
-    // `now` lowers to LoadBlockTimestamp — I1202 should fire.
+    // `now` lowers to LoadBlockTimestamp: I1202 should fire.
     let f = run(&I1202TimestampDependency, src);
     assert!(!f.is_empty(), "expected I1202 for timestamp dependency");
     assert_eq!(f[0].detector_code, "I1202");

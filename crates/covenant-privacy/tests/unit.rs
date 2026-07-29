@@ -416,7 +416,7 @@ fn plaintext_field_decl_has_plaintext_domain() {
 
 #[test]
 fn view_returning_ciphertext_emits_e302() {
-    // Direct R2 check — view body is an `encrypted<amount>` field.
+    // Direct R2 check: view body is an `encrypted<amount>` field.
     let src = r#"
 record R {
     ct: ciphertext<amount>
@@ -452,7 +452,7 @@ record R {
 
 #[test]
 fn nested_encrypted_when_maintains_context() {
-    // Two nested encrypted_whens — inner emit still flagged.
+    // Two nested encrypted_whens: inner emit still flagged.
     let src = r#"
 record R {
     c1: ciphertext<bool>

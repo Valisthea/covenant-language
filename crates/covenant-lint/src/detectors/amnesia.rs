@@ -37,7 +37,7 @@ impl Detector for C801CeremonyPhaseBackwardTransition {
     }
     fn description(&self) -> &'static str {
         "Ceremony action gated by `when phase == K` writes `phase = N` with N <= K \
-         — phase regression breaks the ceremony state machine."
+: phase regression breaks the ceremony state machine."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -67,7 +67,7 @@ impl Detector for C801CeremonyPhaseBackwardTransition {
                     guard_phase_eq_const(&producers, &values, *g, &phase_fields)
                 {
                     // If multiple guards mention the same phase, keep the largest K
-                    // (strictest backward bound — write must exceed all of them).
+                    // (strictest backward bound: write must exceed all of them).
                     expected
                         .entry(field_id)
                         .and_modify(|e| {

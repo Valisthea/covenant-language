@@ -11,7 +11,7 @@ pub enum ColorMode {
 }
 
 impl ColorMode {
-    /// Resolve to a concrete boolean — whether to emit ANSI color codes.
+    /// Resolve to a concrete boolean: whether to emit ANSI color codes.
     pub fn should_color(self) -> bool {
         match self {
             ColorMode::Always => true,

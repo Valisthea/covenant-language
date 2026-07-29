@@ -26,7 +26,7 @@
 //!     which would slow downstream compile times for every consumer.
 //!   - No runtime I/O in the hot compile path.
 //!   - Addresses are visible in `git grep` searches.
-//!   - If the JSON drifts from Rust, CI fails loudly — drift is impossible
+//!   - If the JSON drifts from Rust, CI fails loudly, drift is impossible
 //!     silently.
 
 /// 20-byte EVM address. Used in `PrecompileAddresses` to identify either a
@@ -135,9 +135,9 @@ pub enum TargetParseError {
 // ─── V0.9.0 Sepolia / AsterTestnet hardcoded addresses ──────────────────────
 //
 // These mirror config/helper-addresses-v0.9.0.json. ANY change must update
-// both files in lockstep — see tests/registry_consistency.rs.
+// both files in lockstep: see tests/registry_consistency.rs.
 
-/// V0.9.1 CeremonyHelper — adds the `amnesiaSetup(uint256)` 1-arg overload
+/// V0.9.1 CeremonyHelper: adds the `amnesiaSetup(uint256)` 1-arg overload
 /// the Covenant compiler needs (V0.9.0's 3-arg-only signature mismatched
 /// the V0.8 `Opcode::AmnesiaBegin` operand count = 1, causing Solidity's
 /// `calldatasize` dispatch check to revert when called from Covenant
@@ -226,7 +226,7 @@ pub fn helper_selector_for_opcode(opcode_name: &str) -> Option<[u8; 4]> {
         "PqVerifyDilithium" => [0x0e, 0xc9, 0x7a, 0xf7], // pqVerify(bytes32,bytes,bytes)
         "PqRand" => [0x52, 0x61, 0xff, 0x4c],            // pqRandom(uint256)
 
-        // Opcodes without a V0.9 helper equivalent — fall back to namespaced
+        // Opcodes without a V0.9 helper equivalent: fall back to namespaced
         // V0.8 selector (caller handles the None branch). These typically
         // either (a) are V0.9.x deferred (Sprint 35.c+) or (b) are MockChain-
         // only diagnostics that don't ship to helper-contract targets.

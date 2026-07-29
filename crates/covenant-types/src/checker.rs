@@ -1,10 +1,10 @@
 //! The main bidirectional type checker.
 //!
 //! Organization:
-//! 1. `Checker::new` — builds a fresh checker over a `ResolvedFile`.
-//! 2. `run()` — orchestrates Pass 1 (lower AST type annotations → Ty),
+//! 1. `Checker::new`: builds a fresh checker over a `ResolvedFile`.
+//! 2. `run()`: orchestrates Pass 1 (lower AST type annotations → Ty),
 //!    Pass 2 (register decl types), Pass 3 (typecheck expression bodies).
-//! 3. `synth_expr` / `check_expr` — bidirectional core.
+//! 3. `synth_expr` / `check_expr`: bidirectional core.
 //! 4. Statement / behavior / principal / qualifier typecheck helpers.
 
 use covenant_diag::{Diagnostic, Span};
@@ -42,7 +42,7 @@ pub struct Checker {
     pub(crate) table: TypeTable,
     pub(crate) diagnostics: Vec<Diagnostic>,
     /// Whether the currently visited declaration is inside a construct whose
-    /// privacy qualifier is `encrypted`/`sealed`/`confidential` — in that case
+    /// privacy qualifier is `encrypted`/`sealed`/`confidential`: in that case
     /// fields without per-field override default to `Ciphertext(T)`.
     pub(crate) construct_encrypted: bool,
     /// The ConstructKind currently being checked (for implicit-field types and
@@ -497,7 +497,7 @@ impl Checker {
             let field_ty = self.resolve_ident_ty(&r.name);
             match &field_ty {
                 Ty::Ciphertext(_inner) => {
-                    // Valid — emits a plaintext version.
+                    // Valid: emits a plaintext version.
                 }
                 Ty::Unknown => {}
                 _ => {
@@ -608,7 +608,7 @@ impl Checker {
         // Principals are resolved by Phase 3; the typechecker has nothing
         // additional to do. Any expression branches (Principal::Address,
         // Principal::Call args) should be synth'd in Pass 3 via resolver-
-        // visited walks — we take a best-effort approach and rely on the
+        // visited walks: we take a best-effort approach and rely on the
         // resolver's traversal having already caught unresolved identifiers.
     }
 
@@ -832,7 +832,7 @@ impl Checker {
                         self.check_expr(a, expected);
                     }
                 } else {
-                    // Unresolved event — synth args to fill the table but no check.
+                    // Unresolved event: synth args to fill the table but no check.
                     for a in args {
                         self.synth_expr(a);
                     }
@@ -1255,13 +1255,13 @@ impl Checker {
                     ret: Box::new(sig.ret),
                 }
             }
-            // V0.9.1 — `IFoo.at(addr).method(...)` chains : the type
+            // V0.9.1: `IFoo.at(addr).method(...)` chains : the type
             // checker treats the interface name as an opaque module-like
             // identifier ; method-level resolution happens at IR build
             // time via the file.external_contracts list. Returning
             // Ty::Unknown here keeps the rest of the type checker
             // permissive on the chain (it will see `.at(addr)` returning
-            // Unknown, and `.method(args)` returning Unknown — bytecode
+            // Unknown, and `.method(args)` returning Unknown, bytecode
             // is emitted regardless from the IR layer).
             Some(Binding::ExternalContract(_)) => Ty::Unknown,
             Some(Binding::Unresolved) | None => Ty::Unknown,
@@ -1397,7 +1397,7 @@ impl Checker {
                 return self.check_signature_call(&sig, args, span, Some(id.name.as_ref()));
             }
         }
-        // Special-case: `<ExternalContractIdent>.at(addr)` — the address
+        // Special-case: `<ExternalContractIdent>.at(addr)`: the address
         // argument must be an `address`. Must be checked before the general
         // FieldAccess dispatch below, since `base` here is a bare
         // `Expr::Ident` whose synthesized type is (permissively) `Unknown`.
@@ -1485,7 +1485,7 @@ impl Checker {
                 }
                 Ty::Unknown
             }
-            // StdlibModule shouldn't be directly callable — must go through method access.
+            // StdlibModule shouldn't be directly callable, must go through method access.
             _ => {
                 for a in args {
                     self.synth_expr(a);
@@ -1538,7 +1538,7 @@ impl Checker {
                 }
             }
             VariadicKind::AnyHashable => {
-                // keccak / encode / etc. — accept any args.
+                // keccak / encode / etc.: accept any args.
                 for a in args {
                     self.synth_expr(a);
                 }

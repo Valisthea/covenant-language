@@ -276,7 +276,7 @@ pub fn synthesize(module: &mut IrModule, config: &StdlibConfig, diags: &mut Vec<
             operator_approvals_id,
             span,
         ));
-        // next_id += 1; // last write — discarded; keep increment style consistent
+        // next_id += 1; // last write: discarded; keep increment style consistent
     }
 
     inject_events(module, span);
@@ -670,7 +670,7 @@ fn emit_is_authorized(
     );
     let is_approved = fb.emit_instr(Opcode::Eq, vec![approved, caller], Some(Ty::Bool));
 
-    // operator_approvals uses the flattened key keccak(owner, operator) — same
+    // operator_approvals uses the flattened key keccak(owner, operator): same
     // derivation as setApprovalForAll / isApprovedForAll.
     let op_key = fb.emit_instr(Opcode::Keccak, vec![owner, caller], Some(Ty::Hash));
     let op_map = fb.emit_instr(

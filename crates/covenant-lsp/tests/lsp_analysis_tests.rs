@@ -185,7 +185,7 @@ fn hover_over_action_name() {
 #[test]
 fn hover_outside_any_entity_returns_none() {
     let file = analysis::parse_source(HELLO_SRC).expect("hello.cov must parse");
-    // Offset 0 is in the leading comment — no entity there.
+    // Offset 0 is in the leading comment: no entity there.
     let hover = analysis::find_hover_at(&file, HELLO_SRC, 0);
     // May or may not return something depending on comment spans; we only assert no panic.
     let _ = hover;

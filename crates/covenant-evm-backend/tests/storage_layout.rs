@@ -1,4 +1,4 @@
-//! KSR-CVN-041 regression tests — detect_slot_collisions is wired into codegen_evm.
+//! KSR-CVN-041 regression tests: detect_slot_collisions is wired into codegen_evm.
 //!
 //! Before this fix, `detect_slot_collisions` was fully implemented in
 //! `storage.rs` but never called. Two fields sharing the same `@slot(N)`
@@ -88,7 +88,7 @@ module NoClash {
 #[test]
 fn sequential_field_aliasing_explicit_slot_produces_e423() {
     // Sequential counter starts at 0. A plain `field a: amount` occupies slot 0.
-    // A subsequent `@slot(0) field b: amount` then aliases it — E423 must fire.
+    // A subsequent `@slot(0) field b: amount` then aliases it, E423 must fire.
     let src = r#"
 module SeqClash {
     field a: amount

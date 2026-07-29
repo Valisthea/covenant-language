@@ -1,4 +1,4 @@
-//! `covenant clean` — remove build artifacts.
+//! `covenant clean`: remove build artifacts.
 
 use std::path::PathBuf;
 

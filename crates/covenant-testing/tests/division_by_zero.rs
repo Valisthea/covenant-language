@@ -3,12 +3,12 @@
 //! `/` and `%` lower to `Opcode::Div` / `Opcode::Mod`, which used to become
 //! bare EVM `DIV`/`MOD`. Those are TOTAL functions on the EVM: `x / 0` yields
 //! `0` instead of trapping. So `payout = pot / participants` silently paid 0
-//! to everybody when the participant set was empty — ordinary-looking source,
+//! to everybody when the participant set was empty, ordinary-looking source,
 //! wrong on-chain result, no diagnostic. Solidity reverts here.
 //!
 //! These deploy a tiny record and drive the runtime through the mini-EVM
 //! interpreter, whose `U256::div`/`rem` faithfully reproduce the EVM's
-//! zero-divisor behaviour (covenant-evm-runtime/src/u256.rs) — so each test
+//! zero-divisor behaviour (covenant-evm-runtime/src/u256.rs): so each test
 //! observes the OLD wrong value before the fix and the revert after it.
 
 use covenant_testing::{CovenantTestHarness, U256};
@@ -39,7 +39,7 @@ fn division_by_zero_reverts_instead_of_yielding_zero() {
     let c = h.deploy(SRC, h.addrs.deployer).expect("deploy");
     let alice = h.addrs.alice;
 
-    // 100 / 0 — before the fix this returned 0 with no error.
+    // 100 / 0: before the fix this returned 0 with no error.
     h.call_ok(
         c,
         alice,

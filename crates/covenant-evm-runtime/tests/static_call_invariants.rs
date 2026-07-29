@@ -34,7 +34,7 @@ fn run(bytecode: &[u8], is_static: bool) -> CallResult {
     execute(bytecode, &env, &mut host, &mut precompiles)
 }
 
-// ─── PRELIM-004 — LOG opcodes must respect is_static ─────────────────
+// ─── PRELIM-004: LOG opcodes must respect is_static ─────────────────
 
 /// LOG0 in non-static context: succeeds and emits a LogEvent.
 #[test]
@@ -88,7 +88,7 @@ fn log4_in_static_context_aborts() {
     );
 }
 
-// ─── Adjacent invariants — pre-existing checks that must stay green ──
+// ─── Adjacent invariants: pre-existing checks that must stay green ──
 
 /// SSTORE in static context: must abort. This was already enforced
 /// pre-Sprint-26 (it's the pattern PRELIM-004 mirrored). Test exists

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate examples.covenant-lang.org — Covenant By Example
+Generate examples.covenant-lang.org: Covenant By Example
 Produces: docs/examples/index.html + docs/examples/NN-slug.html (×15)
 """
 
@@ -24,11 +24,11 @@ CHAPTERS = [
     {
         "num": 1, "slug": "hello-contract",
         "title": "Hello Contract",
-        "subtitle": "The simplest Covenant contract — record, action, view.",
+        "subtitle": "The simplest Covenant contract: record, action, view.",
         "section": "fundamentals",
         "intro": """\
 Every Covenant contract is a <em>record</em>: a typed bundle of persistent storage
-fields and the actions that modify them. This chapter builds the minimal contract —
+fields and the actions that modify them. This chapter builds the minimal contract, 
 analogous to "Hello World" but running on an EVM chain.""",
         "blocks": [
             {
@@ -52,14 +52,14 @@ record Hello {
         "notes": [
             ("<code>record</code>", "declares a contract with named storage fields."),
             ("<code>text</code>", "is Covenant's built-in string type, equivalent to <code>string</code> in Solidity."),
-            ("<code>action</code>", "is a state-mutating function — it produces a transaction."),
+            ("<code>action</code>", "is a state-mutating function, it produces a transaction."),
             ("<code>view</code>", "reads state without modifying it; no gas cost when called off-chain."),
             ("<code>emit Updated(...)</code>", "emits a log event. The event type is inferred from the arguments."),
             ("<code>self.greeting</code>", "refers to the contract's own storage field."),
         ],
         "takeaways": [
             "Records are the primary contract abstraction in Covenant.",
-            "Actions and views are declared at the same level — no <code>function</code> keyword ambiguity.",
+            "Actions and views are declared at the same level, no <code>function</code> keyword ambiguity.",
             "The compiler infers ABI, storage layout, and event signatures automatically.",
         ],
     },
@@ -70,7 +70,7 @@ record Hello {
         "section": "fundamentals",
         "intro": """\
 Covenant's type system maps cleanly to EVM storage slots while adding
-semantic types that prevent common mistakes — for example, using <code>amount</code>
+semantic types that prevent common mistakes, for example, using <code>amount</code>
 instead of <code>u256</code> for ether values makes units explicit.""",
         "blocks": [
             {
@@ -80,7 +80,7 @@ instead of <code>u256</code> for ether values makes units explicit.""",
 record Catalog {
     // Semantic primitives
     owner:      address;
-    balance:    amount;       // wei — prevents unit confusion
+    balance:    amount;       // wei: prevents unit confusion
     created:    time;         // unix timestamp
     lock_for:   duration;     // seconds
     checksum:   hash;         // bytes32
@@ -131,25 +131,25 @@ record Counter {
         ],
         "notes": [
             ("<code>amount</code>", "compiles to <code>uint256</code> but the compiler rejects arithmetic that mixes amounts with bare integers."),
-            ("<code>time</code> / <code>duration</code>", "prevent accidental subtraction of timestamps and durations — the compiler enforces dimensional compatibility."),
+            ("<code>time</code> / <code>duration</code>", "prevent accidental subtraction of timestamps and durations, the compiler enforces dimensional compatibility."),
             ("<code>map(K => V)</code>", "compiles to a Solidity mapping; nested maps compile to nested mappings."),
             ("<code>[T; N]</code>", "is a fixed-size array stored packed into adjacent slots when possible."),
         ],
         "takeaways": [
             "Semantic types (<code>amount</code>, <code>time</code>, <code>duration</code>) prevent an entire class of unit bugs at compile time.",
             "Maps and arrays have familiar syntax but compile to efficient EVM layouts.",
-            "Field initialization to zero is implicit — no constructor boilerplate needed.",
+            "Field initialization to zero is implicit: no constructor boilerplate needed.",
         ],
     },
     {
         "num": 3, "slug": "actions-events-errors",
         "title": "Actions, Events & Errors",
-        "subtitle": "emit, transfer, revert_with — the full action vocabulary.",
+        "subtitle": "emit, transfer, revert_with: the full action vocabulary.",
         "section": "fundamentals",
         "intro": """\
 Actions in Covenant carry four responsibilities: validate inputs, update state,
 emit events, and transfer value. Covenant's <code>revert_with</code> attaches
-typed error payloads — readable by any ABI-aware client without extra decoding.""",
+typed error payloads: readable by any ABI-aware client without extra decoding.""",
         "blocks": [
             {
                 "label": "bank.cov",
@@ -197,30 +197,30 @@ record Bank {
         ],
         "notes": [
             ("<code>event</code>", "declares a log event with named, typed fields. The ABI selector is derived automatically."),
-            ("<code>error</code>", "declares a typed revert payload — EIP-838 compatible. Arguments are ABI-encoded into revert data."),
+            ("<code>error</code>", "declares a typed revert payload, EIP-838 compatible. Arguments are ABI-encoded into revert data."),
             ("<code>revert_with E(...)</code>", "reverts the transaction and encodes the error payload. Equivalent to Solidity's <code>revert E(...)</code>."),
             ("<code>msg.value</code>", "the ether attached to the call, as an <code>amount</code>."),
             ("<code>transfer(to, value)</code>", "sends ether using <code>call{value: v}('')</code> with a forward-gas cap. Reverts on failure."),
         ],
         "takeaways": [
-            "Events and errors are declared at the record level — they are part of the contract's public ABI.",
+            "Events and errors are declared at the record level, they are part of the contract's public ABI.",
             "<code>revert_with</code> always carries a typed payload; bare <code>revert</code> is not idiomatic Covenant.",
-            "Follow Checks-Effects-Interactions order — update state before calling <code>transfer()</code>.",
+            "Follow Checks-Effects-Interactions order: update state before calling <code>transfer()</code>.",
         ],
     },
     {
         "num": 4, "slug": "guards",
         "title": "Guards",
-        "subtitle": "only, when, given — declarative access control and invariants.",
+        "subtitle": "only, when, given: declarative access control and invariants.",
         "section": "fundamentals",
         "intro": """\
 Covenant's guard system replaces ad-hoc <code>require()</code> chains with
 <em>declared</em> pre- and post-conditions. Guards appear in the function
-signature — they are part of the interface, not buried in the body.
+signature: they are part of the interface, not buried in the body.
 <br><br>
 <strong>Security note:</strong> OMEGA V4 finding <code>KSR-CVN-011</code> (Critical)
 discovered that a prior compiler version silently dropped <code>only()</code>
-clauses during IR lowering — every deployed contract was wide open. V0.7 fixes
+clauses during IR lowering: every deployed contract was wide open. V0.7 fixes
 this and adds an integration test that verifies guard bytecode is emitted.""",
         "blocks": [
             {
@@ -236,12 +236,12 @@ record Multisig {
     error Unauthorized();
     error AlreadyLocked();
 
-    // only(expr) — caller must satisfy expr, else revert
+    // only(expr): caller must satisfy expr, else revert
     action change_owner(new_owner: address) only(msg.sender == self.owner) {
         self.owner = new_owner;
     }
 
-    // when(cond) — precondition checked before body runs
+    // when(cond): precondition checked before body runs
     action lock() only(msg.sender == self.owner) when(!self.locked) {
         self.locked = true;
     }
@@ -255,7 +255,7 @@ record Multisig {
         self.nonce += 1;
     }
 
-    // given(cond) — postcondition checked after body runs
+    // given(cond): postcondition checked after body runs
     // Reverts the entire action if the condition is false after execution
     action set_guardian(g: address)
         only(msg.sender == self.owner)
@@ -277,12 +277,12 @@ record Multisig {
             ("<code>only(expr)</code>", "emits a <code>JUMPI</code> at function entry that reverts if <code>expr</code> is false. Shorthand <code>only(self.owner)</code> expands to <code>only(msg.sender == self.owner)</code>."),
             ("<code>when(cond)</code>", "a precondition: checked at the start of the action body, before any state changes."),
             ("<code>given(cond)</code>", "a postcondition: checked after the body executes. Reverts (and undoes state changes) if false."),
-            ("Multiple guards", "compose with AND semantics — all conditions must hold."),
+            ("Multiple guards", "compose with AND semantics, all conditions must hold."),
             ("KSR-CVN-011", "was critical because guards look present in source but produced zero bytecode. Always run <code>covenant audit</code> before deployment."),
         ],
         "takeaways": [
-            "Guards are part of the function signature — they appear in the generated ABI docs and are impossible to overlook.",
-            "<code>given()</code> postconditions let you express invariants that must hold after the action — useful for conservation laws.",
+            "Guards are part of the function signature: they appear in the generated ABI docs and are impossible to overlook.",
+            "<code>given()</code> postconditions let you express invariants that must hold after the action, useful for conservation laws.",
             "The compiler verifies that every <code>only()</code> clause produces bytecode (enforced since V0.7).",
         ],
     },
@@ -320,7 +320,7 @@ interface IUniswapV2Pair {
 }"""
             },
             {
-                "label": "vault.cov — non-reentrant external calls",
+                "label": "vault.cov: non-reentrant external calls",
                 "lang": "covenant",
                 "code": """\
 record Vault {
@@ -338,13 +338,13 @@ record Vault {
         // Checks
         // (amount > 0 validated by the caller passing a nonzero value)
 
-        // Effects — update state BEFORE external call
+        // Effects: update state BEFORE external call
         let new_shares = amount;   // simplified 1:1 for illustration
         self.shares[msg.sender] += new_shares;
         self.total += amount;
         emit Deposited(msg.sender, amount, new_shares);
 
-        // Interactions — external call LAST
+        // Interactions: external call LAST
         erc20.transferFrom(msg.sender, self.addr(), amount);
     }
 
@@ -376,11 +376,11 @@ record Vault {
         "notes": [
             ("<code>interface I { ... }</code>", "declares an external contract type. Calling <code>I(addr).method()</code> compiles to a <code>CALL</code> with the correct 4-byte selector."),
             ("<code>@non_reentrant</code>", "inserts a transient storage mutex (EIP-1153 where available, SSTORE otherwise). Reverts if the function is re-entered."),
-            ("<code>self.addr()</code>", "returns the contract's own address — equivalent to Solidity's <code>address(this)</code>."),
+            ("<code>self.addr()</code>", "returns the contract's own address, equivalent to Solidity's <code>address(this)</code>."),
             ("CEI pattern", "is not enforced at compile time in V0.7, but OMEGA lint rule <code>CEI-001</code> flags violations. Future versions will enforce it statically."),
         ],
         "takeaways": [
-            "Declare interfaces explicitly — Covenant will generate the correct selectors and ABI types.",
+            "Declare interfaces explicitly: Covenant will generate the correct selectors and ABI types.",
             "Always use <code>@non_reentrant</code> on any action that makes external calls.",
             "State updates must precede external calls (CEI). OMEGA will flag violations.",
         ],
@@ -389,17 +389,17 @@ record Vault {
     {
         "num": 6, "slug": "erc20-token",
         "title": "ERC-20 Token",
-        "subtitle": "Six lines versus one hundred — the token keyword.",
+        "subtitle": "Six lines versus one hundred: the token keyword.",
         "section": "standards",
         "intro": """\
 The <code>token</code> keyword is syntactic sugar that expands to a fully
 compliant ERC-20 implementation. Covenant generates <code>transfer</code>,
 <code>transferFrom</code>, <code>approve</code>, <code>allowance</code>,
-<code>balanceOf</code>, <code>totalSupply</code>, and the required events —
+<code>balanceOf</code>, <code>totalSupply</code>, and the required events, 
 all generated by the compiler from the single <code>token</code> declaration.""",
         "blocks": [
             {
-                "label": "my_token.cov — using the token keyword",
+                "label": "my_token.cov: using the token keyword",
                 "lang": "covenant",
                 "code": """\
 token MyToken {
@@ -414,7 +414,7 @@ token MyToken {
                 "label": "Equivalent generated interface (for reference only)",
                 "lang": "covenant",
                 "code": """\
-// This is what the compiler produces — you never write this manually.
+// This is what the compiler produces: you never write this manually.
 // Shown here so you understand what the token keyword expands to.
 
 record MyToken {
@@ -475,25 +475,25 @@ record GovernanceTokenMinter {
         "notes": [
             ("<code>supply</code>", "is minted to the deployer (<code>msg.sender</code>) at construction. To distribute differently, extend with a custom distribution action."),
             ("<code>owner</code>", "is stored in the contract and used by <code>mint</code>/<code>burn</code> if those extensions are added."),
-            ("ERC-20 compliance", "is verified at compile time — the Covenant compiler emits a lint error if any mandatory selector is missing from the generated ABI."),
+            ("ERC-20 compliance", "is verified at compile time, the Covenant compiler emits a lint error if any mandatory selector is missing from the generated ABI."),
         ],
         "takeaways": [
-            "Use <code>token</code> for any standard fungible token — six lines replaces ~100 lines of Solidity.",
-            "The generated contract is identical to a hand-written ERC-20 — no abstraction overhead.",
+            "Use <code>token</code> for any standard fungible token, six lines replaces ~100 lines of Solidity.",
+            "The generated contract is identical to a hand-written ERC-20, no abstraction overhead.",
             "Extensions (minting, burning, permit) are added by composing a separate record.",
         ],
     },
     {
         "num": 7, "slug": "fhe-basics",
         "title": "FHE Basics",
-        "subtitle": "encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.",
+        "subtitle": "encrypted&lt;T&gt;, fhe_add, fhe_mul, computing on encrypted state.",
         "section": "standards",
         "intro": """\
 Covenant's FHE type system lets you write contracts where state is never
 decrypted on-chain. The <code>encrypted&lt;T&gt;</code> type annotates a field
 or variable as ciphertext. Operations (<code>fhe_add</code>, <code>fhe_mul</code>)
 compile to <code>STATICCALL</code> instructions targeting chain precompile addresses
-— the actual FHE implementation lives in the chain's precompile layer, not in
+: the actual FHE implementation lives in the chain's precompile layer, not in
 Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).""",
         "blocks": [
             {
@@ -514,14 +514,14 @@ record PrivateCounter {
         self.count = fhe_add(self.count, n);
     }
 
-    // Reveal the decrypted value — only owner can call
+    // Reveal the decrypted value: only owner can call
     view read_count() -> u64 only(self.owner) {
         return decrypt(self.count);
     }
 }"""
             },
             {
-                "label": "encrypted_voting.cov — private ballot tally",
+                "label": "encrypted_voting.cov: private ballot tally",
                 "lang": "covenant",
                 "code": """\
 record PrivateBallot {
@@ -543,7 +543,7 @@ record PrivateBallot {
         }
         self.voted[msg.sender] = true;
 
-        // Homomorphic addition — tally stays encrypted
+        // Homomorphic addition: tally stays encrypted
         self.yes_votes = fhe_add(self.yes_votes, choice);
         self.no_votes  = fhe_add(
             self.no_votes,
@@ -551,7 +551,7 @@ record PrivateBallot {
         );
     }
 
-    // Owner tallies after vote ends — decrypts locally
+    // Owner tallies after vote ends: decrypts locally
     view tally() -> (u64, u64)
         only(self.owner)
         when(block.timestamp >= self.end_time)
@@ -562,16 +562,16 @@ record PrivateBallot {
             },
         ],
         "notes": [
-            ("<code>encrypted&lt;T&gt;</code>", "is a first-class type. You cannot accidentally pass it to a function expecting <code>T</code> — the compiler rejects the type mismatch."),
-            ("<code>fhe_add</code> / <code>fhe_mul</code>", "compile to <code>STATICCALL</code> targeting addresses <code>0x0300</code>–<code>0x0308</code>. The chain's precompile determines the underlying FHE scheme."),
+            ("<code>encrypted&lt;T&gt;</code>", "is a first-class type. You cannot accidentally pass it to a function expecting <code>T</code>, the compiler rejects the type mismatch."),
+            ("<code>fhe_add</code> / <code>fhe_mul</code>", "compile to <code>STATICCALL</code> targeting addresses <code>0x0300</code>-<code>0x0308</code>. The chain's precompile determines the underlying FHE scheme."),
             ("<code>encrypted(v)</code>", "wraps a plaintext value as a client-side ciphertext before sending to the contract."),
-            ("<code>decrypt(c)</code>", "calls the decryption precompile. Only the keyholder can obtain the plaintext — on chains with threshold decryption, this requires a quorum."),
+            ("<code>decrypt(c)</code>", "calls the decryption precompile. Only the keyholder can obtain the plaintext, on chains with threshold decryption, this requires a quorum."),
             ("Scheme agnosticism", "Covenant emits the same bytecode regardless of whether the chain uses TFHE, BGV, or CKKS. See <code>LICENSE_CLARIFICATION.md</code>."),
         ],
         "takeaways": [
-            "<code>encrypted&lt;T&gt;</code> fields are stored as ciphertext on-chain — observers see only the encryption, not the value.",
-            "FHE arithmetic is exact for integers (TFHE) and approximate for fixed-point (CKKS) — choose based on chain support.",
-            "Covenant never imports any FHE library — the chain's precompile layer handles all crypto.",
+            "<code>encrypted&lt;T&gt;</code> fields are stored as ciphertext on-chain, observers see only the encryption, not the value.",
+            "FHE arithmetic is exact for integers (TFHE) and approximate for fixed-point (CKKS): choose based on chain support.",
+            "Covenant never imports any FHE library: the chain's precompile layer handles all crypto.",
         ],
     },
     {
@@ -598,7 +598,7 @@ encrypted token PrivateToken {
 }"""
             },
             {
-                "label": "private_token_auditable.cov — with selective disclosure",
+                "label": "private_token_auditable.cov: with selective disclosure",
                 "lang": "covenant",
                 "code": """\
 encrypted token AuditableToken {
@@ -625,7 +625,7 @@ encrypted token AuditableToken {
                 "label": "Reading a private balance",
                 "lang": "covenant",
                 "code": """\
-// Off-chain — using covenant-sdk (TypeScript)
+// Off-chain: using covenant-sdk (TypeScript)
 
 import { CovenantClient } from '@covenant-lang/sdk';
 
@@ -646,25 +646,25 @@ const balance = await token.balanceOf(
             ("<code>encrypted token</code>", "is the ERC-8227 form of <code>token</code>. It generates a homomorphic transfer function in addition to standard ERC-20 selectors."),
             ("<code>selective_disclosure</code>", "is a block that configures which parties receive a decryption key fragment for which fields."),
             ("<code>reveal X to Y</code>", "grants <code>Y</code> the ability to call the chain's disclosure precompile and obtain the plaintext of <code>X</code>."),
-            ("Transfers", "are handled by <code>fhe_add</code> / <code>fhe_sub</code> on ciphertexts — the chain validates balance constraints via ZK range proofs without decrypting."),
+            ("Transfers", "are handled by <code>fhe_add</code> / <code>fhe_sub</code> on ciphertexts, the chain validates balance constraints via ZK range proofs without decrypting."),
         ],
         "takeaways": [
             "<code>encrypted token</code> gives you a fully private ERC-20 in one declaration.",
             "Selective disclosure enables compliance (auditability) without full transparency.",
-            "Balance integrity is enforced by the chain's ZK proof layer — no plaintext ever leaves the ciphertext domain during transfer.",
+            "Balance integrity is enforced by the chain's ZK proof layer, no plaintext ever leaves the ciphertext domain during transfer.",
         ],
     },
     {
         "num": 9, "slug": "post-quantum-signatures",
         "title": "Post-Quantum Signatures",
-        "subtitle": "pq_key, @pq_signed — Dilithium-5 authentication.",
+        "subtitle": "pq_key, @pq_signed: Dilithium-5 authentication.",
         "section": "standards",
         "intro": """\
 Classical ECDSA signatures are vulnerable to sufficiently large quantum computers.
 Covenant adds <code>pq_key&lt;Scheme&gt;</code> as a first-class storage type and
 <code>@pq_signed</code> as a decorator that verifies post-quantum signatures
 at function entry. The verification compiles to a STATICCALL into the chain's
-PQ precompile (<code>0x0400</code>–<code>0x0401</code>).""",
+PQ precompile (<code>0x0400</code>-<code>0x0401</code>).""",
         "blocks": [
             {
                 "label": "pq_vault.cov",
@@ -690,7 +690,7 @@ record PQVault {
         transfer(to, value);
     }
 
-    // Standard ECDSA deposit — anyone can fund
+    // Standard ECDSA deposit: anyone can fund
     action deposit() {
         self.balance += msg.value;
     }
@@ -699,7 +699,7 @@ record PQVault {
 }"""
             },
             {
-                "label": "hybrid_auth.cov — ECDSA + PQ dual key",
+                "label": "hybrid_auth.cov: ECDSA + PQ dual key",
                 "lang": "covenant",
                 "code": """\
 record HybridWallet {
@@ -731,28 +731,28 @@ record HybridWallet {
             ("<code>pq_key&lt;Dilithium5&gt;</code>", "stores a Dilithium-5 public key (NIST FIPS 204 Level 5). The key is stored as <code>bytes</code> in EVM storage."),
             ("<code>@pq_signed(key)</code>", "prepends a STATICCALL to precompile <code>0x0400</code> that verifies the signature over the canonical message <code>keccak256(address ++ nonce ++ selector ++ calldata)</code>."),
             ("Supported schemes", "<code>Dilithium3</code> (NIST Level 3), <code>Dilithium5</code> (NIST Level 5), <code>Falcon512</code>, <code>Falcon1024</code>. Chain support varies."),
-            ("Nonce", "is automatically incremented by the PQ precompile to prevent replay attacks — you don't manage it manually."),
+            ("Nonce", "is automatically incremented by the PQ precompile to prevent replay attacks, you don't manage it manually."),
         ],
         "takeaways": [
-            "PQ signatures are a zero-cost abstraction — the compiler emits a precompile call, not a Rust/Solidity verifier.",
-            "Hybrid wallets (classical + PQ) are the recommended migration path — quantum resistance without breaking existing tooling.",
+            "PQ signatures are a zero-cost abstraction: the compiler emits a precompile call, not a Rust/Solidity verifier.",
+            "Hybrid wallets (classical + PQ) are the recommended migration path, quantum resistance without breaking existing tooling.",
             "Covenant's PQ support is chain-dependent; check your target chain's precompile registry.",
         ],
     },
     {
         "num": 10, "slug": "zero-knowledge-proofs",
         "title": "Zero-Knowledge Proofs",
-        "subtitle": "selective_disclosure, verified_by — proving properties without revealing data.",
+        "subtitle": "selective_disclosure, verified_by, proving properties without revealing data.",
         "section": "standards",
         "intro": """\
-ZK proofs let a contract verify a claim — "the user is over 18", "the balance
-exceeds 1000 USDC", "the merkle path is valid" — without the contract ever
+ZK proofs let a contract verify a claim: "the user is over 18", "the balance
+exceeds 1000 USDC", "the merkle path is valid", without the contract ever
 seeing the underlying data. Covenant's <code>zk_proof</code> type and
 <code>verified_by</code> clause compile to STATICCALL into the chain's ZK
-precompile (<code>0x0500</code>–<code>0x0501</code>).""",
+precompile (<code>0x0500</code>-<code>0x0501</code>).""",
         "blocks": [
             {
-                "label": "age_gate.cov — prove age without revealing it",
+                "label": "age_gate.cov: prove age without revealing it",
                 "lang": "covenant",
                 "code": """\
 interface IZKVerifier {
@@ -786,7 +786,7 @@ record AgeGate {
 }"""
             },
             {
-                "label": "merkle_drop.cov — airdrop via Merkle proof",
+                "label": "merkle_drop.cov: airdrop via Merkle proof",
                 "lang": "covenant",
                 "code": """\
 record MerkleDrop {
@@ -825,7 +825,7 @@ record MerkleDrop {
         ],
         "takeaways": [
             "ZK proofs let you verify properties of private data without exposing the data itself.",
-            "Covenant's <code>zk_proof</code> type is chain-agnostic — the proof system is selected by the precompile, not the language.",
+            "Covenant's <code>zk_proof</code> type is chain-agnostic, the proof system is selected by the precompile, not the language.",
             "Merkle airdrops, age gates, and range proofs are the most common ZK patterns in production.",
         ],
     },
@@ -833,17 +833,17 @@ record MerkleDrop {
     {
         "num": 11, "slug": "cryptographic-amnesia",
         "title": "Cryptographic Amnesia (ERC-8228)",
-        "subtitle": "amnesia&lt;T&gt;, destroy(), vdf_proof — verifiable data deletion.",
+        "subtitle": "amnesia&lt;T&gt;, destroy(), vdf_proof, verifiable data deletion.",
         "section": "advanced",
         "intro": """\
 ERC-8228 introduces <em>cryptographic amnesia</em>: a contract can provably
 commit to destroying secret data after a delay enforced by a Verifiable Delay
-Function (VDF). Once the destruction ceremony completes, no party — including
-the chain operator — can recover the data. This enables use cases like
+Function (VDF). Once the destruction ceremony completes, no party, including
+the chain operator: can recover the data. This enables use cases like
 time-limited secret auctions, ephemeral keys, and GDPR-compliant on-chain storage.""",
         "blocks": [
             {
-                "label": "amnesia_ceremony.cov — 4-phase destruction protocol",
+                "label": "amnesia_ceremony.cov: 4-phase destruction protocol",
                 "lang": "covenant",
                 "code": """\
 record SecretAuction {
@@ -866,7 +866,7 @@ record SecretAuction {
         self.phase = 1;
     }
 
-    // Phase 1 → 2: lock — no more reads after this
+    // Phase 1 → 2: lock: no more reads after this
     action lock()
         when(self.phase == 1)
         when(block.timestamp >= self.reveal_at)
@@ -876,7 +876,7 @@ record SecretAuction {
     }
 
     // Phase 2 → 3: destroy with VDF proof (prevents last-minute reads)
-    // vdf_proof(t) requires t sequential squarings — ~1 million ≈ 30 seconds
+    // vdf_proof(t) requires t sequential squarings, ~1 million ≈ 30 seconds
     action destroy()
         when(self.phase == 2)
         when(block.timestamp >= self.destroy_at)
@@ -900,19 +900,19 @@ record SecretAuction {
         "notes": [
             ("<code>amnesia&lt;T&gt;</code>", "wraps <code>T</code> in a destruction-trackable envelope. The compiler tracks all read paths and enforces phase guards."),
             ("<code>destroy(field)</code>", "zeroes the storage slot and writes a tombstone hash that proves destruction occurred at a specific block."),
-            ("<code>vdf_proof(t = N)</code>", "compiles to a STATICCALL to the VDF precompile (<code>0x0502</code>). The sequentiality of the VDF prevents parallel pre-computation of the proof — you cannot rush destruction."),
+            ("<code>vdf_proof(t = N)</code>", "compiles to a STATICCALL to the VDF precompile (<code>0x0502</code>). The sequentiality of the VDF prevents parallel pre-computation of the proof, you cannot rush destruction."),
             ("ERC-8228 compliance", "requires: (a) amnesia wrapping, (b) locked phase before destruction, (c) VDF proof in the destruction action, (d) a tombstone event emitted on-chain."),
         ],
         "takeaways": [
-            "Cryptographic amnesia provides a <em>verifiable</em> guarantee of deletion — not just a promise.",
+            "Cryptographic amnesia provides a <em>verifiable</em> guarantee of deletion, not just a promise.",
             "The VDF delay prevents an adversary from watching mempool and reading the data right before the destroy transaction mines.",
-            "After <code>destroy()</code>, the amnesia slot is tombstoned — any subsequent read attempt reverts.",
+            "After <code>destroy()</code>, the amnesia slot is tombstoned, any subsequent read attempt reverts.",
         ],
     },
     {
         "num": 12, "slug": "uups-upgradeable",
         "title": "UUPS Upgradeable",
-        "subtitle": "upgradeable_by, version, migrate — safe contract upgrades.",
+        "subtitle": "upgradeable_by, version, migrate, safe contract upgrades.",
         "section": "advanced",
         "intro": """\
 The Universal Upgradeable Proxy Standard (EIP-1822) separates logic from storage.
@@ -949,7 +949,7 @@ record CounterV1 {
 }"""
             },
             {
-                "label": "counter_v2.cov — adding a step field",
+                "label": "counter_v2.cov: adding a step field",
                 "lang": "covenant",
                 "code": """\
 record CounterV2 {
@@ -995,19 +995,19 @@ covenant upgrade <proxy-address> <v2-address> --network sepolia"""
         "notes": [
             ("<code>version: N</code>", "is a compile-time constant embedded in the bytecode. The upgrade mechanism verifies version monotonicity."),
             ("<code>upgradeable_by: expr</code>", "generates an <code>_authorizeUpgrade</code> override that requires <code>expr</code> to be true."),
-            ("<code>migrate from N to M { ... }</code>", "generates an initializer guarded by a storage flag — it cannot be called twice (re-initialization guard)."),
-            ("Storage layout", "The compiler validates that V2 does not change the slot positions of V1 fields — only appending new fields at the end is allowed."),
+            ("<code>migrate from N to M { ... }</code>", "generates an initializer guarded by a storage flag, it cannot be called twice (re-initialization guard)."),
+            ("Storage layout", "The compiler validates that V2 does not change the slot positions of V1 fields, only appending new fields at the end is allowed."),
         ],
         "takeaways": [
-            "<code>upgradeable_by</code> and <code>version</code> give you UUPS in two declarations — no boilerplate proxy code to maintain.",
-            "The <code>migrate</code> block is the safest place for post-upgrade initialization — the compiler ensures it runs exactly once.",
+            "<code>upgradeable_by</code> and <code>version</code> give you UUPS in two declarations, no boilerplate proxy code to maintain.",
+            "The <code>migrate</code> block is the safest place for post-upgrade initialization, the compiler ensures it runs exactly once.",
             "Always audit storage layout compatibility between versions. The compiler warns on slot conflicts.",
         ],
     },
     {
         "num": 13, "slug": "beacon-proxy",
         "title": "Beacon Proxy Pattern",
-        "subtitle": "@proxy_compatible, deploy_proxy — upgrading many instances atomically.",
+        "subtitle": "@proxy_compatible, deploy_proxy, upgrading many instances atomically.",
         "section": "advanced",
         "intro": """\
 The beacon proxy pattern (EIP-1967) lets one upgrade transaction update the
@@ -1017,7 +1017,7 @@ has no constructor-side effects (safe for delegate calls), and
 <code>deploy_proxy</code> deploys a new proxy pointing at the beacon.""",
         "blocks": [
             {
-                "label": "implementation.cov — proxy-safe logic",
+                "label": "implementation.cov: proxy-safe logic",
                 "lang": "covenant",
                 "code": """\
 // @proxy_compatible disables the constructor and adds
@@ -1047,7 +1047,7 @@ record Vault {
 }"""
             },
             {
-                "label": "beacon.cov — single upgrade point",
+                "label": "beacon.cov: single upgrade point",
                 "lang": "covenant",
                 "code": """\
 record VaultBeacon {
@@ -1067,7 +1067,7 @@ record VaultBeacon {
 }"""
             },
             {
-                "label": "factory.cov — deploy many proxies",
+                "label": "factory.cov: deploy many proxies",
                 "lang": "covenant",
                 "code": """\
 record VaultFactory {
@@ -1098,22 +1098,22 @@ record VaultFactory {
         "notes": [
             ("<code>@proxy_compatible</code>", "adds a compile-time check that the implementation has no immutable constructor arguments and uses an initializer pattern."),
             ("<code>deploy_proxy(beacon)</code>", "deploys a minimal EIP-1967 proxy whose implementation slot points at the beacon's <code>get_implementation()</code> result."),
-            ("Atomic upgrade", "Calling <code>VaultBeacon.upgrade(newImpl)</code> immediately affects all proxies — they delegate to the new implementation on the next call."),
+            ("Atomic upgrade", "Calling <code>VaultBeacon.upgrade(newImpl)</code> immediately affects all proxies, they delegate to the new implementation on the next call."),
             ("Storage slots", "All proxies share the same storage layout as the implementation. Never change field order in an implementation upgrade."),
         ],
         "takeaways": [
             "Beacon proxy is ideal for protocols that deploy many identical contract instances (lending pools, vaults, subgraphs).",
-            "One upgrade transaction affects all instances — a huge operational advantage over per-proxy upgrades.",
+            "One upgrade transaction affects all instances, a huge operational advantage over per-proxy upgrades.",
             "Use <code>@proxy_compatible</code> to catch constructor-safety issues at compile time.",
         ],
     },
     {
         "num": 14, "slug": "oracle-integration",
         "title": "Oracle Integration",
-        "subtitle": "Chainlink price feeds — staleness checks and typed errors.",
+        "subtitle": "Chainlink price feeds: staleness checks and typed errors.",
         "section": "advanced",
         "intro": """\
-Price oracles are a primary attack surface in DeFi — stale prices, flash-loan
+Price oracles are a primary attack surface in DeFi, stale prices, flash-loan
 manipulation, and round-skipping have caused hundreds of millions in losses.
 This chapter shows how to consume Chainlink's <code>latestRoundData</code>
 correctly: checking freshness, validating sequencer uptime (for L2s), and
@@ -1166,7 +1166,7 @@ record PriceConsumer {
 }"""
             },
             {
-                "label": "lending.cov — oracle-gated borrow",
+                "label": "lending.cov: oracle-gated borrow",
                 "lang": "covenant",
                 "code": """\
 record SimpleLend {
@@ -1199,19 +1199,19 @@ record SimpleLend {
         "notes": [
             ("Staleness check", "Always validate <code>block.timestamp - updatedAt &lt;= maxStaleness</code>. A stale price is an open attack vector."),
             ("Round completeness", "<code>answeredInRound &gt;= roundId</code> confirms the round closed normally. An incomplete round may signal a paused feed."),
-            ("Negative price", "Chainlink <code>answer</code> is <code>int256</code> — a zero or negative value indicates a feed error. Always reject <code>answer &lt;= 0</code>."),
+            ("Negative price", "Chainlink <code>answer</code> is <code>int256</code>, a zero or negative value indicates a feed error. Always reject <code>answer &lt;= 0</code>."),
             ("L2 sequencer", "On L2s (Arbitrum, Optimism), also check the sequencer uptime feed before trusting prices."),
         ],
         "takeaways": [
             "Three checks are mandatory: staleness, positive price, round completeness.",
             "Use typed errors (<code>StalePrice</code>, <code>InvalidPrice</code>) so callers can programmatically handle each failure mode.",
-            "On L2s, add a sequencer uptime check — a down sequencer can expose stale L1 prices.",
+            "On L2s, add a sequencer uptime check: a down sequencer can expose stale L1 prices.",
         ],
     },
     {
         "num": 15, "slug": "deploy-to-sepolia",
         "title": "Deploy to Sepolia",
-        "subtitle": "Install, compile, deploy, verify — end-to-end in four commands.",
+        "subtitle": "Install, compile, deploy, verify, end-to-end in four commands.",
         "section": "advanced",
         "intro": """\
 This chapter walks through a complete deployment of a Covenant contract to the
@@ -1220,7 +1220,7 @@ Sepolia wallet, a Sepolia RPC endpoint (Alchemy or Infura), and an Etherscan
 API key for verification.""",
         "blocks": [
             {
-                "label": "Step 1 — install covenant-cli",
+                "label": "Step 1: install covenant-cli",
                 "lang": "bash",
                 "code": """\
 # Requires Rust 1.78+ (rustup.rs)
@@ -1231,7 +1231,7 @@ covenant --version
 # covenant-cli 0.7.0"""
             },
             {
-                "label": "counter.cov — contract to deploy",
+                "label": "counter.cov: contract to deploy",
                 "lang": "covenant",
                 "code": """\
 record Counter {
@@ -1252,18 +1252,18 @@ record Counter {
 }"""
             },
             {
-                "label": "Step 2 — compile to EVM bytecode",
+                "label": "Step 2: compile to EVM bytecode",
                 "lang": "bash",
                 "code": """\
 covenant build counter.cov --target-chain evm --out build/
 
 # Output:
-#   build/Counter.bin          — deployment bytecode
-#   build/Counter.abi.json     — ABI
+#   build/Counter.bin: deployment bytecode
+#   build/Counter.abi.json: ABI
 #   build/Counter.metadata.json"""
             },
             {
-                "label": "Step 3 — set environment variables",
+                "label": "Step 3: set environment variables",
                 "lang": "bash",
                 "code": """\
 export SEPOLIA_RPC="https://eth-sepolia.g.alchemy.com/v2/<YOUR_KEY>"
@@ -1271,7 +1271,7 @@ export PRIVATE_KEY="0x..."          # funded Sepolia wallet
 export ETHERSCAN_KEY="<YOUR_KEY>"   # from etherscan.io/myapikey"""
             },
             {
-                "label": "Step 4 — deploy",
+                "label": "Step 4: deploy",
                 "lang": "bash",
                 "code": """\
 covenant deploy build/Counter.bin \\
@@ -1287,7 +1287,7 @@ covenant deploy build/Counter.bin \\
 #   Contract address: 0x1234...56789"""
             },
             {
-                "label": "Step 5 — verify on Etherscan",
+                "label": "Step 5: verify on Etherscan",
                 "lang": "bash",
                 "code": """\
 covenant verify 0x1234...56789 \\
@@ -1301,7 +1301,7 @@ covenant verify 0x1234...56789 \\
 #   https://sepolia.etherscan.io/address/0x1234...56789#code"""
             },
             {
-                "label": "Step 6 — interact via CLI",
+                "label": "Step 6: interact via CLI",
                 "lang": "bash",
                 "code": """\
 # Call a view
@@ -1323,12 +1323,12 @@ covenant call 0x1234...56789 get \\
             ("<code>covenant build</code>", "compiles <code>.cov</code> source to EVM deployment bytecode and generates the ABI JSON."),
             ("<code>covenant deploy</code>", "sends the deployment transaction and waits for confirmation. Outputs the contract address."),
             ("<code>covenant verify</code>", "submits the source and compiler metadata to Etherscan's verification API."),
-            ("Gas", "Covenant bytecode is typically 10–30% smaller than equivalent Solidity due to IR-level optimizations. This translates to lower deployment gas."),
+            ("Gas", "Covenant bytecode is typically 10-30% smaller than equivalent Solidity due to IR-level optimizations. This translates to lower deployment gas."),
         ],
         "takeaways": [
             "Four commands: <code>cargo install covenant-cli</code>, <code>covenant build</code>, <code>covenant deploy</code>, <code>covenant verify</code>.",
             "The CLI handles RPC, signing, and block confirmation automatically.",
-            "Covenant metadata is embedded in the artifact — Etherscan verification requires no extra steps.",
+            "Covenant metadata is embedded in the artifact, Etherscan verification requires no extra steps.",
         ],
     },
 ]
@@ -1545,13 +1545,13 @@ CSS_CONTENT = """
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -1842,10 +1842,10 @@ def code_block_html(block):
     label = block["label"]
     lang  = block.get("lang", "covenant")
     code  = block["code"].strip()
-    # Escape for pre — JS highlighter will handle the rest
+    # Escape for pre: JS highlighter will handle the rest
     escaped = code.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     # We'll let JS do highlighting; store raw text, JS reads textContent
-    raw = code  # raw — JS highlighter escapes itself
+    raw = code  # raw: JS highlighter escapes itself
     return (
         f'<div class="code-wrap">'
         f'<div class="code-label">{label}</div>'
@@ -1995,7 +1995,7 @@ def render_chapter(ch):
         mock_banner = (
             '<div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);'
             'border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55">'
-            '<strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> '
+            '<strong>⚠️ Testnet-only: the cryptography is MOCKED.</strong> '
             'The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic '
             'stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" '
             'values are readable from chain state and the verifiers accept forged proofs. '
@@ -2041,7 +2041,7 @@ def render_chapter(ch):
 
 def render_index():
     canonical = "https://examples.covenant-lang.org/"
-    description = "Covenant By Example — 15 annotated chapters covering fundamentals, standards, and advanced patterns."
+    description = "Covenant By Example: 15 annotated chapters covering fundamentals, standards, and advanced patterns."
 
     head = f"""<head>
 <meta charset="UTF-8">
@@ -2079,9 +2079,9 @@ def render_index():
 
     # Build section grids
     section_defs = [
-        ("fundamentals", "Fundamentals", "Chapters 1–5", "Records, fields, actions, guards, and external calls — the language core."),
-        ("standards",    "Standards",    "Chapters 6–10", "ERC-20, FHE, encrypted tokens, post-quantum signatures, and ZK proofs."),
-        ("advanced",     "Advanced",     "Chapters 11–15", "Cryptographic amnesia, UUPS upgrades, beacon proxies, oracles, and deployment."),
+        ("fundamentals", "Fundamentals", "Chapters 1-5", "Records, fields, actions, guards, and external calls, the language core."),
+        ("standards",    "Standards",    "Chapters 6-10", "ERC-20, FHE, encrypted tokens, post-quantum signatures, and ZK proofs."),
+        ("advanced",     "Advanced",     "Chapters 11-15", "Cryptographic amnesia, UUPS upgrades, beacon proxies, oracles, and deployment."),
     ]
 
     sections_html = ""
@@ -2120,7 +2120,7 @@ def render_index():
     <h1 class="index-hero-title">Learn Covenant<br>through annotated code.</h1>
     <p class="index-hero-sub">
       15 chapters. From hello contract to encrypted tokens, post-quantum
-      signatures, and full deployment — with real code at every step.
+      signatures, and full deployment: with real code at every step.
     </p>
     <div class="index-hero-meta">
       <div class="index-hero-stat"><strong>15</strong>chapters</div>
@@ -2164,4 +2164,4 @@ if __name__ == "__main__":
             f.write(render_chapter(ch))
         print(f"Written: {path}")
 
-    print(f"\nDone — {1 + len(CHAPTERS)} HTML files in {OUT}")
+    print(f"\nDone: {1 + len(CHAPTERS)} HTML files in {OUT}")

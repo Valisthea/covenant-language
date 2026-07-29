@@ -688,7 +688,7 @@ fn synth_name(next_id: u32, name: &str, span: Span) -> covenant_ir::IrFunction {
 }
 
 // =========================================================================
-// Placeholder — allow dead_code for fields not yet exercised in V0.2 tests.
+// Placeholder: allow dead_code for fields not yet exercised in V0.2 tests.
 // =========================================================================
 #[allow(dead_code)]
 fn _unused(_: Value) {}

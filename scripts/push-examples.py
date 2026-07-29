@@ -69,7 +69,7 @@ def main():
     files = sorted(f for f in os.listdir(EXAMPLES_DIR) if f.endswith(".html"))
     print(f"\nFound {len(files)} HTML files to push to {REPO}/examples/\n")
 
-    commit_msg = "docs(examples): Covenant By Example — 15 chapters V0.7"
+    commit_msg = "docs(examples): Covenant By Example, 15 chapters V0.7"
 
     for filename in files:
         local_path = os.path.join(EXAMPLES_DIR, filename)
@@ -105,7 +105,7 @@ def main():
     # Inject before closing </urlset>
     sitemap_new_entries = "\n".join(new_urls)
     if "examples.covenant-lang.org" in current_sitemap:
-        print("  sitemap already contains examples entries — skipping update")
+        print("  sitemap already contains examples entries, skipping update")
     else:
         new_sitemap = current_sitemap.replace(
             "</urlset>",

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Post-Quantum Signatures · Covenant By Example</title>
-<meta name="description" content="pq_key, @pq_signed — Dilithium-5 authentication.">
+<meta name="description" content="pq_key, @pq_signed, Dilithium-5 authentication.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/09-post-quantum-signatures">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/09-post-quantum-signatures">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Post-Quantum Signatures · Covenant By Example">
-<meta property="og:description" content="pq_key, @pq_signed — Dilithium-5 authentication.">
+<meta property="og:description" content="pq_key, @pq_signed, Dilithium-5 authentication.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Post-Quantum Signatures · Covenant By Example">
-<meta name="twitter:description" content="pq_key, @pq_signed — Dilithium-5 authentication.">
+<meta name="twitter:description" content="pq_key, @pq_signed, Dilithium-5 authentication.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,14 +367,14 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge standards">Standards</span>
     <p class="chapter-eyebrow">Chapter 9 / 15</p>
     <h1 class="chapter-title">Post-Quantum Signatures</h1>
-    <p class="chapter-subtitle">pq_key, @pq_signed — Dilithium-5 authentication.</p>
+    <p class="chapter-subtitle">pq_key, @pq_signed, Dilithium-5 authentication.</p>
     <hr class="chapter-divider">
-    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
+    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only, the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
     <p class="prose">Classical ECDSA signatures are vulnerable to sufficiently large quantum computers.
 Covenant adds <code>pq_key&lt;Scheme&gt;</code> as a first-class storage type and
 <code>@pq_signed</code> as a decorator that verifies post-quantum signatures
 at function entry. The verification compiles to a STATICCALL into the chain's
-PQ precompile (<code>0x0400</code>–<code>0x0401</code>).</p>
+PQ precompile (<code>0x0400</code>-<code>0x0401</code>).</p>
     <div class="code-wrap"><div class="code-label">pq_vault.cov</div><pre class="code-block" data-lang="covenant">record PQVault {
     // Store a Dilithium-5 public key instead of an address
     pq_owner:  pq_key<Dilithium5>;
@@ -395,14 +395,14 @@ PQ precompile (<code>0x0400</code>–<code>0x0401</code>).</p>
         transfer(to, value);
     }
 
-    // Standard ECDSA deposit — anyone can fund
+    // Standard ECDSA deposit: anyone can fund
     action deposit() {
         self.balance += msg.value;
     }
 
     error InsufficientFunds(requested: amount, available: amount);
 }</pre></div>
-<div class="code-wrap"><div class="code-label">hybrid_auth.cov — ECDSA + PQ dual key</div><pre class="code-block" data-lang="covenant">record HybridWallet {
+<div class="code-wrap"><div class="code-label">hybrid_auth.cov, ECDSA + PQ dual key</div><pre class="code-block" data-lang="covenant">record HybridWallet {
     // Both keys must sign for high-value ops
     classical_owner: address;
     pq_owner:        pq_key<Dilithium5>;
@@ -431,11 +431,11 @@ PQ precompile (<code>0x0400</code>–<code>0x0401</code>).</p>
 <tr><td><code>pq_key&lt;Dilithium5&gt;</code></td><td>stores a Dilithium-5 public key (NIST FIPS 204 Level 5). The key is stored as <code>bytes</code> in EVM storage.</td></tr>
 <tr><td><code>@pq_signed(key)</code></td><td>prepends a STATICCALL to precompile <code>0x0400</code> that verifies the signature over the canonical message <code>keccak256(address ++ nonce ++ selector ++ calldata)</code>.</td></tr>
 <tr><td>Supported schemes</td><td><code>Dilithium3</code> (NIST Level 3), <code>Dilithium5</code> (NIST Level 5), <code>Falcon512</code>, <code>Falcon1024</code>. Chain support varies.</td></tr>
-<tr><td>Nonce</td><td>is automatically incremented by the PQ precompile to prevent replay attacks — you don't manage it manually.</td></tr>
+<tr><td>Nonce</td><td>is automatically incremented by the PQ precompile to prevent replay attacks, you don't manage it manually.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>PQ signatures are a zero-cost abstraction — the compiler emits a precompile call, not a Rust/Solidity verifier.</li>
-<li>Hybrid wallets (classical + PQ) are the recommended migration path — quantum resistance without breaking existing tooling.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>PQ signatures are a zero-cost abstraction, the compiler emits a precompile call, not a Rust/Solidity verifier.</li>
+<li>Hybrid wallets (classical + PQ) are the recommended migration path, quantum resistance without breaking existing tooling.</li>
 <li>Covenant's PQ support is chain-dependent; check your target chain's precompile registry.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="08-encrypted-token"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Encrypted Token (ERC-8227)</span></a><a class="chapter-nav-btn next" href="10-zero-knowledge-proofs"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Zero-Knowledge Proofs</span></a></nav>
   </main>

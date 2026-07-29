@@ -1,4 +1,4 @@
-//! F04 regression — non-anonymous event with >3 `indexed` params.
+//! F04 regression: non-anonymous event with >3 `indexed` params.
 //!
 //! Such an event compiled clean but `emit` lowered to an unconditional REVERT
 //! (no LOG5 opcode exists) and the ABI advertised >3 indexed fields, which no

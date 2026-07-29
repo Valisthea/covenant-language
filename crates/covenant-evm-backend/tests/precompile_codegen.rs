@@ -1,4 +1,4 @@
-//! KSR-CVN-013 + KSR-CVN-014 regression tests — hardened precompile STATICCALL.
+//! KSR-CVN-013 + KSR-CVN-014 regression tests, hardened precompile STATICCALL.
 //!
 //! Verifies that every precompile call sequence emitted by the EVM backend:
 //!   - does NOT discard the STATICCALL success flag (fails closed, not open);
@@ -36,7 +36,7 @@ const OP_POP: u8 = 0x50;
 const OP_MSTORE: u8 = 0x52;
 const OP_PUSH0: u8 = 0x5f;
 
-/// Confidential token fixture — `confidential token` synthesises FHE actions
+/// Confidential token fixture: `confidential token` synthesises FHE actions
 /// (transferEncrypted, approveEncrypted) that route through emit_precompile_call
 /// at runtime, plus a genesis-mint STATICCALL in the constructor.
 const CONFIDENTIAL_TOKEN: &str =
@@ -89,21 +89,21 @@ fn assert_all_staticcalls_are_hardened(code: &[u8], label: &str) -> usize {
             window.first().copied().unwrap_or(0),
             OP_POP,
             "{label} STATICCALL at 0x{off:x}: success flag is immediately POP'd \
-             (KSR-CVN-013 regression — discarding success flag)"
+             (KSR-CVN-013 regression: discarding success flag)"
         );
 
         // KSR-CVN-013: ISZERO + JUMPI must appear in the window (success check).
         assert!(
             window.contains(&OP_ISZERO) && window.contains(&OP_JUMPI),
             "{label} STATICCALL at 0x{off:x}: no ISZERO/JUMPI after call \
-             (KSR-CVN-013 — success flag not routed to revert)"
+             (KSR-CVN-013: success flag not routed to revert)"
         );
 
         // KSR-CVN-014: RETURNDATASIZE must appear in the window.
         assert!(
             window.contains(&OP_RETURNDATASIZE),
             "{label} STATICCALL at 0x{off:x}: no RETURNDATASIZE check \
-             (KSR-CVN-014 — stale-memory forgery primitive reachable)"
+             (KSR-CVN-014: stale-memory forgery primitive reachable)"
         );
     }
     sites.len()
@@ -147,7 +147,7 @@ fn constructor_genesis_mint_staticcall_is_hardened() {
 
 #[test]
 fn return_slot_is_zeroed_before_runtime_staticcall() {
-    // The hardened emit_precompile_call begins with PUSH0; PUSH0; MSTORE —
+    // The hardened emit_precompile_call begins with PUSH0; PUSH0; MSTORE,
     // writing zero to mem[0x00] so a stale value cannot be MLOAD'd as the
     // "verified" result if the precompile returns empty data.
     let (_deploy, runtime) = compile(CONFIDENTIAL_TOKEN);
@@ -180,7 +180,7 @@ fn no_staticcall_followed_immediately_by_pop() {
             let next = code.get(off + 1).copied().unwrap_or(0);
             assert_ne!(
                 next, OP_POP,
-                "{name} STATICCALL at 0x{off:x} is immediately followed by POP — \
+                "{name} STATICCALL at 0x{off:x} is immediately followed by POP, \
                  success flag is being discarded (KSR-CVN-013)"
             );
         }
@@ -193,7 +193,7 @@ fn no_staticcall_followed_immediately_by_pop() {
 fn returndatasize_is_compared_before_mload() {
     // The hardened emitter pushes the expected size (32) after RETURNDATASIZE
     // and uses EQ → ISZERO → JUMPI. Confirm at least one EQ exists somewhere
-    // following a RETURNDATASIZE (loose check — rules out "read but ignore").
+    // following a RETURNDATASIZE (loose check: rules out "read but ignore").
     let (_deploy, runtime) = compile(CONFIDENTIAL_TOKEN);
     // Find first RETURNDATASIZE, then scan ahead for EQ or ISZERO within 16 bytes.
     let mut idx = 0;
@@ -218,7 +218,7 @@ fn returndatasize_is_compared_before_mload() {
     }
     assert!(
         found_any,
-        "RETURNDATASIZE must be compared (EQ or ISZERO) within 16 bytes — \
+        "RETURNDATASIZE must be compared (EQ or ISZERO) within 16 bytes, \
          otherwise the read value is discarded and KSR-CVN-014 still applies"
     );
 }

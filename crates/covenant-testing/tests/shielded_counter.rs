@@ -2,7 +2,7 @@
 //!
 //! ShieldedCounter stores a `ciphertext<amount>` and exposes `bump(by)` +
 //! `reveal total to owner`. `bump` must go through the FHE `add` precompile
-//! rather than a plain ADD opcode — we verify that by watching the mock
+//! rather than a plain ADD opcode: we verify that by watching the mock
 //! precompile state for handle minting.
 
 use covenant_testing::{CovenantTestHarness, U256};

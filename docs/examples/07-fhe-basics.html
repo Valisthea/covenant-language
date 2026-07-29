@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FHE Basics · Covenant By Example</title>
-<meta name="description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.">
+<meta name="description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul, computing on encrypted state.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/07-fhe-basics">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/07-fhe-basics">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="FHE Basics · Covenant By Example">
-<meta property="og:description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.">
+<meta property="og:description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul, computing on encrypted state.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="FHE Basics · Covenant By Example">
-<meta name="twitter:description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.">
+<meta name="twitter:description" content="encrypted&lt;T&gt;, fhe_add, fhe_mul, computing on encrypted state.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,14 +367,14 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge standards">Standards</span>
     <p class="chapter-eyebrow">Chapter 7 / 15</p>
     <h1 class="chapter-title">FHE Basics</h1>
-    <p class="chapter-subtitle">encrypted&lt;T&gt;, fhe_add, fhe_mul — computing on encrypted state.</p>
+    <p class="chapter-subtitle">encrypted&lt;T&gt;, fhe_add, fhe_mul, computing on encrypted state.</p>
     <hr class="chapter-divider">
-    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only — the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
+    <div style="border:1px solid #EF4444;background:rgba(239,68,68,0.08);border-radius:8px;padding:14px 16px;margin:20px 0;font-size:14px;line-height:1.55"><strong>⚠️ Testnet-only, the cryptography is MOCKED.</strong> The FHE / post-quantum / ZK / amnesia primitives shown here are deterministic stubs with <strong>zero confidentiality and zero security</strong>: "encrypted" values are readable from chain state and the verifiers accept forged proofs. This tutorial teaches the <em>language surface</em>; real cryptography is a separate, later release. See <a href="https://github.com/Valisthea/covenant-language/blob/main/STATUS.md">STATUS.md</a>.</div>
     <p class="prose">Covenant's FHE type system lets you write contracts where state is never
 decrypted on-chain. The <code>encrypted&lt;T&gt;</code> type annotates a field
 or variable as ciphertext. Operations (<code>fhe_add</code>, <code>fhe_mul</code>)
 compile to <code>STATICCALL</code> instructions targeting chain precompile addresses
-— the actual FHE implementation lives in the chain's precompile layer, not in
+: the actual FHE implementation lives in the chain's precompile layer, not in
 Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).</p>
     <div class="code-wrap"><div class="code-label">private_counter.cov</div><pre class="code-block" data-lang="covenant">record PrivateCounter {
     count: encrypted<u64>;
@@ -390,12 +390,12 @@ Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).</p>
         self.count = fhe_add(self.count, n);
     }
 
-    // Reveal the decrypted value — only owner can call
+    // Reveal the decrypted value: only owner can call
     view read_count() -> u64 only(self.owner) {
         return decrypt(self.count);
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">encrypted_voting.cov — private ballot tally</div><pre class="code-block" data-lang="covenant">record PrivateBallot {
+<div class="code-wrap"><div class="code-label">encrypted_voting.cov, private ballot tally</div><pre class="code-block" data-lang="covenant">record PrivateBallot {
     yes_votes: encrypted<u64>;
     no_votes:  encrypted<u64>;
     end_time:  time;
@@ -414,7 +414,7 @@ Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).</p>
         }
         self.voted[msg.sender] = true;
 
-        // Homomorphic addition — tally stays encrypted
+        // Homomorphic addition: tally stays encrypted
         self.yes_votes = fhe_add(self.yes_votes, choice);
         self.no_votes  = fhe_add(
             self.no_votes,
@@ -422,7 +422,7 @@ Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).</p>
         );
     }
 
-    // Owner tallies after vote ends — decrypts locally
+    // Owner tallies after vote ends: decrypts locally
     view tally() -> (u64, u64)
         only(self.owner)
         when(block.timestamp >= self.end_time)
@@ -433,16 +433,16 @@ Covenant. Covenant is fully scheme-agnostic (TFHE, BGV, CKKS, …).</p>
     
 <p class="takeaways-heading" style="margin-top:44px">Annotations</p>
 <table class="notes-table">
-<tr><td><code>encrypted&lt;T&gt;</code></td><td>is a first-class type. You cannot accidentally pass it to a function expecting <code>T</code> — the compiler rejects the type mismatch.</td></tr>
-<tr><td><code>fhe_add</code> / <code>fhe_mul</code></td><td>compile to <code>STATICCALL</code> targeting addresses <code>0x0300</code>–<code>0x0308</code>. The chain's precompile determines the underlying FHE scheme.</td></tr>
+<tr><td><code>encrypted&lt;T&gt;</code></td><td>is a first-class type. You cannot accidentally pass it to a function expecting <code>T</code>, the compiler rejects the type mismatch.</td></tr>
+<tr><td><code>fhe_add</code> / <code>fhe_mul</code></td><td>compile to <code>STATICCALL</code> targeting addresses <code>0x0300</code>-<code>0x0308</code>. The chain's precompile determines the underlying FHE scheme.</td></tr>
 <tr><td><code>encrypted(v)</code></td><td>wraps a plaintext value as a client-side ciphertext before sending to the contract.</td></tr>
-<tr><td><code>decrypt(c)</code></td><td>calls the decryption precompile. Only the keyholder can obtain the plaintext — on chains with threshold decryption, this requires a quorum.</td></tr>
+<tr><td><code>decrypt(c)</code></td><td>calls the decryption precompile. Only the keyholder can obtain the plaintext, on chains with threshold decryption, this requires a quorum.</td></tr>
 <tr><td>Scheme agnosticism</td><td>Covenant emits the same bytecode regardless of whether the chain uses TFHE, BGV, or CKKS. See <code>LICENSE_CLARIFICATION.md</code>.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li><code>encrypted&lt;T&gt;</code> fields are stored as ciphertext on-chain — observers see only the encryption, not the value.</li>
-<li>FHE arithmetic is exact for integers (TFHE) and approximate for fixed-point (CKKS) — choose based on chain support.</li>
-<li>Covenant never imports any FHE library — the chain's precompile layer handles all crypto.</li></ul>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li><code>encrypted&lt;T&gt;</code> fields are stored as ciphertext on-chain, observers see only the encryption, not the value.</li>
+<li>FHE arithmetic is exact for integers (TFHE) and approximate for fixed-point (CKKS): choose based on chain support.</li>
+<li>Covenant never imports any FHE library: the chain's precompile layer handles all crypto.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="06-erc20-token"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">ERC-20 Token</span></a><a class="chapter-nav-btn next" href="08-encrypted-token"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Encrypted Token (ERC-8227)</span></a></nav>
   </main>
 </div>

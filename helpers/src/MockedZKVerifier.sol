@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * ⚠ V0.9 PLACEHOLDER — NOT FOR PRODUCTION SECRETS ⚠
+ * ⚠ V0.9 PLACEHOLDER: NOT FOR PRODUCTION SECRETS ⚠
  *
  * This contract implements the Covenant V0.9 ZK helper interface
  * with MOCKED logic for `verify` and `proofAggregate`. The

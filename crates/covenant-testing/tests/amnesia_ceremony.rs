@@ -111,7 +111,7 @@ fn ceremony_initial_session_id_is_zero() {
 fn ceremony_setup_returns_session_id_and_sets_phase_one() {
     let (mut h, c) = setup();
     let result = h.call_ok(c, h.addrs.deployer, "setup()", &[]);
-    // Return value is the session_id — must be non-zero (amnesia_nonce starts at 1).
+    // Return value is the session_id: must be non-zero (amnesia_nonce starts at 1).
     let sid = covenant_testing::abi::decode_u256(&result);
     assert!(
         sid > U256::ZERO,
@@ -147,7 +147,7 @@ fn ceremony_submit_share_returns_true() {
     let (mut h, c) = setup();
     let _ = h.call_ok(c, h.addrs.deployer, "setup()", &[]);
 
-    // Share is a bytes32 — use a deterministic test value.
+    // Share is a bytes32: use a deterministic test value.
     let share_word = U256::from_u64(0xdeadbeef);
     let result = h.call_ok(c, h.addrs.alice, "submit_share(bytes32)", &[share_word]);
     // Mock precompile always returns true (bool_word(true)).
@@ -345,7 +345,7 @@ fn ceremony_setup_rejects_non_deployer_caller_ksr_cvn_001() {
 
 #[test]
 fn ceremony_second_setup_reverts_ksr_cvn_001() {
-    // Once phase > 0, setup() must revert — otherwise an attacker could
+    // Once phase > 0, setup() must revert: otherwise an attacker could
     // rotate session_id under a live ceremony.
     let (mut h, c) = setup();
     let _ = h.call_ok(c, h.addrs.deployer, "setup()", &[]);
@@ -359,7 +359,7 @@ fn ceremony_second_setup_reverts_ksr_cvn_001() {
 #[test]
 fn ceremony_finalize_before_setup_reverts_ksr_cvn_001() {
     let (mut h, c) = setup();
-    // No setup() yet — phase is 0. finalize requires phase == 1.
+    // No setup() yet: phase is 0. finalize requires phase == 1.
     let result = h.call(c, h.addrs.deployer, "finalize()", &[]);
     assert!(
         result.is_revert(),
@@ -371,7 +371,7 @@ fn ceremony_finalize_before_setup_reverts_ksr_cvn_001() {
 fn ceremony_destroy_before_finalize_reverts_ksr_cvn_001() {
     let (mut h, c) = setup();
     let _ = h.call_ok(c, h.addrs.deployer, "setup()", &[]);
-    // Phase is 1, not 2 — destroy must revert.
+    // Phase is 1, not 2: destroy must revert.
     let result = h.call(c, h.addrs.deployer, "destroy()", &[]);
     assert!(
         result.is_revert(),
@@ -386,7 +386,7 @@ fn ceremony_double_destroy_reverts_ksr_cvn_001() {
     submit_threshold_shares(&mut h, c);
     let _ = h.call_ok(c, h.addrs.deployer, "finalize()", &[]);
     let _ = h.call_ok(c, h.addrs.deployer, "destroy()", &[]);
-    // Second destroy must fail — phase is now 3, not 2.
+    // Second destroy must fail: phase is now 3, not 2.
     let result = h.call(c, h.addrs.deployer, "destroy()", &[]);
     assert!(
         result.is_revert(),
@@ -396,7 +396,7 @@ fn ceremony_double_destroy_reverts_ksr_cvn_001() {
 
 #[test]
 fn ceremony_submit_share_requires_active_phase_ksr_cvn_001() {
-    // Before setup, phase = 0 — submit_share must revert.
+    // Before setup, phase = 0: submit_share must revert.
     let (mut h, c) = setup();
     let result_before = h.call(
         c,
@@ -409,7 +409,7 @@ fn ceremony_submit_share_requires_active_phase_ksr_cvn_001() {
         "submit_share() must revert before setup (phase 0)"
     );
 
-    // After finalize, phase = 2 — submit_share must revert.
+    // After finalize, phase = 2: submit_share must revert.
     let _ = h.call_ok(c, h.addrs.deployer, "setup()", &[]);
     submit_threshold_shares(&mut h, c);
     let _ = h.call_ok(c, h.addrs.deployer, "finalize()", &[]);

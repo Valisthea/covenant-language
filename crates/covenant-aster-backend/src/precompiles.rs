@@ -6,7 +6,7 @@ use crate::{diagnostics::AsterDiagnostic, lowering::AsterIr};
 
 /// Reserved precompile addresses for Aster-native cryptographic primitives.
 pub mod addresses {
-    // FHE operations (0x0300–0x0308)
+    // FHE operations (0x0300-0x0308)
     pub const FHE_ADD: u64 = 0x0300;
     pub const FHE_MUL: u64 = 0x0301;
     pub const FHE_CMP_EQ: u64 = 0x0302;
@@ -17,11 +17,11 @@ pub mod addresses {
     pub const FHE_DECRYPT: u64 = 0x0307;
     pub const FHE_BOOTSTRAP: u64 = 0x0308;
 
-    // Post-quantum primitives (0x0400–0x0401)
+    // Post-quantum primitives (0x0400-0x0401)
     pub const DILITHIUM_VERIFY: u64 = 0x0400;
     pub const PQ_RAND: u64 = 0x0401;
 
-    // ZK verification (0x0500–0x0501)
+    // ZK verification (0x0500-0x0501)
     pub const ZK_VERIFY_NOVA: u64 = 0x0500;
     pub const ZK_VERIFY_HALO2: u64 = 0x0501;
 }

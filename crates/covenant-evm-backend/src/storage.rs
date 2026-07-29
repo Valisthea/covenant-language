@@ -199,7 +199,7 @@ pub fn slot_bytes(slot: u32) -> [u8; 32] {
 /// Map a field name → its assigned slot number. Used by codegen to know which
 /// slot to SLOAD/SSTORE for a given `GlobalId`.
 ///
-/// KSR-CVN-021: honors `@slot(N)` annotations — explicit slots are returned
+/// KSR-CVN-021: honors `@slot(N)` annotations: explicit slots are returned
 /// as-is, and do not consume a position in the sequential counter.
 pub fn slot_for_global(module: &IrModule, id: covenant_ir::GlobalId) -> u32 {
     let mut current = 0u32;
@@ -224,7 +224,7 @@ pub fn detect_slot_collisions(module: &IrModule) -> Vec<(Box<str>, Box<str>, u32
     for field in &module.fields {
         let slot = field.explicit_slot.unwrap_or(current);
         // KSR-CVN-042 (V0.9.2): an explicit `@slot(N)` that lands on a reserved
-        // slot silently clobbers compiler-managed state — DEPLOYER_SLOT backs
+        // slot silently clobbers compiler-managed state, DEPLOYER_SLOT backs
         // `only deployer` auth and REENTRANT_LOCK_SLOT backs `@non_reentrant`.
         // Flag it through the same E423 path so the contract can't be built
         // with a hijacked deployer-auth or disabled reentrancy guard.

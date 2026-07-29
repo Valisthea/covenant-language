@@ -2,7 +2,7 @@
 //!
 //! Every public function's entry block must begin with a sequence that copies
 //! each static-ABI parameter from its calldata offset into its SSA memory
-//! slot. Without this prelude, the IR body reads parameters as zero — the
+//! slot. Without this prelude, the IR body reads parameters as zero, the
 //! bug that defeated `approve / allowance` round-tripping in Phase 10.
 
 use covenant_diag::SourceId;
@@ -110,11 +110,11 @@ fn coin_runtime_contains_param_loads() {
     let code = coin_runtime();
     let copies = find_param_copies(&code);
     // Synthesized functions with params:
-    //   transfer(address,uint256)            — 2 params
-    //   transferFrom(address,address,uint256) — 3 params
-    //   approve(address,uint256)             — 2 params
-    //   allowance(address,address)           — 2 params
-    //   balanceOf(address)                   — 1 param
+    //   transfer(address,uint256): 2 params
+    //   transferFrom(address,address,uint256): 3 params
+    //   approve(address,uint256): 2 params
+    //   allowance(address,address): 2 params
+    //   balanceOf(address): 1 param
     // Total static params = 2+3+2+2+1 = 10.
     assert!(
         copies.len() >= 10,

@@ -3,7 +3,7 @@
 //! ## Concurrency model
 //!
 //! `wasm-bindgen` runs JS-callable Rust on a single thread (main thread
-//! or a worker — the playground stays on main for now). We use a
+//! or a worker: the playground stays on main for now). We use a
 //! `thread_local` `RefCell<Chain>` to back the global chain instance.
 //! Because every JS call into WASM is fully synchronous from the
 //! browser's perspective, the `RefCell` borrow can never overlap with
@@ -19,10 +19,10 @@
 //!    safer and faster than wasm-bindgen marshalling 4-5 separate
 //!    string params.
 //! 2. Future fields (eg. `gas_limit`, `access_list`) can be added
-//!    without changing the bindings ABI — just extend the JSON shape.
+//!    without changing the bindings ABI: just extend the JSON shape.
 //!
 //! Returns are JS objects produced via `serde_wasm_bindgen::to_value`
-//! over the strongly-typed `chain::TxReceipt` / `Account` / etc. — no
+//! over the strongly-typed `chain::TxReceipt` / `Account` / etc., no
 //! second JSON.parse round-trip on the JS side.
 //!
 //! All JS-callable code is gated to `cfg(target_arch = "wasm32")` (in
@@ -38,7 +38,7 @@ use wasm_bindgen::prelude::*;
 thread_local! {
     /// Process-wide chain singleton. Initialized lazily on first access.
     /// `with_prefunded_accounts` so the playground's first `Deploy`
-    /// click "just works" — no `chain_init` ceremony needed.
+    /// click "just works": no `chain_init` ceremony needed.
     static CHAIN: RefCell<Chain> = RefCell::new(Chain::with_prefunded_accounts());
 }
 
@@ -61,7 +61,7 @@ struct CallArgs {
     value_wei_hex: Option<String>,
 }
 
-/// Slim view of the chain emitted by `chain_get_state` — the playground's
+/// Slim view of the chain emitted by `chain_get_state`: the playground's
 /// status bar consumes this on every refresh.
 #[derive(Serialize)]
 struct ChainStateView {
@@ -112,7 +112,7 @@ pub fn chain_init() {
 }
 
 /// Alias for `chain_init`. The playground's UI uses "Reset", the
-/// underlying op is identical — having both names lets the JS side
+/// underlying op is identical: having both names lets the JS side
 /// pick whichever reads better at the call site.
 #[wasm_bindgen]
 pub fn chain_reset() {
@@ -236,7 +236,7 @@ pub fn chain_mine_blocks(count: u64) {
 }
 
 /// Block number, timestamp, contract count, account count, tx count.
-/// Sized for the playground's status bar — refresh on every UI tick.
+/// Sized for the playground's status bar: refresh on every UI tick.
 #[wasm_bindgen]
 pub fn chain_get_state() -> JsValue {
     CHAIN.with(|c| {
@@ -309,7 +309,7 @@ fn parse_hex(s: &str) -> Result<Vec<u8>, String> {
     // KSR-CVN-PRELIM-003 (Sprint 26 audit): reject odd-length input
     // explicitly. The pre-fix behavior left-padded with `0` silently,
     // turning e.g. `"0xa9059cb"` (one char short of an ERC-20 transfer
-    // selector) into bytes `[0x0a, 0x90, 0x59, 0xcb]` — an entirely
+    // selector) into bytes `[0x0a, 0x90, 0x59, 0xcb]`: an entirely
     // different selector. EIP-1474 § JSON-RPC requires even-length
     // hex; we now match that.
     if trimmed.len() % 2 == 1 {
@@ -340,12 +340,12 @@ fn error_value(message: String) -> JsValue {
     serde_wasm_bindgen::to_value(&err).unwrap_or(JsValue::NULL)
 }
 
-// ─── Input validators (KSR-CVN-PRELIM-006 — Sprint 26 audit) ─────────
+// ─── Input validators (KSR-CVN-PRELIM-006: Sprint 26 audit) ─────────
 //
 // Defense-in-depth: every chain_* entry point validates its parsed
 // arg shape *before* doing any chain work. Pre-fix, we relied on
 // downstream parsers (Address::from_hex, parse_hex) to reject
-// malformed input — which they did, but with errors surfaced from
+// malformed input: which they did, but with errors surfaced from
 // deep in the call stack with less actionable messages. The helpers
 // below are pure functions so they're safe to unit-test natively.
 
@@ -431,7 +431,7 @@ mod tests {
     #[test]
     fn parse_hex_rejects_odd_length_no_silent_pad() {
         // The pre-Sprint-26 behavior silently produced [0x0a, 0x90, 0x59, 0xcb]
-        // — an entirely different selector from the user's `a9059cb` typo.
+        //: an entirely different selector from the user's `a9059cb` typo.
         let r = parse_hex("0xa9059cb");
         assert!(r.is_err(), "odd-length hex must be rejected, got {r:?}");
         let msg = r.unwrap_err();

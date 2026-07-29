@@ -2,11 +2,11 @@
 //!
 //! Sprint 23 split this crate in two:
 //!
-//! * **`covenant-evm-runtime`** — the interpreter, ABI helpers, U256,
+//! * **`covenant-evm-runtime`**: the interpreter, ABI helpers, U256,
 //!   Address, and precompile mocks. Reused by the playground's
 //!   `covenant-wasm-bindings` (browser MockChain), this crate (test
 //!   harness), and any future `covenant simulate` style tool.
-//! * **this crate** — the `harness` module, which provides the
+//! * **this crate**: the `harness` module, which provides the
 //!   compile→deploy→call facade `CovenantTestHarness` consumed by the
 //!   13 integration tests in `tests/`.
 //!

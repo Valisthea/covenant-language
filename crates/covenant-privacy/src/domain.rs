@@ -11,7 +11,7 @@ use covenant_types::Ty;
 pub enum PrivacyDomain {
     /// Observable on-chain as plaintext.
     Plaintext,
-    /// Observable only as ciphertext — requires threshold decryption or a
+    /// Observable only as ciphertext: requires threshold decryption or a
     /// zero-knowledge proof to see the underlying value.
     Encrypted,
     /// Domain could not be determined (type was `Unknown`). Treated as
@@ -21,8 +21,8 @@ pub enum PrivacyDomain {
 
 /// Map a type to its privacy domain.
 ///
-/// Composite types (`List<T>`, `Map<K, V>`) are structurally Plaintext — the
-/// shape is public — but element access rederives the domain of the element
+/// Composite types (`List<T>`, `Map<K, V>`) are structurally Plaintext, the
+/// shape is public: but element access rederives the domain of the element
 /// type. The analyzer records domains per expression span, so `xs[i]` ends up
 /// Encrypted even though the `xs` expression itself is Plaintext.
 pub fn domain_of(ty: &Ty) -> PrivacyDomain {
@@ -40,7 +40,7 @@ pub enum FlowContext {
     /// Ordinary statement flow.
     Normal,
     /// Inside the then-branch of `encrypted_when { ... }`. Side effects here
-    /// leak one bit — the fact that the encrypted condition was true.
+    /// leak one bit: the fact that the encrypted condition was true.
     EncryptedThen,
     /// Inside the otherwise-branch. Same leak profile as `EncryptedThen`.
     EncryptedOtherwise,

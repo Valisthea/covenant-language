@@ -1,7 +1,7 @@
 //! Single-pass privacy flow analyzer.
 //!
 //! See Doc 8 §3.1 (P1) and §4.2 (informal soundness argument). This file is
-//! the executable realization of the informal proof's Steps 2–4.
+//! the executable realization of the informal proof's Steps 2-4.
 
 use covenant_diag::{Diagnostic, Span};
 use covenant_parser::ast::{
@@ -297,7 +297,7 @@ impl Analyzer {
     }
 
     // -------------------------------------------------------------------
-    // Statement walker — where the bulk of the flow rules live
+    // Statement walker: where the bulk of the flow rules live
     // -------------------------------------------------------------------
 
     fn walk_stmt(&mut self, s: &Stmt) {
@@ -477,7 +477,7 @@ impl Analyzer {
     }
 
     // -------------------------------------------------------------------
-    // Expression walker — records domains and checks per-expression rules.
+    // Expression walker: records domains and checks per-expression rules.
     // -------------------------------------------------------------------
 
     fn walk_expr(&mut self, e: &Expr) {

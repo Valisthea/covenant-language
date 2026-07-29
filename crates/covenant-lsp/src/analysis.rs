@@ -1,6 +1,6 @@
 //! Pure analysis helpers: span/position conversion, diagnostic mapping, hover, and symbol extraction.
 //!
-//! All functions here are synchronous and dependency-free w.r.t. the LSP runtime — they
+//! All functions here are synchronous and dependency-free w.r.t. the LSP runtime, they
 //! accept source text and AST nodes and return LSP-typed values, making them trivially testable.
 
 use covenant_diag::{DiagnosticLevel, SourceId};
@@ -437,9 +437,9 @@ impl DefinitionTarget {
 ///   - error references in `revert_with Foo(...)` → error declaration
 ///
 /// Limitations (deferred to V1.0) :
-///   - local variables (action params, `let` bindings) — return None
-///   - cross-file imports — single-file V0.9 has no imports
-///   - scope-aware shadowing — V0.9 grammar disallows shadowing anyway
+///   - local variables (action params, `let` bindings): return None
+///   - cross-file imports: single-file V0.9 has no imports
+///   - scope-aware shadowing: V0.9 grammar disallows shadowing anyway
 ///
 /// Returns `None` when :
 ///   - The cursor is not on an identifier
@@ -501,7 +501,7 @@ fn identifier_at(source: &str, offset: usize) -> Option<String> {
     while end < bytes.len() && is_id_char(bytes[end]) {
         end += 1;
     }
-    // Identifiers can't start with a digit — if so, this is a numeric
+    // Identifiers can't start with a digit: if so, this is a numeric
     // literal, not an identifier.
     if bytes[start].is_ascii_digit() {
         return None;
@@ -649,7 +649,7 @@ mod tests {
         assert_eq!(identifier_at(src, 5).as_deref(), Some("hello_world"));
         // On the `+` → None
         assert_eq!(identifier_at(src, 14).as_deref(), None);
-        // On a digit-leading "literal" — not a valid identifier
+        // On a digit-leading "literal": not a valid identifier
         assert_eq!(identifier_at("42abc", 0), None);
     }
 

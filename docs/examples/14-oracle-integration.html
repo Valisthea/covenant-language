@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Oracle Integration · Covenant By Example</title>
-<meta name="description" content="Chainlink price feeds — staleness checks and typed errors.">
+<meta name="description" content="Chainlink price feeds, staleness checks and typed errors.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/14-oracle-integration">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/14-oracle-integration">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Oracle Integration · Covenant By Example">
-<meta property="og:description" content="Chainlink price feeds — staleness checks and typed errors.">
+<meta property="og:description" content="Chainlink price feeds, staleness checks and typed errors.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Oracle Integration · Covenant By Example">
-<meta name="twitter:description" content="Chainlink price feeds — staleness checks and typed errors.">
+<meta name="twitter:description" content="Chainlink price feeds, staleness checks and typed errors.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,10 +367,10 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge advanced">Advanced</span>
     <p class="chapter-eyebrow">Chapter 14 / 15</p>
     <h1 class="chapter-title">Oracle Integration</h1>
-    <p class="chapter-subtitle">Chainlink price feeds — staleness checks and typed errors.</p>
+    <p class="chapter-subtitle">Chainlink price feeds, staleness checks and typed errors.</p>
     <hr class="chapter-divider">
     
-    <p class="prose">Price oracles are a primary attack surface in DeFi — stale prices, flash-loan
+    <p class="prose">Price oracles are a primary attack surface in DeFi, stale prices, flash-loan
 manipulation, and round-skipping have caused hundreds of millions in losses.
 This chapter shows how to consume Chainlink's <code>latestRoundData</code>
 correctly: checking freshness, validating sequencer uptime (for L2s), and
@@ -416,7 +416,7 @@ record PriceConsumer {
         return answer;
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">lending.cov — oracle-gated borrow</div><pre class="code-block" data-lang="covenant">record SimpleLend {
+<div class="code-wrap"><div class="code-label">lending.cov, oracle-gated borrow</div><pre class="code-block" data-lang="covenant">record SimpleLend {
     price_consumer: address;
     collateral:     map(address => amount);
     borrowed:       map(address => u256);
@@ -446,13 +446,13 @@ record PriceConsumer {
 <table class="notes-table">
 <tr><td>Staleness check</td><td>Always validate <code>block.timestamp - updatedAt &lt;= maxStaleness</code>. A stale price is an open attack vector.</td></tr>
 <tr><td>Round completeness</td><td><code>answeredInRound &gt;= roundId</code> confirms the round closed normally. An incomplete round may signal a paused feed.</td></tr>
-<tr><td>Negative price</td><td>Chainlink <code>answer</code> is <code>int256</code> — a zero or negative value indicates a feed error. Always reject <code>answer &lt;= 0</code>.</td></tr>
+<tr><td>Negative price</td><td>Chainlink <code>answer</code> is <code>int256</code>, a zero or negative value indicates a feed error. Always reject <code>answer &lt;= 0</code>.</td></tr>
 <tr><td>L2 sequencer</td><td>On L2s (Arbitrum, Optimism), also check the sequencer uptime feed before trusting prices.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Three checks are mandatory: staleness, positive price, round completeness.</li>
 <li>Use typed errors (<code>StalePrice</code>, <code>InvalidPrice</code>) so callers can programmatically handle each failure mode.</li>
-<li>On L2s, add a sequencer uptime check — a down sequencer can expose stale L1 prices.</li></ul>
+<li>On L2s, add a sequencer uptime check: a down sequencer can expose stale L1 prices.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="13-beacon-proxy"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Beacon Proxy Pattern</span></a><a class="chapter-nav-btn next" href="15-deploy-to-sepolia"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Deploy to Sepolia</span></a></nav>
   </main>
 </div>

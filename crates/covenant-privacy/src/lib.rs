@@ -35,7 +35,7 @@ pub fn analyze_privacy(
     Analyzer::new(typed).run()
 }
 
-/// Re-exported diagnostic codes (E301–E310, W301–W310).
+/// Re-exported diagnostic codes (E301-E310, W301-W310).
 pub mod codes {
     pub use crate::diag::{
         E301_PLAINTEXT_FROM_ENCRYPTED, E302_VIEW_ENCRYPTED_BODY, E303_REVEAL_MISSING_TARGET,

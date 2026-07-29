@@ -4,8 +4,8 @@
 //! nested declaration name into the appropriate scope. Mutual references are
 //! supported because Pass 1 completes before Pass 2 begins.
 //!
-//! Pass 2 walks the AST a second time. For every identifier *use* — inside
-//! expressions, statements, guards, principals, annotations — it performs
+//! Pass 2 walks the AST a second time. For every identifier *use*, inside
+//! expressions, statements, guards, principals, annotations, it performs
 //! scope-chain lookup and records the result in the `BindingTable`. Unknown
 //! names produce E102 with edit-distance suggestions.
 
@@ -89,7 +89,7 @@ impl<'a> Resolver<'a> {
         );
         self.seed_construct_lang_idents(construct_scope, self.file.top_level.keyword);
 
-        // V0.9.1 — register external contract interfaces in the construct
+        // V0.9.1: register external contract interfaces in the construct
         // scope BEFORE walking declarations, so any view/action body that
         // references `IFoo.at(addr).method(...)` can resolve `IFoo` to a
         // known binding. The IR builder + codegen already lower these
@@ -197,7 +197,7 @@ impl<'a> Resolver<'a> {
             .insert(name_str, Binding::Field(id));
     }
 
-    /// V0.9.1 — register every `external contract IFoo { ... }` declaration's
+    /// V0.9.1: register every `external contract IFoo { ... }` declaration's
     /// name in the construct scope so that body expressions like
     /// `IFoo.at(addr).method(args)` resolve `IFoo` to a known binding.
     /// Method-level type checking on the chain is best-effort (the type
@@ -464,7 +464,7 @@ impl<'a> Resolver<'a> {
     fn resolve_version(&mut self, parent: ScopeId, v: &VersionBlock) {
         // Version scope was created in Pass 1; we need to locate it. We stored
         // it only implicitly, so for Pass 2 we create a fresh version scope
-        // layered under `parent` — duplication is harmless because Pass 1
+        // layered under `parent`: duplication is harmless because Pass 1
         // already filled the declarations there too. Simpler: push a fresh
         // scope and re-run Pass 1 on its body before resolving.
         let vs = self.arena.push(
@@ -818,7 +818,7 @@ impl<'a> Resolver<'a> {
         let binding = match BuiltinPredicate::from_name(&id.name) {
             Some(p) => Binding::BuiltinPredicate(p),
             None => {
-                // Maybe the user wrote an ordinary field/ident — fall back to
+                // Maybe the user wrote an ordinary field/ident, fall back to
                 // scope lookup rather than hard-error, to keep advanced fixtures
                 // compiling. Unresolved names still produce a diagnostic.
                 match self.arena.lookup(&id.name, scope) {

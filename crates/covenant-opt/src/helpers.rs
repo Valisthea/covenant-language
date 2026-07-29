@@ -133,7 +133,7 @@ pub fn fresh_const(
     v
 }
 
-/// Total instruction count across all functions in a module — a cheap proxy
+/// Total instruction count across all functions in a module, a cheap proxy
 /// for "IR size".
 pub fn total_instructions(module: &IrModule) -> usize {
     module

@@ -1,4 +1,4 @@
-//! End-to-end scenarios for the Hello Basics example — the minimal record.
+//! End-to-end scenarios for the Hello Basics example, the minimal record.
 
 use covenant_testing::{CovenantTestHarness, U256};
 

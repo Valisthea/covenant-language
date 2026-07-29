@@ -12,19 +12,19 @@
 //!
 //! Three crates in this workspace depend on the runtime:
 //!
-//! - [`covenant-testing`](https://docs.rs/covenant-testing) — re-exports
+//! - [`covenant-testing`](https://docs.rs/covenant-testing): re-exports
 //!   the modules below so the existing integration suite keeps compiling
 //!   unchanged. The `harness::CovenantTestHarness` facade still lives
 //!   there because it's test-flavoured (rstest fixtures, hex literals,
 //!   compile-deploy-call ergonomics) and brings dev-only deps the WASM
 //!   bundle has no business shipping.
 //!
-//! - `covenant-wasm-bindings` — feeds the playground's `mockchain.ts`
+//! - `covenant-wasm-bindings`: feeds the playground's `mockchain.ts`
 //!   (Sprint 23). The `Chain` abstraction layered on top of `execute()`
 //!   lives there for now and may move into this crate in a later sprint.
 //!
 //! - Future tools (`covenant simulate` CLI, fork-style fuzzers, CI
-//!   regression harnesses) — share one engine.
+//!   regression harnesses): share one engine.
 //!
 //! ## Module map
 //!

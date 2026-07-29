@@ -50,7 +50,7 @@ pub fn run_function(func: &mut IrFunction, diagnostics: &mut Vec<Diagnostic>) ->
             .map(|(_, i)| i.clone());
         let is_const = matches!(info, Some(covenant_ir::instr::ValueInfo::Const(_)));
         if is_const {
-            // Already a constant — no action needed for this annotation.
+            // Already a constant: no action needed for this annotation.
             continue;
         }
         // Not foldable; warn.

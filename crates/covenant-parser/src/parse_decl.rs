@@ -584,7 +584,7 @@ impl<'a> Parser<'a> {
                 body: None,
             });
         }
-        // Block form — newlines were already skipped by saved_pos update.
+        // Block form: newlines were already skipped by saved_pos update.
 
         let (guards, _q) = self.parse_guards_and_qualifiers()?;
         self.expect(&TokenKind::LBrace, "`{`")?;

@@ -4,7 +4,7 @@
 //! seeded at chain construction and only moves forward when an explicit
 //! `advance(seconds)` call comes from the test harness or from the
 //! playground's `Advance Time` button. This keeps every bytecode execution
-//! reproducible across runs and platforms — same input source, same
+//! reproducible across runs and platforms: same input source, same
 //! sequence of calls, same `block.timestamp` and same `block.number`.
 
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,7 @@ impl Clock {
     /// Move the clock forward. `saturating_add` so a malicious or
     /// arithmetic-overflow input stays at `u64::MAX` instead of wrapping
     /// to genesis (which would let a contract observe a `block.timestamp`
-    /// going backwards — invariant violation).
+    /// going backwards: invariant violation).
     pub fn advance(&mut self, seconds: u64) {
         self.seconds_since_epoch = self.seconds_since_epoch.saturating_add(seconds);
     }

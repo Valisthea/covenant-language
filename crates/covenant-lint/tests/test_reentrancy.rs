@@ -207,7 +207,7 @@ record R {
 //
 // Before the fix, only `transfer ... to ...` (Opcode::Transfer) tripped
 // reentrancy detectors. Direct calls to other contracts via `IFoo.at(addr)`
-// emit `Opcode::ExternalCall { .. }` and were silently ignored — the most
+// emit `Opcode::ExternalCall { .. }` and were silently ignored, the most
 // common real-world reentrancy shape (e.g. `IERC20.at(t).transfer(to,v)`
 // followed by a state write) bypassed every reentrancy lint.
 //

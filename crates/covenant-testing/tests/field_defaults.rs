@@ -2,7 +2,7 @@
 //!
 //! `field a: amount = 42` emitted `PUSH1 0x2a` into the deploy bytecode but the
 //! value was never SSTOREd, so the field read back as 0. Found 2026-07-23 while
-//! building the Robinhood milestone token — `fee_bps = 100` deployed as 0 —
+//! building the Robinhood milestone token: `fee_bps = 100` deployed as 0,
 //! and confirmed on anvil and on Robinhood Chain testnet. `covenant check`
 //! passed and `build` succeeded; only the on-chain read exposed it. The
 //! genesis-mint path (`supply: N to deployer`) was separate and worked, which
@@ -10,8 +10,8 @@
 //!
 //! The IR builder now carries a constant default into `IrField::initializer_const`
 //! (`field_default_const`), and the constructor SSTOREs it. Only the literal
-//! types the backend stores in one word are carried — integers, bools, and
-//! 20/32-byte hex — so these tests pin exactly those.
+//! types the backend stores in one word are carried, integers, bools, and
+//! 20/32-byte hex: so these tests pin exactly those.
 
 use covenant_testing::{CovenantTestHarness, U256};
 

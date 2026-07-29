@@ -1,4 +1,4 @@
-//! TIM — Timestamp detectors (W1200, W1201, I1202).
+//! TIM: Timestamp detectors (W1200, W1201, I1202).
 
 use covenant_ir::{IrModule, Opcode, Terminator};
 
@@ -23,7 +23,7 @@ impl Detector for W1200TimestampForRandomness {
         Category::Timestamp
     }
     fn description(&self) -> &'static str {
-        "Block timestamp used as input to a hash or random-looking operation — biasable by miners."
+        "Block timestamp used as input to a hash or random-looking operation, biasable by miners."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -48,7 +48,7 @@ impl Detector for W1200TimestampForRandomness {
                             Finding::new(
                                 "W1200",
                                 instr.span,
-                                "block timestamp used in hash/randomness — \
+                                "block timestamp used in hash/randomness: \
                                  miners can bias the result",
                                 Severity::Warning,
                             )
@@ -83,7 +83,7 @@ impl Detector for W1201BlockNumberInBranch {
         Category::Timestamp
     }
     fn description(&self) -> &'static str {
-        "Block number used in a conditional branch — miners can influence block production timing."
+        "Block number used in a conditional branch: miners can influence block production timing."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -102,7 +102,7 @@ impl Detector for W1201BlockNumberInBranch {
                         Finding::new(
                             "W1201",
                             block.span,
-                            "block number used in a conditional branch — \
+                            "block number used in a conditional branch: \
                              timing can be influenced by miners",
                             Severity::Warning,
                         )
@@ -135,7 +135,7 @@ impl Detector for I1202TimestampDependency {
         Category::Timestamp
     }
     fn description(&self) -> &'static str {
-        "Action reads the block timestamp — document the acceptable manipulation window."
+        "Action reads the block timestamp: document the acceptable manipulation window."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {

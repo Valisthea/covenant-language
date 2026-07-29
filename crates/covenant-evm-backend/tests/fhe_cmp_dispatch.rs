@@ -1,4 +1,4 @@
-//! KSR-CVN-015 regression tests — FheCmpNe / FheCmpLe dispatch to the correct
+//! KSR-CVN-015 regression tests: FheCmpNe / FheCmpLe dispatch to the correct
 //! precompile address rather than reusing FheCmpEq / FheCmpLt.
 //!
 //! The OMEGA V4 audit found that `Opcode::FheCmpEq | Opcode::FheCmpNe` shared
@@ -50,7 +50,7 @@ fn fhe_precompile_addresses_are_distinct() {
                 a, b,
                 "FHE comparison precompile addresses must be distinct: \
                  {name_a} (0x{a_hex}) collides with {name_b} (0x{b_hex}) \
-                 — this is the KSR-CVN-015 root cause"
+: this is the KSR-CVN-015 root cause"
             );
         }
     }
@@ -89,7 +89,7 @@ fn contains_outside_pushdata(haystack: &[u8], needle: &[u8]) -> bool {
         let op = haystack[i];
         if (0x60..=0x7f).contains(&op) {
             let n = (op - 0x60 + 1) as usize;
-            // The PUSH instruction byte itself can start a match — check
+            // The PUSH instruction byte itself can start a match, check
             // here, then skip the payload.
             if i + needle.len() <= haystack.len() && haystack[i..i + needle.len()] == *needle {
                 return true;
@@ -122,7 +122,7 @@ fn fhe_cmp_ne_emits_distinct_precompile_address() {
     // After the KSR-CVN-015 fix, this must dispatch to cmp_ne (0x113),
     // not cmp_eq (0x106).
     //
-    // V0.9 codegen emits PUSH20 (was PUSH2) — see Sprint 31 / target.rs.
+    // V0.9 codegen emits PUSH20 (was PUSH2): see Sprint 31 / target.rs.
     // The MockChain target lifts the V0.8 u16 to a 20-byte EvmAddress with
     // high 18 bytes zero and low 2 bytes the V0.8 value.
     let src = r#"

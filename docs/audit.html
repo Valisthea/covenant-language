@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audit — OMEGA V4 · Covenant</title>
-<meta name="description" content="Complete OMEGA V4 security audit of the Covenant compiler. 41 findings across 5 severity levels — all resolved before V0.7 GA. PoCs, methodology, and remediation commits are public.">
+<title>Audit: OMEGA V4 · Covenant</title>
+<meta name="description" content="Complete OMEGA V4 security audit of the Covenant compiler. 41 findings across 5 severity levels, all resolved before V0.7 GA. PoCs, methodology, and remediation commits are public.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://covenant-lang.org/audit">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -15,12 +15,12 @@
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://covenant-lang.org/audit">
 <meta property="og:site_name" content="Covenant">
-<meta property="og:title" content="OMEGA V4 Audit — 41 findings, all resolved · Covenant">
+<meta property="og:title" content="OMEGA V4 Audit, 41 findings, all resolved · Covenant">
 <meta property="og:description" content="Full adversarial audit of the Covenant compiler before V0.7 GA. 5 Critical, 8 High, 8 Medium, 6 Low, 9 Informational. Every finding documented with PoC and remediation commit.">
 <meta property="og:image" content="https://covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
-<meta name="twitter:title" content="OMEGA V4 Audit — 41 findings, all resolved · Covenant">
+<meta name="twitter:title" content="OMEGA V4 Audit, 41 findings, all resolved · Covenant">
 <meta name="twitter:description" content="Full adversarial audit of the Covenant compiler. 5 Critical (IrGuard not codegenned, proxy hijack, precompile bypass, ceremony bypass). All resolved before V0.7 GA.">
 <meta name="twitter:image" content="https://covenant-lang.org/og-image.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -496,7 +496,7 @@ footer#site-footer {
 
 <!-- ══════════════════ HEADER ══════════════════ -->
 <header id="site-header">
-  <a href="/" class="header-brand" aria-label="Covenant — home">
+  <a href="/" class="header-brand" aria-label="Covenant, home">
     <div style="width:32px;height:32px;" aria-hidden="true">
       <svg width="32" height="32" viewBox="0 0 96 96" id="header-svg">
         <path d="M 32 20 L 20 20 L 20 76 L 32 76" stroke="#1a1a1a" stroke-width="4" fill="none" stroke-linecap="square"/>
@@ -527,19 +527,19 @@ footer#site-footer {
     <div class="page-hero-stats">
       <div class="page-hero-stat">
         <span class="page-hero-stat-val" style="color:var(--red)">5</span>
-        <span class="page-hero-stat-label">Critical — resolved</span>
+        <span class="page-hero-stat-label">Critical, resolved</span>
       </div>
       <div class="page-hero-stat">
         <span class="page-hero-stat-val" style="color:var(--orange)">8</span>
-        <span class="page-hero-stat-label">High — resolved</span>
+        <span class="page-hero-stat-label">High: resolved</span>
       </div>
       <div class="page-hero-stat">
         <span class="page-hero-stat-val" style="color:#92400e">8</span>
-        <span class="page-hero-stat-label">Medium — resolved</span>
+        <span class="page-hero-stat-label">Medium: resolved</span>
       </div>
       <div class="page-hero-stat">
         <span class="page-hero-stat-val" style="color:var(--green)">6</span>
-        <span class="page-hero-stat-label">Low — resolved</span>
+        <span class="page-hero-stat-label">Low: resolved</span>
       </div>
       <div class="page-hero-stat">
         <span class="page-hero-stat-val" style="color:var(--blue)">9</span>
@@ -556,16 +556,16 @@ footer#site-footer {
 <!-- ══════════════════ METHODOLOGY ══════════════════ -->
 <div class="container">
 <section class="section" id="methodology" aria-labelledby="method-title">
-  <span class="section-eyebrow">01 — Methodology</span>
+  <span class="section-eyebrow">01: Methodology</span>
   <h2 class="section-title" id="method-title">OMEGA V4: assume every guarantee is a lie</h2>
-  <p class="body-text">OMEGA V4 is Kairos Lab's internal adversarial audit framework. It is not a checklist. It's a mindset: <em>assume every guarantee the compiler claims to enforce is a lie, and try to prove it.</em> The question is never "does the source look right?" — it's "does the emitted bytecode contain the bytes the source promised?"</p>
+  <p class="body-text">OMEGA V4 is Kairos Lab's internal adversarial audit framework. It is not a checklist. It's a mindset: <em>assume every guarantee the compiler claims to enforce is a lie, and try to prove it.</em> The question is never "does the source look right?", it's "does the emitted bytecode contain the bytes the source promised?"</p>
 
   <ul class="phase-list reveal" style="margin-top:28px;">
     <li class="phase-item">
       <span class="phase-num">Phase 1</span>
       <div>
         <span class="phase-label">Reconnaissance</span>
-        <span class="phase-desc">Map the full attack surface. Parse every crate. Identify every place where source intent becomes bytecode — every opcode, every emit path, every optimization pass.</span>
+        <span class="phase-desc">Map the full attack surface. Parse every crate. Identify every place where source intent becomes bytecode, every opcode, every emit path, every optimization pass.</span>
       </div>
     </li>
     <li class="phase-item">
@@ -579,14 +579,14 @@ footer#site-footer {
       <span class="phase-num">Phase 3</span>
       <div>
         <span class="phase-label">Reproducible PoCs</span>
-        <span class="phase-desc">For each finding, produce a minimal working example. Compile it. Simulate deployment. Show — with annotated bytecode — exactly how the bug manifests in production.</span>
+        <span class="phase-desc">For each finding, produce a minimal working example. Compile it. Simulate deployment. Show, with annotated bytecode, exactly how the bug manifests in production.</span>
       </div>
     </li>
     <li class="phase-item">
       <span class="phase-num">Phase 4</span>
       <div>
         <span class="phase-label">Remediation</span>
-        <span class="phase-desc">Fix each finding with a regression test. The test alone, without the fix, must fail. The test with the fix must pass. No exceptions — every finding has a corresponding test that would have caught it.</span>
+        <span class="phase-desc">Fix each finding with a regression test. The test alone, without the fix, must fail. The test with the fix must pass. No exceptions, every finding has a corresponding test that would have caught it.</span>
       </div>
     </li>
     <li class="phase-item">
@@ -603,9 +603,9 @@ footer#site-footer {
 <!-- ══════════════════ CRITICAL FINDINGS ══════════════════ -->
 <div class="container">
 <section class="section" id="critical" aria-labelledby="critical-title">
-  <span class="section-eyebrow">02 — Critical Findings</span>
+  <span class="section-eyebrow">02: Critical Findings</span>
   <h2 class="section-title" id="critical-title">Five failures that would have made every contract a honeypot</h2>
-  <p class="body-text">These findings share a pattern: the source looked correct, the tests passed, the contracts deployed — but the generated bytecode did not enforce the guarantee the source promised. Silent codegen failures are the worst class of bug.</p>
+  <p class="body-text">These findings share a pattern: the source looked correct, the tests passed, the contracts deployed, but the generated bytecode did not enforce the guarantee the source promised. Silent codegen failures are the worst class of bug.</p>
 
   <!-- KSR-CVN-011 -->
   <div class="finding-card critical reveal" style="margin-top:32px;" id="CVN-011">
@@ -618,7 +618,7 @@ footer#site-footer {
         </div>
       </div>
       <div>
-        <h3 class="finding-title">IrGuard never codegenned — access control was fiction</h3>
+        <h3 class="finding-title">IrGuard never codegenned, access control was fiction</h3>
       </div>
     </div>
     <div class="finding-body">
@@ -626,21 +626,21 @@ footer#site-footer {
       <p>The IR builder accepted and type-checked the clause, but the <code>emit_only_assert</code> function was never called. Every deployed Covenant contract with an access control clause would silently accept calls from any address.</p>
       <div class="code-diff">
         <div class="code-diff-col before">
-          <div class="code-diff-header">Before — emitted bytecode</div>
-          <pre><span style="color:var(--red)">; withdraw_all() — NO ACCESS CHECK</span>
+          <div class="code-diff-header">Before: emitted bytecode</div>
+          <pre><span style="color:var(--red)">; withdraw_all(): NO ACCESS CHECK</span>
 JUMPDEST
 PUSH1 0x00
 SLOAD         ; load balance
 CALLER        ; push msg.sender
-; (transfer — no guard before it)
+; (transfer: no guard before it)
 PUSH1 0x00
 PUSH1 0x00
 SSTORE        ; clear balance
 STOP</pre>
         </div>
         <div class="code-diff-col after">
-          <div class="code-diff-header">After — with guard</div>
-          <pre><span style="color:var(--green)">; withdraw_all() — GUARDED</span>
+          <div class="code-diff-header">After: with guard</div>
+          <pre><span style="color:var(--green)">; withdraw_all(): GUARDED</span>
 JUMPDEST
 CALLER        <span style="color:var(--ink-faint)">; msg.sender</span>
 PUSH32 …      <span style="color:var(--ink-faint)">; stored owner</span>
@@ -667,12 +667,12 @@ JUMPI
         </div>
       </div>
       <div>
-        <h3 class="finding-title">Proxy initializer had no re-init guard — one transaction hijack</h3>
+        <h3 class="finding-title">Proxy initializer had no re-init guard, one transaction hijack</h3>
       </div>
     </div>
     <div class="finding-body">
-      <p>Covenant supports UUPS upgradeable proxy patterns. An <code>initializer action</code> is supposed to be callable exactly once. But the bytecode had no re-init guard — <code>initialize()</code> could be called repeatedly, overwriting <code>owner</code> and <code>treasury</code> with attacker-controlled addresses.</p>
-      <p><strong>Fix:</strong> <code>emit_initializer_guard</code> wraps every <code>initialize</code> action with a slot-based flag. The slot is <code>keccak256("covenant.proxy.initializer.&lt;ModuleName&gt;")</code> — EIP-7201 namespaced, unique per module. The bytecode reads the slot, reverts if already set, then sets it before executing the body. Phase 3 is terminal — no re-entry possible.</p>
+      <p>Covenant supports UUPS upgradeable proxy patterns. An <code>initializer action</code> is supposed to be callable exactly once. But the bytecode had no re-init guard, <code>initialize()</code> could be called repeatedly, overwriting <code>owner</code> and <code>treasury</code> with attacker-controlled addresses.</p>
+      <p><strong>Fix:</strong> <code>emit_initializer_guard</code> wraps every <code>initialize</code> action with a slot-based flag. The slot is <code>keccak256("covenant.proxy.initializer.&lt;ModuleName&gt;")</code>, EIP-7201 namespaced, unique per module. The bytecode reads the slot, reverts if already set, then sets it before executing the body. Phase 3 is terminal, no re-entry possible.</p>
     </div>
   </div>
 
@@ -687,13 +687,13 @@ JUMPI
         </div>
       </div>
       <div>
-        <h3 class="finding-title">Precompile call safety — PQ signature bypass via stale memory</h3>
+        <h3 class="finding-title">Precompile call safety, PQ signature bypass via stale memory</h3>
       </div>
     </div>
     <div class="finding-body">
       <p>Cryptographic precompiles (FHE ops, Dilithium verify, ZK proof check) are invoked via <code>STATICCALL</code>. Two separate failures combined into a full bypass of post-quantum authentication:</p>
       <p><strong>CVN-013</strong>: The <code>STATICCALL</code> success flag was popped and discarded. A precompile that reverted (invalid input, out of gas) was treated as successful.</p>
-      <p><strong>CVN-014</strong>: Before <code>STATICCALL</code>, the return memory slot was not zeroed. A failed <code>STATICCALL</code> left stale memory that <code>MLOAD</code> read as a nonzero value — interpreted as "signature verified".</p>
+      <p><strong>CVN-014</strong>: Before <code>STATICCALL</code>, the return memory slot was not zeroed. A failed <code>STATICCALL</code> left stale memory that <code>MLOAD</code> read as a nonzero value, interpreted as "signature verified".</p>
       <p><strong>Combined exploit:</strong> An attacker submits a forged Dilithium signature. The precompile reverts. The success flag is dropped. The <code>MLOAD</code> reads stale memory containing a nonzero value from a prior operation. Authentication succeeds. One transaction, deterministic in deployments with prior operations.</p>
       <div class="code-block">
         <span class="cm">; Three-layer defense added to every precompile call:</span><br>
@@ -725,13 +725,13 @@ JUMPI
         </div>
       </div>
       <div>
-        <h3 class="finding-title">Ceremony phase transitions unchecked — cryptographic amnesia bypass</h3>
+        <h3 class="finding-title">Ceremony phase transitions unchecked, cryptographic amnesia bypass</h3>
       </div>
     </div>
     <div class="finding-body">
       <p>Covenant implements ERC-8228 (Cryptographic Amnesia Interface). Amnesia ceremonies have a strict four-phase state machine: idle → gathering → finalized → destroyed. Only phase <em>reads</em> were checked; phase <em>transitions</em> had no guards. An attacker could call <code>destroy()</code> at phase 0, jump to phase 3, and have <code>is_destroyed()</code> return <code>true</code> without a key ever having existed.</p>
       <p>Downstream integrations (GDPR compliance, regulatory data erasure, institutional key destruction proofs) rely on <code>is_destroyed()</code> being trustworthy. With transitions unchecked, the state machine was decorative.</p>
-      <p><strong>Fix:</strong> Every ceremony function now checks its required precondition phase via <code>emit_assert_phase_eq(expected_phase)</code>. Phases are enforced at bytecode level via <code>SLOAD + EQ + ISZERO + JUMPI</code>. Phase 3 is terminal — no function takes phase 3 as a valid input state.</p>
+      <p><strong>Fix:</strong> Every ceremony function now checks its required precondition phase via <code>emit_assert_phase_eq(expected_phase)</code>. Phases are enforced at bytecode level via <code>SLOAD + EQ + ISZERO + JUMPI</code>. Phase 3 is terminal, no function takes phase 3 as a valid input state.</p>
     </div>
   </div>
 </section>
@@ -740,7 +740,7 @@ JUMPI
 <!-- ══════════════════ HIGH FINDINGS ══════════════════ -->
 <div class="container">
 <section class="section" id="high" aria-labelledby="high-title">
-  <span class="section-eyebrow">03 — High Findings</span>
+  <span class="section-eyebrow">03: High Findings</span>
   <h2 class="section-title" id="high-title">Eight high-severity issues</h2>
   <p class="body-text">High findings caused incorrect or insecure behaviour without being fully exploitable in isolation. Several had been present since early compiler versions with no visible test failures.</p>
 
@@ -755,42 +755,42 @@ JUMPI
     <tbody>
       <tr>
         <td class="td-id">KSR-CVN-015</td>
-        <td><code>FheCmpNe</code> and <code>FheCmpLe</code> dispatched to wrong precompile addresses — aliasing <code>EQ</code> and <code>LT</code>. Every encrypted <code>!=</code> and <code>&lt;=</code> returned an incorrect result.</td>
+        <td><code>FheCmpNe</code> and <code>FheCmpLe</code> dispatched to wrong precompile addresses, aliasing <code>EQ</code> and <code>LT</code>. Every encrypted <code>!=</code> and <code>&lt;=</code> returned an incorrect result.</td>
         <td class="td-commit">d378297</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-016</td>
-        <td>CSE optimizer collapsed distinct <code>FheEncryptFresh</code> calls. Two ciphertexts from "fresh" encryption were collapsed to one — the "fresh" guarantee was destroyed.</td>
+        <td>CSE optimizer collapsed distinct <code>FheEncryptFresh</code> calls. Two ciphertexts from "fresh" encryption were collapsed to one, the "fresh" guarantee was destroyed.</td>
         <td class="td-commit">f3a5277</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-017</td>
-        <td>Same CSE bug collapsed <code>PqRand</code> calls — post-quantum nonces reused across operations that required distinct randomness.</td>
+        <td>Same CSE bug collapsed <code>PqRand</code> calls, post-quantum nonces reused across operations that required distinct randomness.</td>
         <td class="td-commit">f3a5277</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-018</td>
-        <td>Reentrancy lints didn't cover the <code>ExternalCall</code> opcode — cross-contract reentrancy went undetected by the linter.</td>
+        <td>Reentrancy lints didn't cover the <code>ExternalCall</code> opcode, cross-contract reentrancy went undetected by the linter.</td>
         <td class="td-commit">d88910c</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-019</td>
-        <td>No <code>EXTCODESIZE</code> canary before <code>CALL</code> to external contracts — EOA and self-destruct patterns went undetected.</td>
+        <td>No <code>EXTCODESIZE</code> canary before <code>CALL</code> to external contracts, EOA and self-destruct patterns went undetected.</td>
         <td class="td-commit">5ee93a8</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-020</td>
-        <td>No 4-byte ABI selector prefix on precompile calldata — precompile ABI versioning not enforced at call sites.</td>
+        <td>No 4-byte ABI selector prefix on precompile calldata, precompile ABI versioning not enforced at call sites.</td>
         <td class="td-commit">5ee93a8</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-021</td>
-        <td><code>@slot(N)</code> annotation silently ignored — layout guarantees promised to developers were not enforced in emitted bytecode.</td>
+        <td><code>@slot(N)</code> annotation silently ignored, layout guarantees promised to developers were not enforced in emitted bytecode.</td>
         <td class="td-commit">0eb1ad8</td>
       </tr>
       <tr>
         <td class="td-id">KSR-CVN-027</td>
-        <td>External <code>CALL</code> and <code>STATICCALL</code> success flags discarded — same class as CVN-013, affecting user-invoked external calls.</td>
+        <td>External <code>CALL</code> and <code>STATICCALL</code> success flags discarded, same class as CVN-013, affecting user-invoked external calls.</td>
         <td class="td-commit">5eb1c38</td>
       </tr>
     </tbody>
@@ -801,15 +801,15 @@ JUMPI
 <!-- ══════════════════ MEDIUM/LOW/INFO ══════════════════ -->
 <div class="container">
 <section class="section" id="other" aria-labelledby="other-title">
-  <span class="section-eyebrow">04 — Medium · Low · Informational</span>
-  <h2 class="section-title" id="other-title">23 further findings — the long tail of defense</h2>
+  <span class="section-eyebrow">04: Medium · Low · Informational</span>
+  <h2 class="section-title" id="other-title">23 further findings, the long tail of defense</h2>
   <p class="body-text">Medium findings affected correctness and developer safety. Low and Informational findings strengthened tooling, diagnostics, and supply chain. All resolved before V0.7 GA.</p>
 
   <div class="finding-card medium reveal" style="margin-top:24px;border-left:3px solid var(--orange);">
     <div class="finding-body">
-      <p><strong>KSR-CVN-022, 023 — Shamir / VDF hard-fail:</strong> Shamir Secret Sharing and Wesolowski VDF opcodes emitted broken stubs that silently succeeded without performing any cryptographic work. Rather than emit silent fiction, the compiler now hard-fails with <code>E516</code>/<code>E517</code> for these opcodes until V0.8 chain support ships. "Deploy no code" beats "deploy broken code."</p>
-      <p><strong>KSR-CVN-024, 025 — P4/P5 invariant detectors:</strong> Privacy invariants P4 (nonce reuse) and P5 (monotonicity) had no lint detectors in the security pass. Detectors added.</p>
-      <p><strong>KSR-CVN-026 — FheBootstrap eliminated by DCE:</strong> Dead Code Elimination was removing <code>FheBootstrap</code> calls (which refresh FHE ciphertext noise budget) because they appeared to have no side effects. DCE now marks FHE refresh ops as side-effecting.</p>
+      <p><strong>KSR-CVN-022, 023: Shamir / VDF hard-fail:</strong> Shamir Secret Sharing and Wesolowski VDF opcodes emitted broken stubs that silently succeeded without performing any cryptographic work. Rather than emit silent fiction, the compiler now hard-fails with <code>E516</code>/<code>E517</code> for these opcodes until V0.8 chain support ships. "Deploy no code" beats "deploy broken code."</p>
+      <p><strong>KSR-CVN-024, 025: P4/P5 invariant detectors:</strong> Privacy invariants P4 (nonce reuse) and P5 (monotonicity) had no lint detectors in the security pass. Detectors added.</p>
+      <p><strong>KSR-CVN-026: FheBootstrap eliminated by DCE:</strong> Dead Code Elimination was removing <code>FheBootstrap</code> calls (which refresh FHE ciphertext noise budget) because they appeared to have no side effects. DCE now marks FHE refresh ops as side-effecting.</p>
       <p><strong>Storage / supply chain:</strong> <code>@slot(N)</code> collision detection wired (<code>E423</code>), annotation validation, <code>PRECOMPILE_ABI_VERSION</code> marker in bytecode, Cargo.lock pinning, per-chain version binding. Full list in covenant-audits (coming soon).</p>
     </div>
   </div>
@@ -819,7 +819,7 @@ JUMPI
 <!-- ══════════════════ LESSONS ══════════════════ -->
 <div class="container">
 <section class="section" id="lessons" aria-labelledby="lessons-title">
-  <span class="section-eyebrow">05 — What the audit taught us</span>
+  <span class="section-eyebrow">05: What the audit taught us</span>
   <h2 class="section-title" id="lessons-title">Four lessons that change how we write tests</h2>
 
   <ul class="phase-list reveal">
@@ -827,7 +827,7 @@ JUMPI
       <span class="phase-num" style="color:var(--red)">Lesson 1</span>
       <div>
         <span class="phase-label">Test the bytes, not the source</span>
-        <span class="phase-desc">For every safety guarantee your compiler claims, write a test that inspects the emitted bytecode and asserts the exact opcode pattern. <code>only(owner)</code> should produce <code>CALLER + EQ + ISZERO + JUMPI</code>. If it doesn't, the test fails — not because the source looked wrong, because the bytes are wrong.</span>
+        <span class="phase-desc">For every safety guarantee your compiler claims, write a test that inspects the emitted bytecode and asserts the exact opcode pattern. <code>only(owner)</code> should produce <code>CALLER + EQ + ISZERO + JUMPI</code>. If it doesn't, the test fails, not because the source looked wrong, because the bytes are wrong.</span>
       </div>
     </li>
     <li class="phase-item">
@@ -841,7 +841,7 @@ JUMPI
       <span class="phase-num" style="color:var(--red)">Lesson 3</span>
       <div>
         <span class="phase-label">State machines must be enforced at the bytecode level</span>
-        <span class="phase-desc">Writing <code>state = Phase2</code> in a function body doesn't protect you if the function can be called when <code>state</code> is <code>Phase0</code>. Every transition needs a precondition check compiled into bytecode — not documented in source, not enforced by convention.</span>
+        <span class="phase-desc">Writing <code>state = Phase2</code> in a function body doesn't protect you if the function can be called when <code>state</code> is <code>Phase0</code>. Every transition needs a precondition check compiled into bytecode, not documented in source, not enforced by convention.</span>
       </div>
     </li>
     <li class="phase-item">
@@ -858,7 +858,7 @@ JUMPI
 <!-- ══════════════════ KNOWN LIMITATIONS ══════════════════ -->
 <div class="container">
 <section class="section" id="limitations" aria-labelledby="limits-title">
-  <span class="section-eyebrow">06 — Known limitations</span>
+  <span class="section-eyebrow">06: Known limitations</span>
   <h2 class="section-title" id="limits-title">What V0.7 does not yet support</h2>
   <p class="body-text">Shipping broken stubs is worse than shipping nothing. These features are deliberately disabled until they can be implemented correctly.</p>
 
@@ -888,7 +888,7 @@ JUMPI
       <span class="limitation-icon">🔧</span>
       <div class="limitation-body">
         <div class="limitation-title">External audits (V0.9 target)</div>
-        <div class="limitation-desc">OMEGA V4 was a self-audit. V0.9 will bring independent audits from two external firms. Self-audit is not a substitute for independent verification — this is the roadmap, not a guarantee.</div>
+        <div class="limitation-desc">OMEGA V4 was a self-audit. V0.9 will bring independent audits from two external firms. Self-audit is not a substitute for independent verification, this is the roadmap, not a guarantee.</div>
       </div>
     </div>
   </div>
@@ -898,9 +898,9 @@ JUMPI
 <!-- ══════════════════ CTA ══════════════════ -->
 <div class="container">
 <section class="section" id="report" aria-labelledby="report-title" style="border-bottom:none;">
-  <span class="section-eyebrow">07 — Access the full report</span>
+  <span class="section-eyebrow">07: Access the full report</span>
   <h2 class="section-title" id="report-title">Everything is public. PoCs included.</h2>
-  <p class="body-text">The full OMEGA V4 report will be published at <code>github.com/Valisthea/covenant-audits</code> (coming soon). Every finding has a finding ID, severity, description, annotated bytecode PoC, remediation commit, and regression test. If OMEGA V4 missed something, that's a welcome problem — the bounty program is in the same repo.</p>
+  <p class="body-text">The full OMEGA V4 report will be published at <code>github.com/Valisthea/covenant-audits</code> (coming soon). Every finding has a finding ID, severity, description, annotated bytecode PoC, remediation commit, and regression test. If OMEGA V4 missed something, that's a welcome problem, the bounty program is in the same repo.</p>
 
   <div class="cta-row reveal">
     Read the full audit report → (coming soon)

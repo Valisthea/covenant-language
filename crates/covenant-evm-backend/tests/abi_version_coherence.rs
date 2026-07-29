@@ -1,4 +1,4 @@
-//! KSR-CVN-040 regression tests — PRECOMPILE_ABI_VERSION is a single source of truth.
+//! KSR-CVN-040 regression tests: PRECOMPILE_ABI_VERSION is a single source of truth.
 //!
 //! Before this fix, `abi.rs` and `artifact.rs` each defined an independent
 //! `pub const PRECOMPILE_ABI_VERSION: u32 = 1;`. A maintainer bumping one
@@ -16,7 +16,7 @@ fn precompile_abi_version_is_consolidated() {
     assert_eq!(
         ABI_VERSION, ARTIFACT_VERSION,
         "abi::PRECOMPILE_ABI_VERSION and artifact::PRECOMPILE_ABI_VERSION must be identical \
-         — artifact.rs must re-export from abi.rs (KSR-CVN-040)"
+: artifact.rs must re-export from abi.rs (KSR-CVN-040)"
     );
 }
 

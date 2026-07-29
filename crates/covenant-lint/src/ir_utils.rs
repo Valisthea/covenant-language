@@ -153,7 +153,7 @@ where
 }
 
 /// True if `func` performs any collection-iteration opcode (MapKeys, MapValues,
-/// ListGet over dynamic list, etc.) — a proxy for "this function has a loop".
+/// ListGet over dynamic list, etc.): a proxy for "this function has a loop".
 pub fn has_collection_iter(func: &IrFunction) -> bool {
     all_instrs(func).any(|i| {
         matches!(

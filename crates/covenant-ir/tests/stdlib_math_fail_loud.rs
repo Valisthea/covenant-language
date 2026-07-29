@@ -2,7 +2,7 @@
 //!
 //! They used to map to `Opcode::AddChecked` as a placeholder, so `max(cap, bid)`
 //! compiled cleanly and returned `cap + bid`. Ordinary-looking source, wrong
-//! bytecode, no diagnostic — the same class as the ERC-721 authorization
+//! bytecode, no diagnostic: the same class as the ERC-721 authorization
 //! bypass. Until a real compare-and-branch lowering exists (the IR has `Lt`/`Gt`
 //! but no select, and a stdlib fn maps to exactly one opcode), the only safe
 //! behaviour is to reject the call.
@@ -101,6 +101,6 @@ record R {
     });
     assert!(
         !has_add,
-        "`max` lowered to AddChecked — the silent-miscompile placeholder is back"
+        "`max` lowered to AddChecked: the silent-miscompile placeholder is back"
     );
 }

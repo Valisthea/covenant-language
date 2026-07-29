@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Deploy to Sepolia · Covenant By Example</title>
-<meta name="description" content="Install, compile, deploy, verify — end-to-end in four commands.">
+<meta name="description" content="Install, compile, deploy, verify, end-to-end in four commands.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/15-deploy-to-sepolia">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/15-deploy-to-sepolia">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Deploy to Sepolia · Covenant By Example">
-<meta property="og:description" content="Install, compile, deploy, verify — end-to-end in four commands.">
+<meta property="og:description" content="Install, compile, deploy, verify, end-to-end in four commands.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Deploy to Sepolia · Covenant By Example">
-<meta name="twitter:description" content="Install, compile, deploy, verify — end-to-end in four commands.">
+<meta name="twitter:description" content="Install, compile, deploy, verify, end-to-end in four commands.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,20 +367,20 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge advanced">Advanced</span>
     <p class="chapter-eyebrow">Chapter 15 / 15</p>
     <h1 class="chapter-title">Deploy to Sepolia</h1>
-    <p class="chapter-subtitle">Install, compile, deploy, verify — end-to-end in four commands.</p>
+    <p class="chapter-subtitle">Install, compile, deploy, verify, end-to-end in four commands.</p>
     <hr class="chapter-divider">
     
     <p class="prose">This chapter walks through a complete deployment of a Covenant contract to the
 Sepolia Ethereum testnet using <code>covenant-cli</code>. You will need: a funded
 Sepolia wallet, a Sepolia RPC endpoint (Alchemy or Infura), and an Etherscan
 API key for verification.</p>
-    <div class="code-wrap"><div class="code-label">Step 1 — install covenant-cli</div><pre class="code-block" data-lang="bash"># Requires Rust 1.78+ (rustup.rs)
+    <div class="code-wrap"><div class="code-label">Step 1, install covenant-cli</div><pre class="code-block" data-lang="bash"># Requires Rust 1.78+ (rustup.rs)
 cargo install covenant-cli
 
 # Verify
 covenant --version
 # covenant-cli 0.7.0</pre></div>
-<div class="code-wrap"><div class="code-label">counter.cov — contract to deploy</div><pre class="code-block" data-lang="covenant">record Counter {
+<div class="code-wrap"><div class="code-label">counter.cov, contract to deploy</div><pre class="code-block" data-lang="covenant">record Counter {
     count: u64;
     owner: address;
 
@@ -396,16 +396,16 @@ covenant --version
         return self.count;
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">Step 2 — compile to EVM bytecode</div><pre class="code-block" data-lang="bash">covenant build counter.cov --target-chain evm --out build/
+<div class="code-wrap"><div class="code-label">Step 2, compile to EVM bytecode</div><pre class="code-block" data-lang="bash">covenant build counter.cov --target-chain evm --out build/
 
 # Output:
-#   build/Counter.bin          — deployment bytecode
-#   build/Counter.abi.json     — ABI
+#   build/Counter.bin: deployment bytecode
+#   build/Counter.abi.json: ABI
 #   build/Counter.metadata.json</pre></div>
-<div class="code-wrap"><div class="code-label">Step 3 — set environment variables</div><pre class="code-block" data-lang="bash">export SEPOLIA_RPC="https://eth-sepolia.g.alchemy.com/v2/<YOUR_KEY>"
+<div class="code-wrap"><div class="code-label">Step 3, set environment variables</div><pre class="code-block" data-lang="bash">export SEPOLIA_RPC="https://eth-sepolia.g.alchemy.com/v2/<YOUR_KEY>"
 export PRIVATE_KEY="0x..."          # funded Sepolia wallet
 export ETHERSCAN_KEY="<YOUR_KEY>"   # from etherscan.io/myapikey</pre></div>
-<div class="code-wrap"><div class="code-label">Step 4 — deploy</div><pre class="code-block" data-lang="bash">covenant deploy build/Counter.bin \
+<div class="code-wrap"><div class="code-label">Step 4, deploy</div><pre class="code-block" data-lang="bash">covenant deploy build/Counter.bin \
     --abi build/Counter.abi.json \
     --network sepolia \
     --rpc $SEPOLIA_RPC \
@@ -416,7 +416,7 @@ export ETHERSCAN_KEY="<YOUR_KEY>"   # from etherscan.io/myapikey</pre></div>
 #   Transaction: 0xabc...
 #   Confirmed in block 5834201
 #   Contract address: 0x1234...56789</pre></div>
-<div class="code-wrap"><div class="code-label">Step 5 — verify on Etherscan</div><pre class="code-block" data-lang="bash">covenant verify 0x1234...56789 \
+<div class="code-wrap"><div class="code-label">Step 5, verify on Etherscan</div><pre class="code-block" data-lang="bash">covenant verify 0x1234...56789 \
     --source counter.cov \
     --network sepolia \
     --etherscan-key $ETHERSCAN_KEY
@@ -425,7 +425,7 @@ export ETHERSCAN_KEY="<YOUR_KEY>"   # from etherscan.io/myapikey</pre></div>
 #   Submitting source to Etherscan...
 #   Verification successful.
 #   https://sepolia.etherscan.io/address/0x1234...56789#code</pre></div>
-<div class="code-wrap"><div class="code-label">Step 6 — interact via CLI</div><pre class="code-block" data-lang="bash"># Call a view
+<div class="code-wrap"><div class="code-label">Step 6, interact via CLI</div><pre class="code-block" data-lang="bash"># Call a view
 covenant call 0x1234...56789 get \
     --network sepolia --rpc $SEPOLIA_RPC
 # Returns: 0
@@ -444,12 +444,12 @@ covenant call 0x1234...56789 get \
 <tr><td><code>covenant build</code></td><td>compiles <code>.cov</code> source to EVM deployment bytecode and generates the ABI JSON.</td></tr>
 <tr><td><code>covenant deploy</code></td><td>sends the deployment transaction and waits for confirmation. Outputs the contract address.</td></tr>
 <tr><td><code>covenant verify</code></td><td>submits the source and compiler metadata to Etherscan's verification API.</td></tr>
-<tr><td>Gas</td><td>Covenant bytecode is typically 10–30% smaller than equivalent Solidity due to IR-level optimizations. This translates to lower deployment gas.</td></tr>
+<tr><td>Gas</td><td>Covenant bytecode is typically 10-30% smaller than equivalent Solidity due to IR-level optimizations. This translates to lower deployment gas.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Four commands: <code>cargo install covenant-cli</code>, <code>covenant build</code>, <code>covenant deploy</code>, <code>covenant verify</code>.</li>
 <li>The CLI handles RPC, signing, and block confirmation automatically.</li>
-<li>Covenant metadata is embedded in the artifact — Etherscan verification requires no extra steps.</li></ul>
+<li>Covenant metadata is embedded in the artifact, Etherscan verification requires no extra steps.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="14-oracle-integration"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Oracle Integration</span></a><a class="chapter-nav-btn next" href="index"><span class="chapter-nav-direction">Done ✓</span><span class="chapter-nav-title">All chapters</span></a></nav>
   </main>
 </div>

@@ -1,12 +1,12 @@
 name: cargo-fuzz
 
-# Sprint 26 audit Phase 3 — operator delivers fuzz coverage via CI
+# Sprint 26 audit Phase 3: operator delivers fuzz coverage via CI
 # rather than local Windows machine (cargo-fuzz on MSVC is officially
 # fragile per the libfuzzer-sys docs). Linux is the supported platform;
 # GitHub Actions ubuntu-latest runs it cleanly.
 
 on:
-  # Every PR that touches the compiler surface — keeps fixes from
+  # Every PR that touches the compiler surface: keeps fixes from
   # introducing regressions silently.
   pull_request:
     paths:
@@ -25,11 +25,11 @@ on:
       - 'crates/covenant-diag/**'
       - '.github/workflows/fuzz.yml'
 
-  # Weekly deep run — 4 hours per target on Sunday night UTC.
+  # Weekly deep run: 4 hours per target on Sunday night UTC.
   schedule:
     - cron: '0 23 * * 0'
 
-  # Manual trigger from the Actions tab — useful for ad-hoc audit runs.
+  # Manual trigger from the Actions tab: useful for ad-hoc audit runs.
   workflow_dispatch:
     inputs:
       duration_seconds:
@@ -104,4 +104,4 @@ jobs:
           echo "Duration: ${{ matrix.duration }}s"
           echo "Outcome:  ${{ job.status }}"
           ls -la crates/covenant-wasm-bindings/fuzz/artifacts/${{ matrix.target }}/ 2>/dev/null \
-            || echo "(no artifacts dir — clean run)"
+            || echo "(no artifacts dir: clean run)"

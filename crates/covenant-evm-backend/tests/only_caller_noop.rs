@@ -1,4 +1,4 @@
-//! F05 regression — `only caller` is a no-op guard and must be diagnosed.
+//! F05 regression: `only caller` is a no-op guard and must be diagnosed.
 //!
 //! `only caller` lowers to `msg.sender == msg.sender` (always true) and emits
 //! ZERO caller checks. It was the one degenerate `only` principal that produced
@@ -7,7 +7,7 @@
 //!
 //! It is intentionally a WARNING, not a hard error: the bytecode is not wrong
 //! (it faithfully means "no restriction"), and `only caller` is used across the
-//! examples/test-suite as an explicit "anyone" marker — a hard error would
+//! examples/test-suite as an explicit "anyone" marker, a hard error would
 //! break passing code for no correctness gain.
 
 use covenant_diag::{Diagnostic, SourceId};

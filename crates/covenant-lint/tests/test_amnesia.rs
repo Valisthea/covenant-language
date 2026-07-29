@@ -1,4 +1,4 @@
-//! KSR-CVN-025 — C801 ceremony phase monotonicity regression tests.
+//! KSR-CVN-025: C801 ceremony phase monotonicity regression tests.
 
 use std::collections::HashMap;
 
@@ -126,7 +126,7 @@ fn guarded_phase_write_action(name: &str, phase_id: GlobalId, k: u128, n: u128) 
 
 #[test]
 fn c801_fires_on_backward_transition_audit_example() {
-    // `action finalize() when phase == 1 { phase = 0 }` — the exact audit example.
+    // `action finalize() when phase == 1 { phase = 0 }`: the exact audit example.
     let (mut m, phase_id) = module_with_phase();
     m.functions
         .push(guarded_phase_write_action("finalize", phase_id, 1, 0));
@@ -141,7 +141,7 @@ fn c801_fires_on_backward_transition_audit_example() {
 
 #[test]
 fn c801_fires_on_stationary_write() {
-    // `when phase == 2 { phase = 2 }` — no forward progress.
+    // `when phase == 2 { phase = 2 }`: no forward progress.
     let (mut m, phase_id) = module_with_phase();
     m.functions
         .push(guarded_phase_write_action("stay", phase_id, 2, 2));
@@ -155,7 +155,7 @@ fn c801_fires_on_stationary_write() {
 
 #[test]
 fn c801_silent_on_forward_transition() {
-    // `when phase == 0 { phase = 1 }` — monotonic increase.
+    // `when phase == 0 { phase = 1 }`: monotonic increase.
     let (mut m, phase_id) = module_with_phase();
     m.functions
         .push(guarded_phase_write_action("start", phase_id, 0, 1));

@@ -15,7 +15,7 @@ pub fn emit(
     // Magic identifier
     out.extend_from_slice(ASTER_MAGIC);
 
-    // Function count (4 bytes LE) — minimal metadata
+    // Function count (4 bytes LE): minimal metadata
     let fc = aster_ir.function_count as u32;
     out.extend_from_slice(&fc.to_le_bytes());
 

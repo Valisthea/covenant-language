@@ -76,7 +76,7 @@ pub enum Ty {
     // --- Stdlib module (before method access) ---
     StdlibModule(StdlibModuleTag),
 
-    /// Namespace marker — distinguishes `Msg` / `Block` / `Phase` from ordinary
+    /// Namespace marker: distinguishes `Msg` / `Block` / `Phase` from ordinary
     /// types so `msg.value` / `block.timestamp` can dispatch via a parallel table.
     Namespace(Namespace),
 

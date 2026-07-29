@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Guards · Covenant By Example</title>
-<meta name="description" content="only, when, given — declarative access control and invariants.">
+<meta name="description" content="only, when, given, declarative access control and invariants.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/04-guards">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/04-guards">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Guards · Covenant By Example">
-<meta property="og:description" content="only, when, given — declarative access control and invariants.">
+<meta property="og:description" content="only, when, given, declarative access control and invariants.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Guards · Covenant By Example">
-<meta name="twitter:description" content="only, when, given — declarative access control and invariants.">
+<meta name="twitter:description" content="only, when, given, declarative access control and invariants.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,16 +367,16 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge fundamentals">Fundamentals</span>
     <p class="chapter-eyebrow">Chapter 4 / 15</p>
     <h1 class="chapter-title">Guards</h1>
-    <p class="chapter-subtitle">only, when, given — declarative access control and invariants.</p>
+    <p class="chapter-subtitle">only, when, given, declarative access control and invariants.</p>
     <hr class="chapter-divider">
     
     <p class="prose">Covenant's guard system replaces ad-hoc <code>require()</code> chains with
 <em>declared</em> pre- and post-conditions. Guards appear in the function
-signature — they are part of the interface, not buried in the body.
+signature: they are part of the interface, not buried in the body.
 <br><br>
 <strong>Security note:</strong> OMEGA V4 finding <code>KSR-CVN-011</code> (Critical)
 discovered that a prior compiler version silently dropped <code>only()</code>
-clauses during IR lowering — every deployed contract was wide open. V0.7 fixes
+clauses during IR lowering: every deployed contract was wide open. V0.7 fixes
 this and adds an integration test that verifies guard bytecode is emitted.</p>
     <div class="code-wrap"><div class="code-label">guards.cov</div><pre class="code-block" data-lang="covenant">record Multisig {
     owner:    address;
@@ -387,12 +387,12 @@ this and adds an integration test that verifies guard bytecode is emitted.</p>
     error Unauthorized();
     error AlreadyLocked();
 
-    // only(expr) — caller must satisfy expr, else revert
+    // only(expr): caller must satisfy expr, else revert
     action change_owner(new_owner: address) only(msg.sender == self.owner) {
         self.owner = new_owner;
     }
 
-    // when(cond) — precondition checked before body runs
+    // when(cond): precondition checked before body runs
     action lock() only(msg.sender == self.owner) when(!self.locked) {
         self.locked = true;
     }
@@ -406,7 +406,7 @@ this and adds an integration test that verifies guard bytecode is emitted.</p>
         self.nonce += 1;
     }
 
-    // given(cond) — postcondition checked after body runs
+    // given(cond): postcondition checked after body runs
     // Reverts the entire action if the condition is false after execution
     action set_guardian(g: address)
         only(msg.sender == self.owner)
@@ -428,12 +428,12 @@ this and adds an integration test that verifies guard bytecode is emitted.</p>
 <tr><td><code>only(expr)</code></td><td>emits a <code>JUMPI</code> at function entry that reverts if <code>expr</code> is false. Shorthand <code>only(self.owner)</code> expands to <code>only(msg.sender == self.owner)</code>.</td></tr>
 <tr><td><code>when(cond)</code></td><td>a precondition: checked at the start of the action body, before any state changes.</td></tr>
 <tr><td><code>given(cond)</code></td><td>a postcondition: checked after the body executes. Reverts (and undoes state changes) if false.</td></tr>
-<tr><td>Multiple guards</td><td>compose with AND semantics — all conditions must hold.</td></tr>
+<tr><td>Multiple guards</td><td>compose with AND semantics, all conditions must hold.</td></tr>
 <tr><td>KSR-CVN-011</td><td>was critical because guards look present in source but produced zero bytecode. Always run <code>covenant audit</code> before deployment.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Guards are part of the function signature — they appear in the generated ABI docs and are impossible to overlook.</li>
-<li><code>given()</code> postconditions let you express invariants that must hold after the action — useful for conservation laws.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Guards are part of the function signature, they appear in the generated ABI docs and are impossible to overlook.</li>
+<li><code>given()</code> postconditions let you express invariants that must hold after the action, useful for conservation laws.</li>
 <li>The compiler verifies that every <code>only()</code> clause produces bytecode (enforced since V0.7).</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="03-actions-events-errors"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Actions, Events & Errors</span></a><a class="chapter-nav-btn next" href="05-external-calls"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">External Contract Calls</span></a></nav>
   </main>

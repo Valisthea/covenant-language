@@ -22,7 +22,7 @@
 //! ```
 //!
 //! Severity values : `"off"` | `"info"` | `"warn"` | `"error"`.
-//! Unknown rule codes are ignored (forward-compat — V0.9.x can ship new
+//! Unknown rule codes are ignored (forward-compat, V0.9.x can ship new
 //! detectors without breaking V0.9.0 config files).
 //!
 //! Loader is permissive : missing file = empty config = use defaults.
@@ -73,7 +73,7 @@ impl RuleSeverity {
 impl LintConfig {
     /// Load `.covenantlint.json` from `dir` (or any ancestor). Returns
     /// `Ok(None)` if no config file is found anywhere up to filesystem
-    /// root — this is the "use defaults" path. Returns `Err` only on
+    /// root: this is the "use defaults" path. Returns `Err` only on
     /// malformed JSON.
     pub fn find_and_load(start_dir: &Path) -> Result<Option<Self>, ConfigError> {
         let mut current = Some(start_dir.to_path_buf());

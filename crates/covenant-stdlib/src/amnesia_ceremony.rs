@@ -410,7 +410,7 @@ fn synth_submit_share(
 /// KSR-CVN-001: asserts caller == deployer, phase == 1, and that
 /// AmnesiaFinalize returned true before advancing phase to 2. A failed
 /// finalize proof therefore leaves the ceremony in phase 1, where new
-/// shares can still be submitted and finalize can be retried — rather
+/// shares can still be submitted and finalize can be retried, rather
 /// than locking the ceremony into a "finalized" state based on an
 /// unverified precompile response.
 /// OMEGA V6 CRT-005 fix: also asserts at least `threshold` distinct callers
@@ -463,7 +463,7 @@ fn synth_finalize(
 /// `destroy() → bool`
 /// KSR-CVN-001: asserts caller == deployer, phase == 2, and that the
 /// DestructionProof precompile returned true before advancing phase to 3.
-/// Also asserts `phase != 3` — a redundant guard on the already-destroyed
+/// Also asserts `phase != 3`: a redundant guard on the already-destroyed
 /// path that keeps the contract observably idempotent (the fail-closed
 /// `Assert(phase == 2)` already excludes 3, but the extra check pairs with
 /// the `CeremonyAlreadyDestroyed` error in the ABI).
@@ -667,7 +667,7 @@ mod tests {
 
     #[test]
     fn threshold_zero_is_rejected() {
-        // guardians: 3, threshold: 0 — the degenerate finalize gate.
+        // guardians: 3, threshold: 0: the degenerate finalize gate.
         let mut module = with_meta(&[("guardians", 3), ("threshold", 0)]);
         let config = crate::config::StdlibConfig::default();
         let mut diags = Vec::new();
@@ -692,7 +692,7 @@ mod tests {
 
     #[test]
     fn threshold_gt_guardians_is_rejected() {
-        // guardians: 2, threshold: 3 — can never finalize.
+        // guardians: 2, threshold: 3: can never finalize.
         let mut module = with_meta(&[("guardians", 2), ("threshold", 3)]);
         let config = crate::config::StdlibConfig::default();
         let mut diags = Vec::new();
@@ -712,7 +712,7 @@ mod tests {
 
     #[test]
     fn guardians_zero_is_rejected() {
-        // guardians: 0 with defaulted threshold(1) — 1 > 0, no valid threshold.
+        // guardians: 0 with defaulted threshold(1): 1 > 0, no valid threshold.
         let mut module = with_meta(&[("guardians", 0)]);
         let config = crate::config::StdlibConfig::default();
         let mut diags = Vec::new();
@@ -726,7 +726,7 @@ mod tests {
 
     #[test]
     fn valid_threshold_compiles_clean() {
-        // guardians: 3, threshold: 2 — the shipped fixture values.
+        // guardians: 3, threshold: 2: the shipped fixture values.
         let mut module = with_meta(&[("guardians", 3), ("threshold", 2)]);
         let config = crate::config::StdlibConfig::default();
         let mut diags = Vec::new();
@@ -741,7 +741,7 @@ mod tests {
 
     #[test]
     fn threshold_eq_guardians_compiles_clean() {
-        // guardians: 3, threshold: 3 — unanimity is a valid boundary.
+        // guardians: 3, threshold: 3: unanimity is a valid boundary.
         let mut module = with_meta(&[("guardians", 3), ("threshold", 3)]);
         let config = crate::config::StdlibConfig::default();
         let mut diags = Vec::new();

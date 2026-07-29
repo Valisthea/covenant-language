@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UUPS Upgradeable · Covenant By Example</title>
-<meta name="description" content="upgradeable_by, version, migrate — safe contract upgrades.">
+<meta name="description" content="upgradeable_by, version, migrate, safe contract upgrades.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/12-uups-upgradeable">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/12-uups-upgradeable">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="UUPS Upgradeable · Covenant By Example">
-<meta property="og:description" content="upgradeable_by, version, migrate — safe contract upgrades.">
+<meta property="og:description" content="upgradeable_by, version, migrate, safe contract upgrades.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="UUPS Upgradeable · Covenant By Example">
-<meta name="twitter:description" content="upgradeable_by, version, migrate — safe contract upgrades.">
+<meta name="twitter:description" content="upgradeable_by, version, migrate, safe contract upgrades.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,7 +367,7 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge advanced">Advanced</span>
     <p class="chapter-eyebrow">Chapter 12 / 15</p>
     <h1 class="chapter-title">UUPS Upgradeable</h1>
-    <p class="chapter-subtitle">upgradeable_by, version, migrate — safe contract upgrades.</p>
+    <p class="chapter-subtitle">upgradeable_by, version, migrate, safe contract upgrades.</p>
     <hr class="chapter-divider">
     
     <p class="prose">The Universal Upgradeable Proxy Standard (EIP-1822) separates logic from storage.
@@ -397,7 +397,7 @@ logic can only run once.</p>
         // (owner was always present; nothing new here)
     }
 }</pre></div>
-<div class="code-wrap"><div class="code-label">counter_v2.cov — adding a step field</div><pre class="code-block" data-lang="covenant">record CounterV2 {
+<div class="code-wrap"><div class="code-label">counter_v2.cov, adding a step field</div><pre class="code-block" data-lang="covenant">record CounterV2 {
     value:   u256;
     owner:   address;
     step:    u256;    // new in V2
@@ -435,12 +435,12 @@ covenant upgrade <proxy-address> <v2-address> --network sepolia</pre></div>
 <table class="notes-table">
 <tr><td><code>version: N</code></td><td>is a compile-time constant embedded in the bytecode. The upgrade mechanism verifies version monotonicity.</td></tr>
 <tr><td><code>upgradeable_by: expr</code></td><td>generates an <code>_authorizeUpgrade</code> override that requires <code>expr</code> to be true.</td></tr>
-<tr><td><code>migrate from N to M { ... }</code></td><td>generates an initializer guarded by a storage flag — it cannot be called twice (re-initialization guard).</td></tr>
-<tr><td>Storage layout</td><td>The compiler validates that V2 does not change the slot positions of V1 fields — only appending new fields at the end is allowed.</td></tr>
+<tr><td><code>migrate from N to M { ... }</code></td><td>generates an initializer guarded by a storage flag, it cannot be called twice (re-initialization guard).</td></tr>
+<tr><td>Storage layout</td><td>The compiler validates that V2 does not change the slot positions of V1 fields, only appending new fields at the end is allowed.</td></tr>
 </table>
 
-    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li><code>upgradeable_by</code> and <code>version</code> give you UUPS in two declarations — no boilerplate proxy code to maintain.</li>
-<li>The <code>migrate</code> block is the safest place for post-upgrade initialization — the compiler ensures it runs exactly once.</li>
+    <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li><code>upgradeable_by</code> and <code>version</code> give you UUPS in two declarations, no boilerplate proxy code to maintain.</li>
+<li>The <code>migrate</code> block is the safest place for post-upgrade initialization, the compiler ensures it runs exactly once.</li>
 <li>Always audit storage layout compatibility between versions. The compiler warns on slot conflicts.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="11-cryptographic-amnesia"><span class="chapter-nav-direction">← Previous</span><span class="chapter-nav-title">Cryptographic Amnesia (ERC-8228)</span></a><a class="chapter-nav-btn next" href="13-beacon-proxy"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Beacon Proxy Pattern</span></a></nav>
   </main>

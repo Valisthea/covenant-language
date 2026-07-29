@@ -1,6 +1,6 @@
 //! Native smoke tests for the wasm-bindings adapter layer.
 //!
-//! Runs with `cargo test -p covenant-wasm-bindings` — no wasm-pack,
+//! Runs with `cargo test -p covenant-wasm-bindings`: no wasm-pack,
 //! no headless browser. The adapter functions are the same code path
 //! the WASM build will execute, just minus the `JsValue` ser step.
 
@@ -90,7 +90,7 @@ fn coin_produces_erc20_selectors() {
 
 #[test]
 fn syntax_error_is_reported_with_line_col() {
-    // Missing closing brace inside `set` — parser-level error.
+    // Missing closing brace inside `set`: parser-level error.
     let src = "record Bad {\n    field x: int\n    action set(v: int) {\n        x = v\n    \n}\n";
     let r = compile_evm(src);
     assert!(!r.ok, "broken source must report ok = false");
@@ -151,7 +151,7 @@ fn ir_text_renders_for_hello() {
 
 #[test]
 fn five_basic_examples_all_compile() {
-    // Mirrors the existing covenant-driver test_compiles_all_basics test —
+    // Mirrors the existing covenant-driver test_compiles_all_basics test,
     // proves the bindings adapter doesn't drop any artifact or mangle
     // any selector for the canonical fixture set.
     //

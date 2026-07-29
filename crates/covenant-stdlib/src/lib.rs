@@ -3,7 +3,7 @@
 //! Phase 9 of the compiler pipeline. Consumes the `IrModule` emitted by Phase 6
 //! and synthesizes standard-interface functions (ERC-20 for `token`, ERC-8227
 //! for `confidential token`) by injecting `IrFunction`s, events, and errors
-//! directly. For non-token constructs this phase is mostly a no-op in V0 —
+//! directly. For non-token constructs this phase is mostly a no-op in V0,
 //! ballot / ceremony / bridge / vault / registry synthesizers are stubbed and
 //! emit `W606`.
 
@@ -79,7 +79,7 @@ pub fn lower_stdlib(mut module: IrModule, config: StdlibConfig) -> (IrModule, Ve
                 diags.push(diag::warn_synth_not_impl(module.name.span, "nft"));
             }
         }
-        // Record / Counter / Board / Market / Module / Test — no stdlib synthesis.
+        // Record / Counter / Board / Market / Module / Test, no stdlib synthesis.
         _ => {}
     }
 

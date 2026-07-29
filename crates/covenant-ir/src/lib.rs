@@ -1,7 +1,7 @@
 //! Intermediate representation: the typed, privacy-annotated IR used by all backends.
 //!
 //! Phase 6 of the compiler pipeline. Consumes a `PrivacyCheckedFile` from
-//! Phase 5 and emits an `IrModule` — SSA form with block parameters (no
+//! Phase 5 and emits an `IrModule`: SSA form with block parameters (no
 //! explicit phi nodes). The IR is backend-agnostic: Phase 7 optimizes it,
 //! Phase 8 (EVM) / Phase 9 (Aster) / Phase 10 (WASM) lower it to bytecode.
 

@@ -2,7 +2,7 @@
 //!
 //! Naming is normative (see Phase 6 spec). Every variant's doc-comment
 //! specifies the expected operand count and result semantics. Phase 7
-//! (optimizer) and Phase 8 (backend) key off these opcodes — do not rename
+//! (optimizer) and Phase 8 (backend) key off these opcodes, do not rename
 //! without updating every consumer.
 
 use covenant_parser::ast::Ident;
@@ -132,7 +132,7 @@ pub enum Opcode {
     FheAnd,
     FheOr,
     FheNot,
-    /// `(cond_ct, true_ct, false_ct) -> ct` — merge values after FheBranch.
+    /// `(cond_ct, true_ct, false_ct) -> ct`: merge values after FheBranch.
     FheSelect,
     FheBootstrap,
     FheCiphertextHash,
@@ -185,7 +185,7 @@ pub enum Opcode {
     LoadZeroAddress,
 
     // --- Reveal ---
-    /// `(ciphertext) -> plaintext` — reveal body's decryption point.
+    /// `(ciphertext) -> plaintext`: reveal body's decryption point.
     RevealDecrypt,
 
     // --- Assertion ---
@@ -203,7 +203,7 @@ pub enum Opcode {
     /// from which the EVM backend derives the 4-byte selector.
     /// Use STATICCALL when `is_view` is true.
     ExternalCall {
-        /// Canonical ABI signature — selector computed by the EVM backend.
+        /// Canonical ABI signature: selector computed by the EVM backend.
         abi_sig: Box<str>,
         is_view: bool,
         /// Number of ABI-encoded arguments (excluding the leading address operand).
@@ -307,7 +307,7 @@ impl Opcode {
 
     /// Stable string name for this opcode, used by backends to derive wire
     /// selectors (KSR-CVN-020 precompile selector prefix). Does NOT include
-    /// payload data for tuple variants — the selector is per-operation, not
+    /// payload data for tuple variants: the selector is per-operation, not
     /// per-call-site.
     pub fn stable_name(&self) -> &'static str {
         use Opcode::*;
@@ -452,7 +452,7 @@ impl Opcode {
     ///     `AmnesiaBegin`, `AmnesiaSubmitShare`, `AmnesiaFinalize`,
     ///     `VdfLock`, `VdfUnlock`, `DestructionProof`.
     ///
-    /// Optimizer passes (CSE in particular — see KSR-CVN-016/017) MUST
+    /// Optimizer passes (CSE in particular: see KSR-CVN-016/017) MUST
     /// consult this method before merging two values produced by the same
     /// opcode with identical operands.
     pub fn has_randomness_or_state(&self) -> bool {
@@ -474,7 +474,7 @@ impl Opcode {
     }
 
     /// Returns true for opcodes that DCE must preserve even when their SSA
-    /// result is unused — verification primitives whose absence in the final
+    /// result is unused: verification primitives whose absence in the final
     /// bytecode would silently strip security checks, and `FheBootstrap`
     /// whose absence breaks runtime noise budgeting (KSR-CVN-026).
     ///

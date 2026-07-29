@@ -3,7 +3,7 @@
 //! Checks:
 //! * every block has exactly one terminator (true by construction, but we
 //!   explicitly reject `Terminator::Unreachable` as a bug unless the block is
-//!   known to be unreachable — which we can't prove without a CFG pass, so we
+//!   known to be unreachable: which we can't prove without a CFG pass, so we
 //!   accept it as "intentional" placeholder);
 //! * every function has a valid entry block;
 //! * every Jump/Branch/FheBranch target exists;

@@ -1,6 +1,6 @@
-//! Resolver diagnostic codes (E101–E199 per Doc 5 §17.2).
+//! Resolver diagnostic codes (E101-E199 per Doc 5 §17.2).
 //!
-//! Not every helper is used internally — some are reserved for future passes
+//! Not every helper is used internally: some are reserved for future passes
 //! that will reuse the same code numbering.
 #![allow(dead_code)]
 

@@ -14,7 +14,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-# Compiler surface — keep this list minimal. Every extra crate is bytes
+# Compiler surface: keep this list minimal. Every extra crate is bytes
 # in the user's browser.
 covenant-driver = { path = "../covenant-driver", version = "0.9.2" }
 covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
@@ -32,7 +32,7 @@ hex = "0.4"
 # Aster + wasm backends are deliberately NOT pulled in. They add weight
 # without giving the browser playground anything actionable.
 
-# JS interop bindings — all expensive ones gated to wasm32 so native
+# JS interop bindings: all expensive ones gated to wasm32 so native
 # `cargo test` doesn't have to compile them.
 serde = { workspace = true }
 serde_json = { workspace = true }

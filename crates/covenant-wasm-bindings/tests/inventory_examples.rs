@@ -3,9 +3,9 @@
 //! and which are pseudo-Covenant (Solidity-flavored aspirational
 //! pseudo-code that never compiled).
 //!
-//! Sprint 26 audit Phase 5 finding KSR-CVN-PRELIM-009 — the operator's
+//! Sprint 26 audit Phase 5 finding KSR-CVN-PRELIM-009, the operator's
 //! browser validation discovered that ~10+ examples use `require()`,
-//! `map<...>`, `encrypted<...>`, etc. — none of which exist in real
+//! `map<...>`, `encrypted<...>`, etc.: none of which exist in real
 //! Covenant per the working compiler fixtures.
 //!
 //! Run with:
@@ -44,7 +44,7 @@ fn inventory_playground_examples() {
     let dir = match examples_dir() {
         Some(d) => d,
         None => {
-            eprintln!("playground examples dir not found — run from covenant repo root");
+            eprintln!("playground examples dir not found, run from covenant repo root");
             eprintln!("expected at ../covenant-playground/public/examples");
             return;
         }
@@ -75,7 +75,7 @@ fn inventory_playground_examples() {
         } else {
             let first = errs
                 .first()
-                .map(|d| format!("L{}:{} {} — {}", d.line, d.column, d.code, d.message))
+                .map(|d| format!("L{}:{} {}: {}", d.line, d.column, d.code, d.message))
                 .unwrap_or_else(|| "(no specific error)".into());
             fail.push((name.clone(), first));
         }
@@ -103,11 +103,11 @@ fn inventory_playground_examples() {
     // public/examples/ has to make sure it parses + lowers cleanly.
     //
     // If you intentionally want to ship a "preview / not-yet-compiling"
-    // example, do NOT put it in public/examples/ — keep it in src/examples/
+    // example, do NOT put it in public/examples/: keep it in src/examples/
     // metadata only and gate visibility via a feature flag.
     assert!(
         fail.is_empty(),
-        "{} example(s) in public/examples/ failed to compile — see stdout",
+        "{} example(s) in public/examples/ failed to compile, see stdout",
         fail.len()
     );
 }

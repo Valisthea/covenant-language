@@ -181,7 +181,7 @@ pub fn emit_abi(module: &IrModule, include_test_actions: bool) -> String {
         // F08: a `reveal` is read-only and RETURNs 32 bytes at runtime, but the
         // one-liner form (`reveal total to owner`) carries no explicit `returns`
         // clause, so `f.returns` is `None` and the ABI used to advertise
-        // `outputs:[]` — a caller decoding the return per the published ABI got
+        // `outputs:[]`: a caller decoding the return per the published ABI got
         // nothing. Recover the real output type from the return terminator's
         // value (the decrypted field type) when there is no declared return.
         let output_ty: Option<Ty> = match &f.returns {
@@ -196,7 +196,7 @@ pub fn emit_abi(module: &IrModule, include_test_actions: bool) -> String {
             )],
             None => Vec::new(),
         };
-        // F08: `reveal` is a read-only disclosure — it never writes state — so
+        // F08: `reveal` is a read-only disclosure: it never writes state, so
         // its ABI `stateMutability` is `view`, not `nonpayable`.
         let mutability = match f.kind {
             IrFunctionKind::View => "view",

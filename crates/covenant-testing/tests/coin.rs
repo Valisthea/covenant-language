@@ -140,7 +140,7 @@ fn transfer_from_deployer_moves_balance() {
 
 #[test]
 fn transfer_beyond_balance_reverts() {
-    // Alice still has zero — sending from her must revert.
+    // Alice still has zero: sending from her must revert.
     let (mut h, c) = setup();
     let _data = h.call_revert(
         c,

@@ -1,4 +1,4 @@
-//! KSR-CVN-021 regression tests — `@slot(N)` annotation respected by storage layout.
+//! KSR-CVN-021 regression tests: `@slot(N)` annotation respected by storage layout.
 //!
 //! Verifies that:
 //!   1. A field annotated with `@slot(N)` is placed at storage slot `N`, not at
@@ -11,7 +11,7 @@
 //! field with `@slot(N)`" upgrade-safety convention would have the annotation
 //! silently ignored. Adding a new field between two existing ones shifts every
 //! subsequent slot by one, so funds stored at "old slot 3" are read from
-//! "new slot 3" — a different field. Pinning with `@slot` is the documented
+//! "new slot 3": a different field. Pinning with `@slot` is the documented
 //! upgrade-safety remediation; it must actually work.
 
 use covenant_diag::SourceId;
@@ -119,7 +119,7 @@ module Fine {
 fn slot_annotation_is_honored_in_storage_layout() {
     // First field gets @slot(42); second field has no annotation and should
     // take the next sequential slot (1, since the first sequential slot 0 is
-    // unused — pinned slots do not advance the sequential counter).
+    // unused: pinned slots do not advance the sequential counter).
     let src = r#"
 module Pinned {
     @slot(42)

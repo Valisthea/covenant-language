@@ -1,4 +1,4 @@
-//! `covenant doctor` — diagnose the local development environment.
+//! `covenant doctor`: diagnose the local development environment.
 //!
 //! V0.9 Sprint 41 Phase 41.3. Inspired by Flutter's `flutter doctor` /
 //! Foundry's implicit env checks.
@@ -37,7 +37,7 @@ pub struct DoctorArgs {
 
     /// Exit with non-zero status if any probe is in `Failed` state.
     /// Warnings (e.g. missing optional env vars) do NOT trigger non-zero
-    /// exit — only hard failures (missing required tools, unreadable
+    /// exit: only hard failures (missing required tools, unreadable
     /// config files). Designed for CI gates : `covenant doctor --strict ||
     /// exit 1` blocks the pipeline if the dev env can't reproduce the
     /// V0.9.x baseline.
@@ -90,7 +90,7 @@ pub fn run(args: DoctorArgs) -> Result<(), CliError> {
         probe_env_var(
             "ASTER_RPC_URL",
             "Aster Chain RPC URL",
-            "needed for Aster Chain deploy (V0.9.x — placeholder, deploy pending)",
+            "needed for Aster Chain deploy (V0.9.x: placeholder, deploy pending)",
         ),
         probe_file_present(
             "config/helper-addresses-v0.9.0.json",
@@ -137,7 +137,7 @@ fn probe_rustc() -> Probe {
     match command_version_string("rustc", &["--version"]) {
         Some(v) => {
             // Min supported = 1.81 (matches the workspace's rust-toolchain).
-            // We don't strictly enforce — just warn if it looks too old.
+            // We don't strictly enforce: just warn if it looks too old.
             let too_old = v.contains("1.7") || v.contains("1.6") || v.contains("1.5");
             Probe {
                 name: "rustc".to_string(),
@@ -293,7 +293,7 @@ fn emit_human(probes: &[Probe]) {
         println!("Action items :");
         for (i, p) in action_items.iter().enumerate() {
             println!(
-                "  {}. {} — {}",
+                "  {}. {}: {}",
                 i + 1,
                 p.name,
                 p.fix.as_deref().unwrap_or("")

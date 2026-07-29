@@ -17,7 +17,7 @@ use crate::ty::{StdlibModuleTag, Ty};
 pub enum VariadicKind {
     /// Not variadic; arity must match exactly.
     Fixed,
-    /// `keccak(...)`, `encode(...)` — accept any hashable/encodable trailing args.
+    /// `keccak(...)`, `encode(...)`: accept any hashable/encodable trailing args.
     AnyHashable,
     /// Trailing args must all share the same concrete type as the last declared param.
     /// Reserved for future use; no current stdlib signature uses this mode.

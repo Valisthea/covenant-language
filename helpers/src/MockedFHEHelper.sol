@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * ⚠ V0.9 PLACEHOLDER — NOT FOR PRODUCTION SECRETS ⚠
+ * ⚠ V0.9 PLACEHOLDER: NOT FOR PRODUCTION SECRETS ⚠
  *
  * This contract implements the Covenant V0.9 FHE helper interface
  * with MOCKED logic. It is suitable ONLY for:
@@ -12,8 +12,8 @@ pragma solidity ^0.8.20;
  *
  * It is NOT suitable for:
  *   - Storing real secrets (plaintexts are recoverable from chain state)
- *   - Verifying real signatures (no relevance — this is FHE)
- *   - Verifying real ZK proofs (no relevance — this is FHE)
+ *   - Verifying real signatures (no relevance: this is FHE)
+ *   - Verifying real ZK proofs (no relevance: this is FHE)
  *
  * Production-grade implementations land in V1.0 after external audit.
  * Until then, this contract reverts on Ethereum mainnet (chainid 1).

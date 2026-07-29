@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hello Contract · Covenant By Example</title>
-<meta name="description" content="The simplest Covenant contract — record, action, view.">
+<meta name="description" content="The simplest Covenant contract, record, action, view.">
 <meta name="author" content="Kairos Lab">
 <link rel="canonical" href="https://examples.covenant-lang.org/01-hello-contract">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -16,12 +16,12 @@
 <meta property="og:url" content="https://examples.covenant-lang.org/01-hello-contract">
 <meta property="og:site_name" content="Covenant By Example">
 <meta property="og:title" content="Hello Contract · Covenant By Example">
-<meta property="og:description" content="The simplest Covenant contract — record, action, view.">
+<meta property="og:description" content="The simplest Covenant contract, record, action, view.">
 <meta property="og:image" content="https://examples.covenant-lang.org/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:creator" content="@Valisthea">
 <meta name="twitter:title" content="Hello Contract · Covenant By Example">
-<meta name="twitter:description" content="The simplest Covenant contract — record, action, view.">
+<meta name="twitter:description" content="The simplest Covenant contract, record, action, view.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -226,13 +226,13 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
   color: #e5e7eb; overflow-x: auto;
   tab-size: 4;
 }
-.code-block .kw   { color: #a78bfa; }  /* keywords — purple */
-.code-block .tp   { color: #67e8f9; }  /* types — cyan */
-.code-block .str  { color: #86efac; }  /* strings — green */
-.code-block .num  { color: #fca5a5; }  /* numbers — red */
+.code-block .kw   { color: #a78bfa; }  /* keywords, purple */
+.code-block .tp   { color: #67e8f9; }  /* types, cyan */
+.code-block .str  { color: #86efac; }  /* strings, green */
+.code-block .num  { color: #fca5a5; }  /* numbers, red */
 .code-block .cmt  { color: #6b7280; font-style: italic; } /* comments */
-.code-block .dec  { color: #fbbf24; }  /* decorators — amber */
-.code-block .fn   { color: #93c5fd; }  /* builtins — blue */
+.code-block .dec  { color: #fbbf24; }  /* decorators, amber */
+.code-block .fn   { color: #93c5fd; }  /* builtins, blue */
 /* Notes table */
 .notes-table {
   width: 100%; border-collapse: collapse;
@@ -367,11 +367,11 @@ nav.header-nav { display: flex; align-items: center; gap: 32px; }
     <span class="section-badge fundamentals">Fundamentals</span>
     <p class="chapter-eyebrow">Chapter 1 / 15</p>
     <h1 class="chapter-title">Hello Contract</h1>
-    <p class="chapter-subtitle">The simplest Covenant contract — record, action, view.</p>
+    <p class="chapter-subtitle">The simplest Covenant contract, record, action, view.</p>
     <hr class="chapter-divider">
     
     <p class="prose">Every Covenant contract is a <em>record</em>: a typed bundle of persistent storage
-fields and the actions that modify them. This chapter builds the minimal contract —
+fields and the actions that modify them. This chapter builds the minimal contract, 
 analogous to "Hello World" but running on an EVM chain.</p>
     <div class="code-wrap"><div class="code-label">hello.cov</div><pre class="code-block" data-lang="covenant">record Hello {
     greeting: text;
@@ -390,14 +390,14 @@ analogous to "Hello World" but running on an EVM chain.</p>
 <table class="notes-table">
 <tr><td><code>record</code></td><td>declares a contract with named storage fields.</td></tr>
 <tr><td><code>text</code></td><td>is Covenant's built-in string type, equivalent to <code>string</code> in Solidity.</td></tr>
-<tr><td><code>action</code></td><td>is a state-mutating function — it produces a transaction.</td></tr>
+<tr><td><code>action</code></td><td>is a state-mutating function, it produces a transaction.</td></tr>
 <tr><td><code>view</code></td><td>reads state without modifying it; no gas cost when called off-chain.</td></tr>
 <tr><td><code>emit Updated(...)</code></td><td>emits a log event. The event type is inferred from the arguments.</td></tr>
 <tr><td><code>self.greeting</code></td><td>refers to the contract's own storage field.</td></tr>
 </table>
 
     <p class="takeaways-heading">Key takeaways</p><ul class="takeaways"><li>Records are the primary contract abstraction in Covenant.</li>
-<li>Actions and views are declared at the same level — no <code>function</code> keyword ambiguity.</li>
+<li>Actions and views are declared at the same level, no <code>function</code> keyword ambiguity.</li>
 <li>The compiler infers ABI, storage layout, and event signatures automatically.</li></ul>
     <nav class="chapter-nav"><a class="chapter-nav-btn prev" href="index"><span class="chapter-nav-direction">← Back</span><span class="chapter-nav-title">All chapters</span></a><a class="chapter-nav-btn next" href="02-fields-and-storage"><span class="chapter-nav-direction">Next →</span><span class="chapter-nav-title">Fields and Storage</span></a></nav>
   </main>

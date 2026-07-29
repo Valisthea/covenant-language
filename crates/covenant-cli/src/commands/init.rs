@@ -1,4 +1,4 @@
-//! `covenant init` — scaffold a new Covenant project from a template.
+//! `covenant init`: scaffold a new Covenant project from a template.
 //!
 //! Templates are embedded as string constants. Available templates:
 //! basics, token, ballot, ceremony, module.
@@ -95,7 +95,7 @@ entrypoints = ["main.cov"]
 output = "build/"
 "#;
 
-const BASICS_COV: &str = r#"-- {{project_name}} — minimal Covenant module.
+const BASICS_COV: &str = r#"-- {{project_name}}: minimal Covenant module.
 
 module {{project_name}} {
     field counter: amount
@@ -143,7 +143,7 @@ entrypoints = ["main.cov"]
 output = "build/"
 "#;
 
-const TOKEN_COV: &str = r#"-- {{project_name}} — ERC-20-compatible token.
+const TOKEN_COV: &str = r#"-- {{project_name}}: ERC-20-compatible token.
 
 token {{project_name}} {
     field supply: amount
@@ -183,7 +183,7 @@ entrypoints = ["main.cov"]
 output = "build/"
 "#;
 
-const BALLOT_COV: &str = r#"-- {{project_name}} — open voting ballot.
+const BALLOT_COV: &str = r#"-- {{project_name}}: open voting ballot.
 
 ballot {{project_name}} {
     field tally: map<text, amount>
@@ -227,7 +227,7 @@ entrypoints = ["main.cov"]
 output = "build/"
 "#;
 
-const CEREMONY_COV: &str = r#"-- {{project_name}} — ERC-8228 amnesia ceremony.
+const CEREMONY_COV: &str = r#"-- {{project_name}}: ERC-8228 amnesia ceremony.
 
 ceremony {{project_name}}
     guardians: 3
@@ -266,7 +266,7 @@ entrypoints = ["main.cov"]
 output = "build/"
 "#;
 
-const MODULE_COV: &str = r#"-- {{project_name}} — bare module construct.
+const MODULE_COV: &str = r#"-- {{project_name}}: bare module construct.
 
 module {{project_name}} {
     field value: amount

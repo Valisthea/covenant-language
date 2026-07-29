@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 /**
- * CeremonyHelper — V0.9 ERC-8228 Amnesia Ceremony lifecycle.
+ * CeremonyHelper: V0.9 ERC-8228 Amnesia Ceremony lifecycle.
  *
  * Implements the 4 state-changing methods + 5 read views that the Covenant
  * compiler emits CALL into for contracts using the `ceremony` construct.

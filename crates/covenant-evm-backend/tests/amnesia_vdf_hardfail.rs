@@ -2,7 +2,7 @@
 //!
 //! Before Session 2 v0.6.1-rc2:
 //!   - `ShamirSplit`, `ShamirReconstruct`, `VdfLock`, `VdfUnlock`, and the
-//!     priority-queue stubs produced a diagnostic but no bytecode — a contract
+//!     priority-queue stubs produced a diagnostic but no bytecode, a contract
 //!     using Amnesia reconstruct compiled "successfully" into a silent no-op.
 //!   - `@vdf_locked(delay)` parsed into `IrActionQualifier::VdfLocked` but
 //!     was never referenced by codegen, so supposedly-delayed actions ran

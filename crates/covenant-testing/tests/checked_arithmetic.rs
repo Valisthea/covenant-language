@@ -2,7 +2,7 @@
 //!
 //! Covenant's `+` / `-` lower to AddChecked / SubChecked. Before V0.9.2 those
 //! lowered to bare EVM ADD/SUB, which WRAP the 256-bit word on overflow /
-//! underflow instead of reverting — so a `balance = balance - amount` would
+//! underflow instead of reverting: so a `balance = balance - amount` would
 //! silently wrap to ~type(uint256).max. These tests deploy a tiny record and
 //! drive the runtime through the mini-EVM interpreter.
 

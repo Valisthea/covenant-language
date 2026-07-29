@@ -171,7 +171,7 @@ pub enum RawToken {
     Tilde,
 }
 
-/// Callback for `(* ... *)` comments — walks the body tracking depth so that
+/// Callback for `(* ... *)` comments: walks the body tracking depth so that
 /// `(* outer (* inner *) still outer *)` parses as one comment.
 fn consume_nested_comment(lex: &mut Lexer<'_, RawToken>) -> Result<(), RawLexError> {
     let remainder = lex.remainder();
@@ -214,7 +214,7 @@ fn consume_c_block_comment(lex: &mut Lexer<'_, RawToken>) -> Result<(), RawLexEr
         }
         i += 1;
     }
-    // Unterminated — consume to end.
+    // Unterminated: consume to end.
     lex.bump(remainder.len());
     Ok(())
 }

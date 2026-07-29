@@ -5,7 +5,7 @@
 //! `Option<File>` together with any diagnostics collected during parsing.
 //!
 //! The AST types live in the [`ast`] submodule. Parser-level diagnostic codes
-//! (E020–E099) are exposed via the [`codes`] module.
+//! (E020-E099) are exposed via the [`codes`] module.
 
 pub mod ast;
 mod diag;
@@ -34,7 +34,7 @@ pub fn parse(tokens: &[Token], source_id: SourceId) -> (Option<File>, Vec<Diagno
     parser.parse_file()
 }
 
-/// Re-exported parser diagnostic codes (E020–E099).
+/// Re-exported parser diagnostic codes (E020-E099).
 pub mod codes {
     pub use crate::diag::{
         E020_UNEXPECTED_TOKEN, E021_ANNOTATION_WRONG_DECL, E022_MISSING_CLOSING_BRACE,

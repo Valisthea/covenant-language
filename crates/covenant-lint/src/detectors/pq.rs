@@ -1,4 +1,4 @@
-//! PQ — Post-quantum invariant detectors.
+//! PQ: Post-quantum invariant detectors.
 //!
 //! C700 `pq_verify_without_nonce` enforces P4 (PQ nonce uniqueness):
 //! a `PqVerifyDilithium` / `PqHybridVerify` must be paired with a nullifier
@@ -90,7 +90,7 @@ impl Detector for C700PqVerifyWithoutNonce {
                             instr.span,
                             format!(
                                 "PQ verify without nullifier protection: {missing} \
-                                 — replayable signature"
+: replayable signature"
                             ),
                             Severity::Critical,
                         )

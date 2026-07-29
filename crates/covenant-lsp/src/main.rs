@@ -1,4 +1,4 @@
-//! `covenant-lsp` — Language Server Protocol server for the Covenant language.
+//! `covenant-lsp`: Language Server Protocol server for the Covenant language.
 //!
 //! Communicates over stdin/stdout using the LSP JSON-RPC framing expected by
 //! VS Code and other editors. Start via:

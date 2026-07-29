@@ -1,32 +1,32 @@
 //! Mocked precompile implementations for the Styx primitive suite.
 //!
-//! These are *test doubles* — they are deterministic, handle-based
+//! These are *test doubles*: they are deterministic, handle-based
 //! implementations that let the EVM interpreter exercise Covenant bytecode
 //! end-to-end without linking against real TFHE, Dilithium, or ZK libraries.
 //!
 //! Design:
 //!
-//! - **FHE (0x101..0x10F)** — handle-based. Every ciphertext is an opaque
+//! - **FHE (0x101..0x10F)**: handle-based. Every ciphertext is an opaque
 //!   32-byte word (`keccak256(b"covenant-fhe" || nonce)`) that lives in
 //!   `MockPrecompileState::fhe_handles` alongside its plaintext U256 payload.
 //!   Homomorphic ops materialize new handles whose payload is computed
-//!   directly on plaintexts — so `reveal_decrypt(handle)` always returns the
+//!   directly on plaintexts: so `reveal_decrypt(handle)` always returns the
 //!   real value, and the tests stay deterministic.
 //!
-//! - **PQ (0x150..0x154)** — signature verification returns `true` by default,
+//! - **PQ (0x150..0x154)**: signature verification returns `true` by default,
 //!   `false` if `state.pq_force_fail` is set. `rand_pq` returns a keccak-based
 //!   deterministic stream seeded by `state.pq_nonce`.
 //!
-//! - **ZK (0x130..0x133)** — proof verification (`ZK_VERIFY` and
+//! - **ZK (0x130..0x133)**: proof verification (`ZK_VERIFY` and
 //!   `ZK_VDF_VERIFY`) returns `true` by default, `false` if
 //!   `state.zk_force_fail` is set; `nullifier` returns `keccak256(secret)`;
 //!   `ZK_VDF_EVAL` returns a pass-through value.
 //!
-//! - **Amnesia (0x120..0x123)** — session counters; tests generally don't
+//! - **Amnesia (0x120..0x123)**: session counters; tests generally don't
 //!   exercise these, but stubs are in place.
 //!
 //! Every precompile takes `(input: &[u8]) -> Vec<u8>`. The ABI used here is
-//! the one assumed by the EVM backend's codegen — 32-byte-aligned big-endian
+//! the one assumed by the EVM backend's codegen, 32-byte-aligned big-endian
 //! words for scalar inputs, raw byte slices for hashing.
 
 use sha3::{Digest, Keccak256};
@@ -216,7 +216,7 @@ pub fn dispatch(addr_low: u16, input: &[u8], state: &mut MockPrecompileState) ->
         }
         FHE_THRESHOLD_DECRYPT_BOOL => {
             // Input: 32-byte handle for ciphertext<bool>.
-            // Output: single byte — 1 if plaintext is non-zero, else 0.
+            // Output: single byte: 1 if plaintext is non-zero, else 0.
             // V0.2 note: leaks 1 bit about the ciphertext, acceptable for
             // balance-sufficient checks (caller already knows the result by
             // initiating the transfer). See LESSONS.md §7.

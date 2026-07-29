@@ -1,4 +1,4 @@
-//! EXT — External Call detectors (C300, C301, W302, W303, I304).
+//! EXT: External Call detectors (C300, C301, W302, W303, I304).
 
 use covenant_ir::{IrModule, Opcode};
 
@@ -23,7 +23,7 @@ impl Detector for C300TransferToZero {
         Category::ExternalCalls
     }
     fn description(&self) -> &'static str {
-        "Transfer destination is the zero address — funds will be permanently burned."
+        "Transfer destination is the zero address: funds will be permanently burned."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -44,7 +44,7 @@ impl Detector for C300TransferToZero {
                         Finding::new(
                             "C300",
                             instr.span,
-                            "Transfer destination is the zero address — funds will be burned",
+                            "Transfer destination is the zero address: funds will be burned",
                             Severity::Critical,
                         )
                         .with_help("Validate that the recipient address is non-zero"),
@@ -148,7 +148,7 @@ impl Detector for W302TransferInLoop {
                             Finding::new(
                                 "W302",
                                 instr.span,
-                                "Transfer inside a loop — partial failure risk",
+                                "Transfer inside a loop: partial failure risk",
                                 Severity::Warning,
                             )
                             .with_help(
@@ -234,7 +234,7 @@ impl Detector for I304TransferWithNoLogging {
         Category::ExternalCalls
     }
     fn description(&self) -> &'static str {
-        "Transfer is performed without emitting an event — transfers become untrackable off-chain."
+        "Transfer is performed without emitting an event, transfers become untrackable off-chain."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {

@@ -109,7 +109,7 @@ pub fn codegen_evm(module: IrModule, config: EvmConfig) -> (EvmArtifact, Vec<Dia
         }
     }
 
-    // Check @slot annotation conflicts — KSR-CVN-041.
+    // Check @slot annotation conflicts: KSR-CVN-041.
     let slot_conflicts = storage::detect_slot_collisions(&module);
     for (_, prior, slot) in slot_conflicts {
         cg.diagnostics

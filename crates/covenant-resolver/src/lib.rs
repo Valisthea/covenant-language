@@ -39,7 +39,7 @@ pub fn resolve(file: File, source_id: SourceId) -> (ResolvedFile, Vec<Diagnostic
     resolver.run()
 }
 
-/// Re-exported diagnostic codes (E101–E113, W201/W202, W301).
+/// Re-exported diagnostic codes (E101-E113, W201/W202, W301).
 pub mod codes {
     pub use crate::diag::{
         E101_DUPLICATE_DECL, E102_UNRESOLVED_IDENT, E103_PROOF_PAYLOAD_CONTEXT,

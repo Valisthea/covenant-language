@@ -1,4 +1,4 @@
-//! Tests for `external contract` parsing (Phase 17 – Solidity interop).
+//! Tests for `external contract` parsing (Phase 17 - Solidity interop).
 
 use covenant_diag::SourceId;
 use covenant_lexer::tokenize;
@@ -293,7 +293,7 @@ fn parse_external_function_bool_hash_params() {
 
 #[test]
 fn keyword_method_name_in_field_access_parses() {
-    // `transfer` is KwTransfer — must be accepted as a method name after `.`
+    // `transfer` is KwTransfer: must be accepted as a method name after `.`
     let src = r#"
 external contract IERC20 {
     function transfer(address, amount)

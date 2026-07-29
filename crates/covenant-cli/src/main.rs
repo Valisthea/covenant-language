@@ -1,15 +1,15 @@
-//! Covenant compiler CLI — V0.5 (Phase 14, Sessions 1–3).
+//! Covenant compiler CLI: V0.5 (Phase 14, Sessions 1-3).
 //!
 //! Subcommands:
-//!   init        — scaffold a new project from a template
-//!   build       — compile to EVM bytecode + ABI
-//!   check       — frontend-only validation (no codegen)
-//!   test        — run inline test blocks via the MockChain harness
-//!   fmt         — format source files canonically
-//!   inspect     — dump AST/IR/bytecode/ABI/storage
-//!   lint        — run the security linter
-//!   clean       — remove build artifacts
-//!   completions — generate shell completion scripts
+//!   init: scaffold a new project from a template
+//!   build: compile to EVM bytecode + ABI
+//!   check: frontend-only validation (no codegen)
+//!   test: run inline test blocks via the MockChain harness
+//!   fmt: format source files canonically
+//!   inspect: dump AST/IR/bytecode/ABI/storage
+//!   lint: run the security linter
+//!   clean: remove build artifacts
+//!   completions: generate shell completion scripts
 
 mod color;
 mod commands;
@@ -107,7 +107,7 @@ enum Commands {
 // ---------------------------------------------------------------------------
 
 fn main() {
-    // Clean panic hook — shows ICE message, not a Rust stack trace by default.
+    // Clean panic hook: shows ICE message, not a Rust stack trace by default.
     // With RUST_BACKTRACE set, surfaces the actual panic payload + location
     // (not just the PanicHookInfo Debug, which only shows the closure site).
     std::panic::set_hook(Box::new(|info| {

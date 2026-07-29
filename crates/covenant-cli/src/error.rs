@@ -24,7 +24,7 @@ pub enum CliError {
     #[error("compiler version mismatch: {0}")]
     CompilerVersionMismatch(String),
 
-    #[error("unknown template '{0}' — available: basics, token, ballot, ceremony, module")]
+    #[error("unknown template '{0}': available: basics, token, ballot, ceremony, module")]
     UnknownTemplate(String),
 
     #[error("target directory is not empty; use --force to overwrite: {0}")]
@@ -33,13 +33,13 @@ pub enum CliError {
     #[error("usage error: {0}")]
     Usage(String),
 
-    #[error("linter found critical security findings — release build blocked")]
+    #[error("linter found critical security findings, release build blocked")]
     LintError,
 
     #[error("{0} test(s) failed")]
     TestFailed(usize),
 
-    #[error("source file(s) are not formatted — run `covenant fmt` to fix")]
+    #[error("source file(s) are not formatted: run `covenant fmt` to fix")]
     FmtCheckFailed,
 }
 

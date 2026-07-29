@@ -110,7 +110,7 @@ impl CovenantTestHarness {
     pub fn deploy(&mut self, source: &str, caller: Address) -> Result<Contract, Vec<Diagnostic>> {
         // The harness exists to run `test_*` actions, so it must keep them in
         // the emitted contract. A release build (EvmConfig::default) strips
-        // them — see `include_test_actions`.
+        // them: see `include_test_actions`.
         let config = EvmConfig {
             include_test_actions: true,
             ..EvmConfig::default()

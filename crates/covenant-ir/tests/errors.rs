@@ -130,7 +130,7 @@ fn validator_rejects_opcode_arity_mismatch() {
     let mut m = empty_module();
     let mut f = empty_function();
     let span = Span::new(covenant_diag::SourceId::new(0), 0, 0);
-    // `Keccak` has `range(0, None)` so accepts any number — use a strict one.
+    // `Keccak` has `range(0, None)` so accepts any number, use a strict one.
     // `AddChecked` expects exactly 2 operands; supply 0.
     f.blocks[0].instructions.push(Instr {
         result: None,

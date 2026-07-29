@@ -375,7 +375,7 @@ impl Builder {
         // the contract's public interface. Classify it as `Test` so
         // `is_public_function` strips it from the ABI, the selector table and
         // the runtime dispatcher on a release build. Before this, every test
-        // shipped as a public entrypoint — and a test that mutates is a public
+        // shipped as a public entrypoint: and a test that mutates is a public
         // UNGUARDED state mutator (DEBT.md; confirmed on-chain 2026-07-23).
         let kind = if is_test_action(a) {
             IrFunctionKind::Test
@@ -512,7 +512,7 @@ impl Builder {
 
         // F07 (CRITICAL): enforce the `to <target>` disclosure restriction.
         // The one-liner `reveal <field> to owner` used to DROP the target
-        // entirely — the reveal compiled with zero caller check, so the
+        // entirely: the reveal compiled with zero caller check, so the
         // owner-only restriction was silently unenforced (private_dao.cov even
         // documented "Access control (`to owner`) is IR-level metadata; EVM
         // enforcement is V1"). Lower the target into the SAME authorization
@@ -591,7 +591,7 @@ impl Builder {
     ) -> IrPrincipal {
         match t {
             // `to owner`: gate on the `owner` field if the construct declares
-            // one, otherwise on the deployer — the natural on-chain owner of a
+            // one, otherwise on the deployer: the natural on-chain owner of a
             // construct with no explicit owner field (e.g. an `encrypted
             // counter`). This reuses `only owner` / `only deployer` codegen
             // verbatim and matches the harness's own expectation that the
@@ -601,10 +601,10 @@ impl Builder {
                 None => IrPrincipal::Deployer,
             },
             // `to caller`: the caller IS the recipient, so `caller == caller`
-            // is trivially true — an unrestricted (public) reveal. No check.
+            // is trivially true: an unrestricted (public) reveal. No check.
             RevealTarget::Caller => IrPrincipal::Caller,
             // `to parties`: a collection-membership check that is not yet
-            // lowered — `emit_only_assert` fails it CLOSED (reverts every call)
+            // lowered: `emit_only_assert` fails it CLOSED (reverts every call)
             // with the KSR-CVN-011 diagnostic, never silently open.
             RevealTarget::Parties => {
                 IrPrincipal::Parties(self.field_by_name.get("parties").map(|(id, _, _)| *id))
@@ -791,7 +791,7 @@ impl Builder {
                 // KSR-CVN-011: lower every principal-based `only` clause into a
                 // real IR assertion. Prior to this, non-predicate principals
                 // (owner / admin / deployer / address(...)) fell through to
-                // `Assert(true)` — a no-op that made access control advisory
+                // `Assert(true)`: a no-op that made access control advisory
                 // across every contract produced by the compiler.
                 self.emit_only_assert(fb, &lowered, span);
                 IrGuard::Only(lowered)
@@ -916,10 +916,10 @@ impl Builder {
         };
 
         match p {
-            // `only caller` — trivially true (caller == caller). No emit.
+            // `only caller`: trivially true (caller == caller). No emit.
             IrPrincipal::Caller => {}
 
-            // `only deployer` — assert caller == constructor-captured deployer.
+            // `only deployer`: assert caller == constructor-captured deployer.
             IrPrincipal::Deployer => {
                 let dep = fb.emit_instr(
                     Opcode::LoadDeployer,
@@ -932,7 +932,7 @@ impl Builder {
                 assert_eq_caller(fb, dep);
             }
 
-            // `only owner` / `only admin` — assert caller == SLOAD(field_slot).
+            // `only owner` / `only admin`: assert caller == SLOAD(field_slot).
             IrPrincipal::Owner(Some(gid)) | IrPrincipal::Admin(Some(gid)) => {
                 let principal_v = fb.emit_instr(
                     Opcode::SLoad(*gid),
@@ -945,7 +945,7 @@ impl Builder {
                 assert_eq_caller(fb, principal_v);
             }
 
-            // `only address(expr)` — assert caller == expr.
+            // `only address(expr)`: assert caller == expr.
             IrPrincipal::Address(v) => {
                 assert_eq_caller(fb, *v);
             }
@@ -1265,7 +1265,7 @@ impl Builder {
                 // OMEGA V6 CRT-003 fix: real structured-loop lowering with a
                 // counter threaded through a block parameter (the same
                 // mechanism already used for if-expression merge values,
-                // see `Expr::If` above) — header block branches on
+                // see `Expr::If` above): header block branches on
                 // `counter < len`, body block reads `ListGet(list, counter)`
                 // into the loop binding and jumps back to the header with
                 // `counter + 1`. The previous lowering ran the body exactly
@@ -2147,11 +2147,11 @@ impl Builder {
                 // exactly one opcode, but membership is a `ListContains` loop
                 // (compare + branch over each element). The old placeholder
                 // returned `Opcode::Eq`, so `x in [a, b, c]` compiled to
-                // `x == a` — a guard that silently passed only for the first
+                // `x == a`: a guard that silently passed only for the first
                 // element and rejected every other member, with no diagnostic.
                 if matches!(op, BinaryOp::In) {
                     // Still lower operands so their spans/types are recorded,
-                    // then refuse — matching the emit-const-after-diag shape of
+                    // then refuse: matching the emit-const-after-diag shape of
                     // E424/E425.
                     let _ = self.lower_expr(fb, lhs);
                     let _ = self.lower_expr(fb, rhs);
@@ -2239,7 +2239,7 @@ impl Builder {
                     // Fail-loud, mirroring the E424 stdlib-math refusal above.
                     // These lowered to opcodes the EVM backend answered with
                     // PUSH0, so `.length` was always 0 and `.keys`/`.values`
-                    // yielded a handle that `for each` read as an empty list —
+                    // yielded a handle that `for each` read as an empty list,
                     // a clean-compiling silent no-op, indistinguishable from a
                     // genuinely empty map. A Covenant map is a bare
                     // keccak(key ‖ slot) mapping: it has no length word and no
@@ -2254,7 +2254,7 @@ impl Builder {
                         // refusal. `.argmax`/`.argmin` fell through to
                         // `StructGet(0)`: the reduction never iterated and
                         // returned a constant (field 0 of the map handle)
-                        // instead of the key with the max/min value — a
+                        // instead of the key with the max/min value: a
                         // clean-compiling silent miscompile. A Covenant map has
                         // no key array to iterate, so nothing correct can be
                         // emitted. List `.argmax`/`.argmin` still lower via the
@@ -2533,7 +2533,7 @@ impl Builder {
             }
             Some(Binding::LangIdent(li)) => self.lower_lang_ident(fb, li, ty, id.span),
             Some(Binding::StdlibFn(_)) | Some(Binding::StdlibModule(_)) => {
-                // Appears as a callee target — the Call branch handles dispatch.
+                // Appears as a callee target: the Call branch handles dispatch.
                 fb.emit_const(IrConstant::Integer(0), ty, id.span)
             }
             _ => fb.emit_const(IrConstant::Integer(0), ty, id.span),
@@ -2557,7 +2557,7 @@ impl Builder {
             LangIdent::This => Opcode::LoadThis,
             LangIdent::ZeroAddress => Opcode::LoadZeroAddress,
             LangIdent::Block | LangIdent::Msg => {
-                // Namespaces — represent as a placeholder value; subsequent
+                // Namespaces: represent as a placeholder value; subsequent
                 // FieldAccess dispatches to the concrete opcode.
                 return fb.emit_const(IrConstant::Integer(0), ty, span);
             }
@@ -3185,7 +3185,7 @@ fn choose_binop(op: BinaryOp, lhs: &Ty, rhs: &Ty) -> Opcode {
         // `in` is intercepted and fail-loud-refused (E426) at the sole call
         // site above, before `choose_binop` is ever reached, because membership
         // is a `ListContains` loop that a single-opcode mapping cannot express.
-        // Reaching here means that guard was bypassed — a compiler bug, never a
+        // Reaching here means that guard was bypassed, a compiler bug, never a
         // silent scalar `Eq` again.
         In => unreachable!("`in` must be refused with E426 before choose_binop"),
     }
@@ -3228,7 +3228,7 @@ fn stdlib_fn_opcode(f: StdlibFn) -> Opcode {
         StdlibFn::RandPq => Opcode::PqRand,
         // Min/Max/Abs/Pow/Sqrt are intentionally absent: they are rejected in
         // `lower_call` via `unimplemented_math_name` before reaching here.
-        // Do NOT add placeholder arms — that is exactly how `max(a, b)` came
+        // Do NOT add placeholder arms: that is exactly how `max(a, b)` came
         // to compile as `a + b`.
         _ => Opcode::AbiEncode,
     }
@@ -3407,7 +3407,7 @@ fn validate_annotation_name(
     if KNOWN_ANNOTATIONS.contains(&name) {
         return;
     }
-    // Case-insensitive match against the canonical set — if the user wrote
+    // Case-insensitive match against the canonical set, if the user wrote
     // `@NonReentrant`, that is a near-miss, not a custom annotation.
     let lower = name.to_ascii_lowercase();
     let sugg = if KNOWN_ANNOTATIONS
@@ -3431,7 +3431,7 @@ fn validate_annotation_name(
 /// correctly in a single word are carried: integers, bools, and 20/32-byte
 /// hex (address / hash). `Text`, `Duration` and non-20/32-byte hex hit that
 /// function's `vec![0]` fallback, so populating them would store a WRONG
-/// value — worse than dropping the default. They stay `None` and reach the
+/// value: worse than dropping the default. They stay `None` and reach the
 /// runtime as 0, exactly as before; honouring them needs proper (dynamic or
 /// duration-folding) constructor encoding, tracked in `DEBT.md`. Computed
 /// defaults (`= a + b`) are not constants and also return `None`.
@@ -3455,7 +3455,7 @@ fn field_default_const(expr: &Expr) -> Option<IrConstant> {
             }
             _ => None,
         },
-        // Backend can't store these in one word yet — leave as-is rather than
+        // Backend can't store these in one word yet: leave as-is rather than
         // store a wrong value.
         LiteralExpr::Text(_, _) | LiteralExpr::Duration(_, _, _) => None,
     }
@@ -3467,7 +3467,7 @@ fn field_default_const(expr: &Expr) -> Option<IrConstant> {
 /// re-implement the predicate: if the runner and the backend disagree about
 /// what a test is, either a test becomes unrunnable or a test entrypoint
 /// ships. Note the runner additionally requires zero args to *run* a test, but
-/// classification here is deliberately name/annotation only — a parameterised
+/// classification here is deliberately name/annotation only, a parameterised
 /// `test_*` action is not runnable, so leaving it a public `Action` would be
 /// the worst case (an un-runnable public mutator).
 pub fn is_test_action(a: &covenant_parser::ast::ActionDecl) -> bool {
@@ -3480,7 +3480,7 @@ pub fn is_test_action(a: &covenant_parser::ast::ActionDecl) -> bool {
 fn lower_annotation(ann: &covenant_parser::ast::Annotation) -> IrAnnotation {
     match ann.name.name.as_ref() {
         "precompute" => {
-            // Lose the expression here — it's metadata; the builder can revisit.
+            // Lose the expression here: it's metadata; the builder can revisit.
             IrAnnotation::Unknown("precompute".into())
         }
         "batch_up_to" => {
