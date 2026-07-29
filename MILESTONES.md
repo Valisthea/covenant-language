@@ -215,7 +215,7 @@ arriving on time means the V0.9.0 monolithic ship plan stays viable.
 ### Resolution of KSR-CVN-PRELIM-005
 
 The V0.8 audit finding flipped to "FIX VERIFIED". See
-`covenant-audits/audits/2026-04-25-omega-v4-covenant-v0.8/02-findings/KSR-CVN-PRELIM-005-call-no-target-execution.md`
+`covenant-security-reviews/audits/2026-04-25-omega-v4-covenant-v0.8/02-findings/KSR-CVN-PRELIM-005-call-no-target-execution.md`
 for the full resolution narrative.
 
 ---

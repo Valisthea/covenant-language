@@ -159,7 +159,7 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 > 6 **Critical**, 6 **High**, and 5 **Medium** severity defects — the
 > largest single-cycle finding count since the V0.6 launch audit. Full
 > per-finding write-ups and remediation detail:
-> `covenant-audits/audits/2026-07-05-omega-v6-covenant-v0.9.2/`.
+> `covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2/`.
 > As with V0.9.2 : bytecode/storage layout for contracts already deployed
 > is unchanged ; only NEW compiles get the fixes. Full dynamic-`bytes`
 > storage+ABI remains out of scope (tracked in `DEBT.md`) — see the
@@ -785,7 +785,7 @@ First general availability release of Covenant. Post-quantum + FHE + ZK + Crypto
 
 ### Audit
 
-Covenant V0.6 underwent a full OMEGA V4 audit by Kairos Lab Security Research. **41 findings identified across 5 phases; all resolved.** Audit reports and reproducible PoCs will be published at `github.com/Valisthea/covenant-audits` (coming soon).
+Covenant V0.6 underwent a full OMEGA V4 audit by Kairos Lab Security Research. **41 findings identified across 5 phases; all resolved.** Audit reports and reproducible PoCs will be published at `github.com/Valisthea/covenant-security-reviews`.
 
 ### Critical fixes (Session 1)
 
@@ -809,7 +809,7 @@ Covenant V0.6 underwent a full OMEGA V4 audit by Kairos Lab Security Research. *
 
 ### Medium / Low / Info fixes (Sessions 3 + 4)
 
-- Layout-diff CLI (`covenant diff-layout`), precompile ABI version marker in bytecode, annotation validation, Cargo.lock pinning, CSE FHE arithmetic exclusion, `fhe_fold` type-aware key, ceremony seed entropy, version binding, `@slot` collision detection wired (`E423`), `PRECOMPILE_ABI_VERSION` consolidated. Full list in `covenant-audits`.
+- Layout-diff CLI (`covenant diff-layout`), precompile ABI version marker in bytecode, annotation validation, Cargo.lock pinning, CSE FHE arithmetic exclusion, `fhe_fold` type-aware key, ceremony seed entropy, version binding, `@slot` collision detection wired (`E423`), `PRECOMPILE_ABI_VERSION` consolidated. Full list in `covenant-security-reviews`.
 
 ### Language features
 
@@ -845,10 +845,10 @@ Covenant V0.6 underwent a full OMEGA V4 audit by Kairos Lab Security Research. *
 
 ### Audit artifacts
 
-- Full audit reports: `github.com/Valisthea/covenant-audits` (coming soon)
-- Executive summary: covenant-audits/audits/2026-04-22-omega-v4-covenant-v0.6/00-executive-summary.md
-- 7 reproducible PoCs: covenant-audits/.../03-adversarial-testing/
-- Phase 5 re-audit: covenant-audits/.../phase5-report.md
+- Full audit reports: `github.com/Valisthea/covenant-security-reviews`
+- Executive summary: covenant-security-reviews/audits/2026-04-22-omega-v4-covenant-v0.6/00-executive-summary.md
+- 7 reproducible PoCs: covenant-security-reviews/.../03-adversarial-testing/
+- Phase 5 re-audit: covenant-security-reviews/.../phase5-report.md
 
 ---
 

@@ -23,6 +23,8 @@ Write `token`, `nft`, `registry`, `ceremony` — the compiler synthesizes the au
 
 [**Website**](https://covenant-lang.org) · [**Playground**](https://playground.covenant-lang.org) · [**Milestones**](MILESTONES.md) · [**Changelog**](CHANGELOG.md) · [**Honest status**](STATUS.md)
 
+[**Security and audit roadmap**](docs/security-and-audit-roadmap.md) · [**Deploying to an Orbit chain**](docs/orbit-adoption.md) · [**Review archive**](https://github.com/Valisthea/covenant-security-reviews)
+
 </div>
 
 ---

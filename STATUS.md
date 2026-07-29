@@ -48,7 +48,7 @@ Every mock file carries a `PLACEHOLDER` banner and is gated by an `onlyTestnet` 
   and fixed **6 Critical + 6 High + 5 Medium** defects — the largest single-cycle finding
   count since the V0.6 launch audit, including three complete-authorization-bypass bugs and
   an uncatchable stack-overflow DoS reachable via every subcommand and the LSP. See
-  `covenant-audits/audits/2026-07-05-omega-v6-covenant-v0.9.2/` for full detail. Every cycle
+  `covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2/` for full detail. Every cycle
   finding more defects, not fewer, is itself evidence the codegen surface is still
   pre-external-audit.
 - **No external firm audit yet.** The unqualified word "audited" should not be used publicly

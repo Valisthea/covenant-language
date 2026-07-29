@@ -106,7 +106,7 @@ The internal self-audit findings below are all resolved. See
 | Info | 9 | Resolved |
 | **Total** | **36** | **All resolved** |
 
-Full self-audit reports: covenant-audits (coming soon).
+Full self-audit reports: covenant-security-reviews.
 
 ---
 

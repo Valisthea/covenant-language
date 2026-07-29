@@ -715,7 +715,7 @@ Never let the "Deferred" list grow without the "Resolved" list growing too. Debt
 **Resolved** : OMEGA V6, 2026-07-05 (HGH-027). `IFoo.at(addr).method(args)` chains are now type-checked against the matching `function` in the `external contract` block: `.at(addr)` requires an `address` argument, and the method call is arity- and per-argument-type-checked (E205/E201), with E203 for a typo'd method name. Previously this hit a permissive `Ty::Unknown` fallback unconditionally.
 
 ### `for each` / `list<Struct>` / builtin-predicate guards / ceremony auth / builtin-ident shadowing / PQ-key registry ABI
-**Resolved** : OMEGA V6, 2026-07-05 (CRT-002 through CRT-007). See `covenant-audits/audits/2026-07-05-omega-v6-covenant-v0.9.2/` for the full per-finding write-ups and `04-remediation/00-remediation-summary.md` for the fix summary. Six Critical-severity defects across control flow, list/struct storage, authorization guards, and ABI encoding.
+**Resolved** : OMEGA V6, 2026-07-05 (CRT-002 through CRT-007). See `covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2/` for the full per-finding write-ups and `04-remediation/00-remediation-summary.md` for the fix summary. Six Critical-severity defects across control flow, list/struct storage, authorization guards, and ABI encoding.
 
 ### Unbounded AST recursion (stack-overflow DoS)
 **Resolved** : OMEGA V6, 2026-07-05 (HGH-029). The parser's `parse_expr_bp`/`parse_block`, the resolver's `resolve_expr`, and the typechecker's `synth_expr` each now bound their own recursion depth independently, raising E031/E113/E232 instead of overflowing the native process stack.

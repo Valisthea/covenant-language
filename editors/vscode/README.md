@@ -2,7 +2,7 @@
 
 **Covenant** is a privacy-first smart contract language that compiles to EVM bytecode. Its compile-time access control and privacy type system are real; the cryptographic primitives (FHE, ZK, post-quantum, cryptographic amnesia) are **testnet-only mocked stubs with no security yet** — see [STATUS](https://github.com/Valisthea/covenant-language/blob/main/STATUS.md). Write privacy-typed contracts without Solidity.
 
-> **Continuously audited** — OMEGA V4 through V6 by Kairos Lab Security Research. Latest cycle (OMEGA V6, 5 July 2026): 6 Critical / 6 High / 5 Medium, all fixed the same day. Public report → (coming soon)
+> **Continuously audited** — OMEGA V4 through V6 by Kairos Lab Security Research. Latest cycle (OMEGA V6, 5 July 2026): 6 Critical / 6 High / 5 Medium, all fixed the same day. Public report →
 
 ---
 
@@ -207,9 +207,9 @@ Covenant is continuously audited by **Kairos Lab Security Research** using the O
 
 Key fixes: access control no-op (KSR-CVN-011), stale-memory precompile forgery (KSR-CVN-014), proxy initializer hijack (KSR-CVN-012), ceremony phase transition bypass (KSR-CVN-001).
 
-**Latest cycle — OMEGA V6 (5 July 2026, compiler V0.9.3):** a fresh breadth-first sweep across the compiler, stdlib, and produced-contract surfaces found 6 Critical, 6 High, and 5 Medium severity defects — the largest single-cycle count since the V0.6 launch audit, including a `for each` loop that never actually iterated and an unbounded-recursion crash reachable from any `.cov` file this extension's language server opens. All 17 findings were fixed the same day, each with a new regression test. Full write-up: covenant-audits/audits/2026-07-05-omega-v6-covenant-v0.9.2 (coming soon).
+**Latest cycle — OMEGA V6 (5 July 2026, compiler V0.9.3):** a fresh breadth-first sweep across the compiler, stdlib, and produced-contract surfaces found 6 Critical, 6 High, and 5 Medium severity defects — the largest single-cycle count since the V0.6 launch audit, including a `for each` loop that never actually iterated and an unbounded-recursion crash reachable from any `.cov` file this extension's language server opens. All 17 findings were fixed the same day, each with a new regression test. Full write-up: covenant-security-reviews/audits/2026-07-05-omega-v6-covenant-v0.9.2.
 
-Full public report index: github.com/Valisthea/covenant-audits (coming soon)
+Full public report index: github.com/Valisthea/covenant-security-reviews
 
 ---
 
@@ -221,7 +221,7 @@ Full public report index: github.com/Valisthea/covenant-audits (coming soon)
 | Documentation | [covenant-lang.org](https://covenant-lang.org) |
 | Kairos Lab | [kairos-lab.org](https://kairos-lab.org) |
 | Issues | [github.com/Valisthea/covenant-language/issues](https://github.com/Valisthea/covenant-language/issues) |
-| Audit reports | github.com/Valisthea/covenant-audits (coming soon) |
+| Audit reports | github.com/Valisthea/covenant-security-reviews |
 
 ---
 
