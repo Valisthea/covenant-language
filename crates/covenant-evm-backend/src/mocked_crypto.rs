@@ -2,18 +2,29 @@
 //! compiled module's bytecode routes to a `Mocked*.sol` helper contract on
 //! real-chain targets (Sepolia / AsterTestnet).
 //!
-//! Deliberately excludes the amnesia/ceremony precompiles (`AmnesiaBegin`
-//! etc., routed to `CeremonyHelper.sol`): that contract's V0.9 destruction
-//! proof is a real (if simplified) deterministic commitment, not the
-//! coin-flip-parity-check / open-access-plaintext-store class of mock the
-//! audit's PoC demonstrated for FHE/PQ/ZK, and its source carries no
-//! "PLACEHOLDER — NOT FOR PRODUCTION SECRETS" label. Conflating the two
-//! would misrepresent CeremonyHelper's actual maturity.
-//!
 //! This scans the IR directly (ground truth of what codegen actually
 //! lowers), rather than grepping source text, so it can't miss a primitive
 //! reached indirectly (e.g. via stdlib synthesis) or false-positive on one
 //! that only appears in a comment.
+//!
+//! The amnesia/ceremony category was originally EXCLUDED here, on the
+//! reasoning that `CeremonyHelper.sol` implements a real if simplified
+//! deterministic commitment rather than the coin-flip-parity-check class of
+//! stub used for FHE/PQ/ZK, and that its source carries no "PLACEHOLDER, NOT
+//! FOR PRODUCTION SECRETS" label, so conflating the two would misrepresent its
+//! maturity.
+//!
+//! That exclusion was wrong for the question this field exists to answer. A
+//! `ceremony` contract's V0.9 destruction path does not make anything
+//! unrecoverable: the VDF, the Shamir split and the destruction proof are
+//! deterministic stubs, and the "destroyed" secret remains readable from chain
+//! state. `CeremonyHelper.sol` is also the one helper with no `notMainnet`
+//! chain-id gate. A reader gating a pipeline on an empty
+//! `mockedCryptoPrimitives` would therefore have concluded that a ceremony
+//! contract depends on no mocked cryptography, which is the opposite of the
+//! truth. It is now reported, under its own category, so the difference in
+//! maturity between `CeremonyHelper` and the `Mocked*` stubs stays visible
+//! instead of being erased in either direction.
 
 use covenant_ir::{IrModule, Opcode};
 
@@ -32,6 +43,7 @@ pub fn detect_mocked_crypto_usage(module: &IrModule) -> Vec<MockedCryptoUsage> {
     let mut fhe = false;
     let mut zk = false;
     let mut pq = false;
+    let mut amnesia = false;
 
     for func in &module.functions {
         for block in &func.blocks {
@@ -64,6 +76,14 @@ pub fn detect_mocked_crypto_usage(module: &IrModule) -> Vec<MockedCryptoUsage> {
                     | Opcode::PqRand
                     | Opcode::KyberEncrypt
                     | Opcode::KyberDecrypt => pq = true,
+                    Opcode::AmnesiaBegin
+                    | Opcode::AmnesiaSubmitShare
+                    | Opcode::AmnesiaFinalize
+                    | Opcode::ShamirSplit
+                    | Opcode::ShamirReconstruct
+                    | Opcode::VdfLock
+                    | Opcode::VdfUnlock
+                    | Opcode::DestructionProof => amnesia = true,
                     _ => {}
                 }
             }
@@ -89,6 +109,12 @@ pub fn detect_mocked_crypto_usage(module: &IrModule) -> Vec<MockedCryptoUsage> {
             helper_contract: "MockedPQVerifier",
         });
     }
+    if amnesia {
+        out.push(MockedCryptoUsage {
+            category: "amnesia",
+            helper_contract: "CeremonyHelper",
+        });
+    }
     out
 }
 
@@ -100,6 +126,7 @@ pub fn helper_contract_for_category(category: &str) -> &'static str {
         "fhe" => "MockedFHEHelper",
         "zk" => "MockedZKVerifier",
         "pq" => "MockedPQVerifier",
+        "amnesia" => "CeremonyHelper",
         _ => "an unknown mocked-crypto helper",
     }
 }

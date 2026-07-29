@@ -69,6 +69,47 @@ fn plain_contract_reports_no_mocked_crypto_hgh_031() {
 }
 
 #[test]
+fn ceremony_reports_amnesia_in_metadata() {
+    // The amnesia category was originally excluded from this signal, on the
+    // reasoning that `CeremonyHelper.sol` is a real if simplified commitment
+    // rather than a coin-flip stub. That was the wrong call for the question
+    // the field answers: a V0.9 ceremony's destroy path does NOT make anything
+    // unrecoverable (the VDF, the Shamir split and the destruction proof are
+    // deterministic stubs, and the "destroyed" secret stays readable from chain
+    // state), so an empty `mockedCryptoPrimitives` told a reader gating on it
+    // the exact opposite of the truth.
+    //
+    // Negative control for this test: revert `detect_mocked_crypto_usage` to
+    // drop the amnesia arm and this assertion fails, while
+    // `plain_contract_reports_no_mocked_crypto_hgh_031` and
+    // `confidential_token_reports_fhe_in_metadata_hgh_031` both keep passing,
+    // proving the arm is scoped to ceremony opcodes and has not simply started
+    // reporting a category for everything.
+    let src = r#"
+ceremony SecretBurial {
+    guardians: 3
+    threshold: 2
+
+    on_destroy {
+        destroy(0)
+    }
+}
+"#;
+    let artifact = compile(src);
+    let cats: Vec<&str> = artifact
+        .metadata
+        .mocked_crypto_primitives
+        .iter()
+        .map(|c| c.as_ref())
+        .collect();
+    assert!(
+        cats.contains(&"amnesia"),
+        "a `ceremony` contract depends on placeholder amnesia cryptography and must report the \
+         `amnesia` category, got {cats:?}"
+    );
+}
+
+#[test]
 fn helper_contract_names_match_real_solidity_files_hgh_031() {
     // Cross-check the category -> contract-name mapping the CLI's warning
     // message uses against the categories this fixture actually produces,
@@ -78,4 +119,5 @@ fn helper_contract_names_match_real_solidity_files_hgh_031() {
     assert_eq!(helper_contract_for_category("fhe"), "MockedFHEHelper");
     assert_eq!(helper_contract_for_category("zk"), "MockedZKVerifier");
     assert_eq!(helper_contract_for_category("pq"), "MockedPQVerifier");
+    assert_eq!(helper_contract_for_category("amnesia"), "CeremonyHelper");
 }
