@@ -53,8 +53,15 @@ impl Detector for C100NoAccessGuard {
                         Severity::Critical,
                     )
                     .with_help(
-                        "Add `only(owner)` or another principal guard; \
-                         suppress with `@allow(C100)` if intentionally public",
+                        "Add a principal guard: `only owner`, `only deployer`, \
+                         `only admin` backed by a field of that name, or an explicit \
+                         `only 0x..` address. To accept a public action, put the \
+                         suppression in a COMMENT, \
+                         `-- @allow(C100, reason: \"intentionally public\")`, or set \
+                         \"C100\": \"off\" in .covenantlint.json. Written as a bare \
+                         annotation instead of a comment, `@allow(..)` fails the \
+                         build with E110: the linter reads it from the source text, \
+                         the parser does not know it.",
                     ),
                 );
             }
@@ -156,7 +163,14 @@ impl Detector for W102AdminNoTimelock {
                         ),
                         Severity::Warning,
                     )
-                    .with_help("Add `vdf_locked(delay)` qualifier to enforce a timelock"),
+                    .with_help(
+                        "No timelock qualifier compiles at this release. \
+                         `vdf_locked(delay)` does not parse, and the form that does, \
+                         `vdf_locked for <duration>`, is refused by the backend with \
+                         E517 because it has no EVM lowering. Store the deadline in a \
+                         `time` field and guard on it: \
+                         `action claim() when now >= unlock_at`.",
+                    ),
                 );
             }
         }

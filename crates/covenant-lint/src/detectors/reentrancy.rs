@@ -140,7 +140,7 @@ impl Detector for W003MissingNonReentrant {
         Category::Reentrancy
     }
     fn description(&self) -> &'static str {
-        "Action performs a Transfer without an `@non_reentrant` annotation."
+        "Action makes an external call, and this release has no reentrancy guard."
     }
 
     fn analyze(&self, ir: &IrModule, _source: &str) -> Vec<Finding> {
@@ -157,12 +157,20 @@ impl Detector for W003MissingNonReentrant {
                         "W003",
                         func.span,
                         format!(
-                            "action `{}` performs an external call without `@non_reentrant`",
+                            "action `{}` makes an external call with no reentrancy \
+                             protection, and this release has none to offer",
                             func.name.name
                         ),
                         Severity::Warning,
                     )
-                    .with_help("Add `@non_reentrant` to guard against reentrant calls"),
+                    .with_help(
+                        "Write every state change before the transfer. There is no \
+                         reentrancy guard in the language at this release: \
+                         `@non_reentrant` is not an annotation the compiler knows and \
+                         writing it is E110, and `vault` adds no protection either, \
+                         since the same body written as `module` compiles to \
+                         byte-identical bytecode.",
+                    ),
                 );
             }
         }

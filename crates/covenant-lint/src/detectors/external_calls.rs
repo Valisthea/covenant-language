@@ -206,7 +206,11 @@ impl Detector for W303NoEnsureBeforeTransfer {
                             Severity::Warning,
                         )
                         .with_help(
-                            "Add an `ensure` or `assert` to validate state before transferring",
+                            "Validate before transferring with a `when` guard on the \
+                             action, for example \
+                             `action pay(v: amount) when balances[caller] >= v`. \
+                             Covenant has no `ensure` or `assert` statement: both \
+                             are E030.",
                         ),
                     );
                 }
