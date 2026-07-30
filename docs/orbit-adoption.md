@@ -80,13 +80,24 @@ The four helper addresses are `PUSH20` immediates baked into the emitted
 bytecode. There is no runtime lookup, no constructor injection, and no on-chain
 registry. Two consequences:
 
-- Those addresses are deterministic only because they assume the Arachnid CREATE2
-  factory at `0x4e59b44847b379578588920cA78FbF26c0B4956C` exists on the chain. On
-  an Orbit chain without it, the prediction does not hold.
-- There is **no runtime check that code exists at those addresses**. A call into
-  an empty address fails at execution rather than at deployment, and worse, a
-  `STATICCALL` into an empty address returns success with empty data, so a
-  verification can read as passing when nothing ran.
+- Three of the four are deterministic only because they assume the Arachnid
+  CREATE2 factory at `0x4e59b44847b379578588920cA78FbF26c0B4956C` exists on the
+  chain. On an Orbit chain without it, the prediction does not hold.
+- **The fourth is not a prediction at all.** The ceremony helper the compiler
+  actually bakes in is `0x627f1Ff6Dc93AEba050c242FD9E26961E8F6c6F0`, deployed by
+  an ordinary transaction on Sepolia on 2026-04-26. It is not the CREATE2
+  address in the manifest, so it is not reproducible on another chain by
+  redeploying with the same salt. Any `ceremony` contract points there.
+- There is **no deploy-time check that code exists at those addresses**. A
+  contract pointed at an empty address deploys clean and is dead on arrival:
+  every action reaching a helper reverts on first use.
+
+  It does not silently pass, and an earlier version of this page said it could.
+  That was wrong. Every helper and precompile call site emits a success check
+  and a returndata-size check immediately after the call, both branching to
+  `REVERT`. An empty address returns success with zero-length returndata, which
+  trips the size check. Those guards are `KSR-CVN-013` and `KSR-CVN-014`, fixed
+  at v0.6, and they are why the failure is loud rather than silent.
 
 Since v0.9.7 there is a compile-time check, but only where we know the answer.
 `E533` refuses to build a contract that reaches a helper when the target's

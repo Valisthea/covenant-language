@@ -131,7 +131,22 @@ pub fn codegen_evm(module: IrModule, config: EvmConfig) -> (EvmArtifact, Vec<Dia
     erc_versions.insert("ERC-8229".into(), "0.1".into());
     erc_versions.insert("ERC-8231".into(), "0.1".into());
 
-    let mocked_crypto_primitives = mocked_crypto::detect_mocked_crypto_usage(&module)
+    let mocked_usage = mocked_crypto::detect_mocked_crypto_usage(&module);
+
+    // The mock target bakes in addresses that exist only in the in-tab
+    // runtime. That is right for the local harness and wrong the moment the
+    // artifact leaves the machine, and until now the build said nothing at
+    // all. `mockchain` is the default, so it is what you get by typing
+    // nothing.
+    if !mocked_usage.is_empty() && !config.target.uses_helper_contracts() {
+        let categories: Vec<&str> = mocked_usage.iter().map(|u| u.category).collect();
+        cg.diagnostics.push(diag::mock_addresses_in_artifact(
+            Span::new(module.source_id, 0, 0),
+            &categories,
+        ));
+    }
+
+    let mocked_crypto_primitives = mocked_usage
         .into_iter()
         .map(|u| Box::from(u.category))
         .collect();

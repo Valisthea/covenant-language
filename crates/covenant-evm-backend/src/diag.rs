@@ -104,15 +104,40 @@ pub const E532_DYNAMIC_INDEXED_EVENT_PARAM: DiagCode = DiagCode(532);
 /// EVM JSON-RPC endpoint to verify against.
 ///
 /// So a contract using any mocked primitive built for this target carries
-/// calls to four addresses that most likely hold no code. It deploys, and then
-/// every guarded action reverts, or worse, a STATICCALL to an empty address
-/// returns success with empty data and the primitive reads as a pass.
+/// calls to addresses that most likely hold no code. It deploys clean and is
+/// dead on arrival: every action that reaches a helper reverts on first use.
+///
+/// It does not silently pass. An earlier version of this comment said a call
+/// into an empty address could read as a successful verification. That is
+/// wrong, and the compiler had already made it wrong: every helper and
+/// precompile call site emits a success check and a returndata-size check
+/// immediately after the call, both branching to REVERT. An empty address
+/// returns success with zero-length returndata, which trips the size check.
+/// Those guards are KSR-CVN-013 and KSR-CVN-014, fixed at v0.6.
 ///
 /// This is the same defect as the removed `evm` alias: a target that reads as
 /// deployable while its helper addresses exist on no verified network.
 /// Contracts that use no helper are unaffected and still build, since their
 /// bytecode is identical on every target.
 pub const E533_UNVERIFIED_HELPER_TARGET: DiagCode = DiagCode(533);
+
+/// A contract using mocked cryptography built for the local mock chain.
+///
+/// The default target bakes in the mock precompile addresses, `0x0101` and
+/// neighbours, which are implemented by the in-tab runtime and exist on no
+/// public network. Building for it is correct while you are testing locally
+/// and wrong the moment the artifact leaves the machine, and nothing said so:
+/// the build printed `ok` with no warning at all.
+///
+/// The earlier reasoning for staying quiet was that the mock target is
+/// obviously local. It is not obvious from an artifact on disk, which carries
+/// no target in its filename, and `mockchain` is the default, so it is what a
+/// user gets by typing nothing. Deploying that artifact to any real chain
+/// produces a contract that reverts on the first action reaching a helper.
+///
+/// This is a warning rather than an error because building for the mock chain
+/// is exactly right when running the local harness, which is the common case.
+pub const W534_MOCK_ADDRESSES_IN_ARTIFACT: DiagCode = DiagCode(534);
 
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
@@ -345,10 +370,12 @@ pub fn unverified_helper_target(span: Span, opcode: &str, target: &str) -> Diagn
              predicted for Sepolia, reused on the assumption that the Arachnid CREATE2 \
              factory exists on that chain, which nobody verified: the address manifest \
              still records no helpers for this target. Emitting the call anyway would \
-             produce a contract that deploys and then reverts on first use, or reads a \
-             STATICCALL to an empty address as a passing verification. Build for \
-             `sepolia`, where all four helpers are deployed and verified, or for \
-             `mockchain`, whose runtime implements these opcodes natively."
+             produce a contract that compiles clean, deploys clean, and is dead on \
+             arrival: every action reaching a helper reverts on first use, because \
+             the call site checks the success flag and the returndata size and an \
+             empty address satisfies neither. Build for `sepolia`, where all four \
+             helpers are deployed and verified, or for `mockchain`, whose runtime \
+             implements these opcodes natively."
         ),
         span,
     )
@@ -419,6 +446,25 @@ pub fn transfer_from_unsupported(span: Span) -> Diagnostic {
          <dst>` to send the contract's own balance, or model the debit explicitly in \
          storage (for example a balances map) before transferring."
             .to_string(),
+        span,
+    )
+}
+
+/// Mock precompile addresses baked into an artifact.
+/// See [`W534_MOCK_ADDRESSES_IN_ARTIFACT`].
+pub fn mock_addresses_in_artifact(span: Span, categories: &[&str]) -> Diagnostic {
+    let used = categories.join(", ");
+    warn(
+        W534_MOCK_ADDRESSES_IN_ARTIFACT,
+        format!(
+            "this contract uses mocked cryptography ({used}) and was built for the \
+             local mock chain, so the emitted bytecode calls the in-tab mock \
+             precompile addresses. Those exist on no public network. The artifact \
+             is correct for `covenant test` and for the playground, and deploying \
+             it anywhere else gives a contract that reverts on the first action \
+             reaching a helper. Build with --target-chain=sepolia for an artifact \
+             that points at deployed helpers."
+        ),
         span,
     )
 }
