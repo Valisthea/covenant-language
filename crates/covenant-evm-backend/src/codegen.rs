@@ -2273,6 +2273,18 @@ impl<'a> Codegen<'a> {
         // Native-precompile targets (mockchain) are unaffected: their runtime
         // implements these opcodes, so the namespaced selector is correct there.
         let sel = if self.config.target.uses_helper_contracts() {
+            // The helper may well have the method, at an address nobody has
+            // confirmed holds code. Same doctrine as E520 one step earlier:
+            // refuse rather than emit a call into an address that is very
+            // likely empty, where a STATICCALL returns success with no data
+            // and the primitive reads as a pass.
+            if !self.config.target.helpers_verified_deployed() {
+                self.diagnostics.push(d::unverified_helper_target(
+                    instr.span,
+                    instr.opcode.stable_name(),
+                    self.config.target.as_str(),
+                ));
+            }
             match crate::target::helper_selector_for_opcode(instr.opcode.stable_name()) {
                 Some(s) => s,
                 None => {

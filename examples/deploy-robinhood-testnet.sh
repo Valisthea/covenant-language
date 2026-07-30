@@ -20,7 +20,9 @@ set -euo pipefail
 RPC="${RPC:-https://rpc.testnet.chain.robinhood.com}"
 EXPLORER="https://explorer.testnet.chain.robinhood.com"
 EXPECTED_CHAINID=46630
-COVENANT="${COVENANT:-$HOME/Desktop/_Projets_Kairos/covenant-src/target/release/covenant.exe}"
+# Defaults to whatever `covenant` is on PATH. Override with $COVENANT to
+# point at a build tree.
+COVENANT="${COVENANT:-$(command -v covenant || echo covenant)}"
 SRC="${SRC:-./coin.cov}"
 OUT="${OUT:-./out}"
 FEE_BPS="${FEE_BPS:-100}"   # 1.00%

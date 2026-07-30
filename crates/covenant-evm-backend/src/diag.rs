@@ -92,6 +92,28 @@ pub const E531_BARE_STRUCT_FIELD: DiagCode = DiagCode(531);
 /// behaviour instead of shipping a topic that encodes nothing.
 pub const E532_DYNAMIC_INDEXED_EVENT_PARAM: DiagCode = DiagCode(532);
 
+/// A helper call emitted for a target whose helper contracts have never been
+/// confirmed deployed.
+///
+/// `aster_testnet` reuses the CREATE2 addresses predicted for Sepolia, on the
+/// reasoning that the Arachnid factory is deterministic across EVM chains.
+/// That holds only where the factory is itself deployed, and nobody checked.
+/// `config/helper-addresses-v0.9.0.json` still carries `"helpers": null` for
+/// this target and a status reading "Verify in Sprint 42", which never
+/// happened; there is no published Aster Chain testnet chain id and no public
+/// EVM JSON-RPC endpoint to verify against.
+///
+/// So a contract using any mocked primitive built for this target carries
+/// calls to four addresses that most likely hold no code. It deploys, and then
+/// every guarded action reverts, or worse, a STATICCALL to an empty address
+/// returns success with empty data and the primitive reads as a pass.
+///
+/// This is the same defect as the removed `evm` alias: a target that reads as
+/// deployable while its helper addresses exist on no verified network.
+/// Contracts that use no helper are unaffected and still build, since their
+/// bytecode is identical on every target.
+pub const E533_UNVERIFIED_HELPER_TARGET: DiagCode = DiagCode(533);
+
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
 pub const W503_SELECTOR_NEAR_COLLISION: DiagCode = DiagCode(503);
@@ -307,6 +329,26 @@ pub fn helper_method_missing(span: Span, opcode: &str, target: &str) -> Diagnost
              action would revert on first use. Build for `mockchain`, whose native \
              runtime implements this opcode, or wait for a helper release that adds the \
              method."
+        ),
+        span,
+    )
+}
+
+/// A helper call for a target whose helpers were never verified deployed.
+/// See [`E533_UNVERIFIED_HELPER_TARGET`].
+pub fn unverified_helper_target(span: Span, opcode: &str, target: &str) -> Diagnostic {
+    Diagnostic::error(
+        E533_UNVERIFIED_HELPER_TARGET,
+        format!(
+            "`{opcode}` needs a helper contract, and the helper addresses for target \
+             `{target}` have never been confirmed deployed. They are the addresses \
+             predicted for Sepolia, reused on the assumption that the Arachnid CREATE2 \
+             factory exists on that chain, which nobody verified: the address manifest \
+             still records no helpers for this target. Emitting the call anyway would \
+             produce a contract that deploys and then reverts on first use, or reads a \
+             STATICCALL to an empty address as a passing verification. Build for \
+             `sepolia`, where all four helpers are deployed and verified, or for \
+             `mockchain`, whose runtime implements these opcodes natively."
         ),
         span,
     )

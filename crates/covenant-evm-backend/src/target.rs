@@ -108,6 +108,26 @@ impl Target {
     pub fn uses_helper_contracts(&self) -> bool {
         !matches!(self, Target::MockChain)
     }
+
+    /// True when the helper contracts this target points at are known to be
+    /// deployed at those addresses.
+    ///
+    /// Sepolia is verified: all four helpers were deployed on 2026-04-26 and
+    /// answer `eth_getCode`. AsterTestnet is not. It reuses Sepolia's
+    /// predicted CREATE2 addresses on the assumption that the Arachnid factory
+    /// is deployed on that chain, which was left to a sprint that never ran:
+    /// the address manifest still carries `"helpers": null` for it. Compiling
+    /// a helper call for an unverified target is the same defect as the
+    /// removed `evm` alias, so codegen refuses it rather than shipping a
+    /// contract that reverts on first use.
+    pub fn helpers_verified_deployed(&self) -> bool {
+        match self {
+            // Native precompiles, nothing to deploy.
+            Target::MockChain => true,
+            Target::Sepolia => true,
+            Target::AsterTestnet => false,
+        }
+    }
 }
 
 /// Errors from parsing a target name.

@@ -31,18 +31,32 @@ pub struct BuildArgs {
 
     /// Override backend target.
     ///
-    /// Backend dispatch:
+    /// EVM bytecode:
     ///
-    ///   - `aster` (existing)            → Aster native backend
+    ///   - `mockchain` / `mock`  → local mock chain, the default. Mocked
+    ///     primitives run as native precompiles, nothing to deploy.
+    ///   - `sepolia`             → all four helper contracts are deployed and
+    ///     verified on Ethereum Sepolia. This is the testnet path that works.
+    ///   - `aster_testnet`       → helper contracts NEVER verified deployed.
+    ///     The addresses are the ones predicted for Sepolia, reused on the
+    ///     assumption that the CREATE2 factory exists on that chain, which
+    ///     nobody checked. A contract using any mocked primitive is refused
+    ///     with E533 rather than shipped as a contract that reverts on first
+    ///     use. Contracts that touch no mocked primitive build normally,
+    ///     since their bytecode is the same on every target.
     ///
-    /// EVM bytecode dispatch (new in V0.9):
+    /// Aster native bytecode:
     ///
-    ///   - `mockchain` / `mock` / `evm`  → in-tab MockChain (V0.8 default)
-    ///   - `sepolia`                     → V0.9 helpers on Ethereum Sepolia
-    ///   - `aster_testnet`               → V0.9 helpers on Aster Testnet
+    ///   - `aster`               → placeholder artifact only, not deployable.
+    ///     Emits metadata and zero functions until the Aster SDK ships, and
+    ///     warns loudly when you use it.
     ///
-    /// Mainnet is rejected at parse time (V0.9 testnet-only; mainnet helpers
-    /// land in V1.0 post external audit).
+    /// There is no generic `evm` target. It previously aliased the local mock
+    /// chain, whose helper addresses exist on no public network, so a build
+    /// that read as portable produced bytecode that could not work anywhere.
+    ///
+    /// Mainnet is refused: this release is testnet-only, and mainnet is gated
+    /// on an external audit.
     #[arg(long)]
     pub target_chain: Option<String>,
 
