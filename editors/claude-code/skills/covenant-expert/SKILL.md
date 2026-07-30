@@ -2,39 +2,46 @@
 name: covenant-expert
 description: >-
   Expert knowledge of the Covenant v0.9.7 smart-contract language (Kairos Lab).
-  Activate for any of: Covenant code.cov files; the 14 top-level constructs
-  (record, token, confidential token, ballot, counter, encrypted counter, board,
-  market, vault, registry, bridge, ceremony, module, hybrid module); FHE; ZK;
-  post-quantum; cryptographic amnesia; ERC-8227; ERC-8228; ERC-8229; ERC-8231;
+  Activate for any of: Covenant code.cov files; the top-level constructs
+  (record, token, nft, confidential token, ballot, counter, encrypted counter,
+  board, market, vault, registry, bridge, ceremony, module, hybrid module);
+  FHE; ZK; post-quantum; cryptographic amnesia; ERC-8227; ERC-8228; ERC-8229; ERC-8231;
   Solidity migration to Covenant; Covenant code review; compile errors in .cov
   files.
 ---
 
 # Covenant v0.9.7: Language Reference
 
-Every syntax claim here is verified against the Covenant v0.9.7 compiler fixtures.
+Every fenced sample in this file was run through `covenant build` on v0.9.7, and
+every guard, construct and diagnostic named here was checked against that same
+compiler. Where something does not compile, this file says so and quotes the
+diagnostic instead of leaving a gap.
+
 Top-level keyword = architecture decision. Solidity has one `contract`; Covenant
-has 14 specialized constructs, pick the right one and the compiler auto-synthesizes
-the correct ABI surface.
+has the specialized constructs listed below. Picking the right one gives you the
+right shape and defaults, but only a few of them synthesize an ABI surface for
+you, and most emit nothing at all. Check the table below before assuming a
+surface exists.
 
 ---
 
-## a) The 14 top-level constructs
+## a) The top-level constructs
 
 | Construct | Auto-synthesizes | Pick when… |
 |-----------|-----------------|------------|
-| `record C { }` | Per-field auto-getters (from the ABI layer, not the stdlib synthesizer) | Key-value storage, simple state bag |
+| `record C { }` | **Nothing.** No auto-getters are emitted: the ABI is `[]` and the runtime is the same 12-byte stub `module` produces. Write `view` accessors yourself | Key-value storage, simple state bag |
 | `token C { }` | Full ERC-20 surface (`transfer`, `approve`, `balanceOf`, `Transfer`, `Approval`) | Standard fungible token |
+| `nft C { }` | Full ERC-721 surface: 21 ABI entries, including `mint`, `burn`, `ownerOf`, `balanceOf`, `approve`, `setApprovalForAll`, `transferFrom`, `tokenURI`, `name`, `symbol`, plus `Transfer` / `Approval` / `ApprovalForAll` | Non-fungible token collection |
 | `confidential token C { }` | ERC-8227 surface (`transferEncrypted`, `balanceOfEncrypted`, `approveEncrypted`) | FHE-encrypted token balances |
 | `ballot C { }` | **Nothing yet** (emits `W606`, synthesis not implemented). Write the actions yourself | On-chain voting / polls |
 | `counter C { }` | **Nothing.** Write the actions yourself | Single-value counter |
 | `encrypted counter C { }` | **Nothing.** The `encrypted` qualifier is real; there is no generated surface | Privacy-preserving counter |
 | `board C { post { } }` | **Nothing.** Write the actions yourself | Message board / append-only log |
 | `market C { }` | **Nothing.** `priority_queue` fields are read-only in this release | Marketplace, DEX order book |
-| `vault C { }` | `@non_reentrant` by default, which is real. **No generated surface** (emits `W606`) | Funds vault, escrow |
+| `vault C { }` | **Nothing** (emits `W606`). No reentrancy guard is inserted and no lock slot is allocated; `lint` still reports `W003` on any value-transferring action. See section g) | Funds vault, escrow |
 | `registry C { }` | ERC-8231 surface, but the construct **does not compile** in this release (`E505`) | Identity registry, key directory |
 | `bridge C anchored_on ["a","b"] { }` | **Nothing yet** (emits `W606`, synthesis not implemented). Write the actions yourself | Multi-chain bridge |
-| `ceremony C { guardians: N threshold: M }` | Full amnesia-ceremony lifecycle (`setup`, `submit_share`, `finalize`, `destroy`, `phase`, `is_destroyed`) | Cryptographic amnesia / secret-sharing ceremonies |
+| `ceremony C { guardians: N threshold: M on_destroy { … } }` | Full amnesia-ceremony lifecycle (`setup`, `submit_share`, `finalize`, `destroy`, `phase`, `session_id`, `is_destroyed`, `owner`). The `on_destroy { }` block is mandatory: without it the build fails with `E309` | Cryptographic amnesia / secret-sharing ceremonies |
 | `module C { }` | Nothing, generic escape hatch | Generic logic when no specialized keyword fits |
 | `hybrid module C { }` | Nothing, but allows per-field privacy qualifiers | Mixed plaintext + encrypted state |
 
@@ -54,6 +61,9 @@ emitting `W606`, the compiler says so out loud rather than pretending.
 (* multi-line comment
    can nest (* like this *)
    ends with closing *)
+record Holder {
+    field balance: amount
+}
 ```
 
 `//` and `/* */` are **rejected** by the compiler with a dedicated diagnostic.
@@ -92,14 +102,25 @@ Privacy qualifiers **prefix** the construct keyword (or a field type inside `hyb
 | `confidential` | `token` | Alias that selects the ERC-8227 surface |
 | `hybrid` | `module`, `token` | Mixed plaintext + encrypted fields; qualify per-field |
 
-Inside `hybrid module`, per-field qualifiers:
+Inside `hybrid module`, two per-field qualifiers compile: `public` and
+`encrypted`. Only `encrypted` changes the field's representation, `storage.json`
+types it `ciphertext<_>` where `public` (like an unqualified field) is `uint256`.
+The other four are rejected by the parser, `E020 expected field name`, got
+`KwPrivate` / `KwSealed` / `KwConfidential` / `KwHybrid`.
+
 ```covenant
 hybrid module Wallet {
     field headcount:          amount   -- plaintext
     field encrypted treasury: amount   -- TFHE ciphertext
-    field pq_signed history:  [hash]   -- post-quantum signed list
+    field history:            [hash]   -- plaintext list of digests
 }
 ```
+
+There is **no `pq_signed` field qualifier**. `field pq_signed history: [hash]` is
+rejected by the parser with `[E020] expected field name, got KwPqSigned`, and no
+other placement in a field declaration parses either (`field history: pq_signed
+[hash]` gives `E020` plus `E024`, `pq_signed field history: [hash]` gives `E020`).
+`pq_signed` exists only as an action guard, see section e).
 
 ---
 
@@ -109,29 +130,78 @@ Guards are declared **after the arg list, before the body**, comma-separated.
 All guards must hold or the action reverts before the body runs.
 
 ```covenant
-action transfer(to: address, value: amount)
-        when balances[caller] >= value,
-        only registered_account {
-    balances[caller] -= value
-    balances[to]     += value
-    emit Transfer(caller, to, value)
+module Ledger {
+    field owner:    address
+    field paused:   bool
+    field balances: map<address, amount>
+
+    event Transfer(sender: address indexed, recipient: address indexed, value: amount)
+
+    action send(recipient: address, value: amount)
+            when balances[caller] >= value,
+            when !paused {
+        balances[caller]    -= value
+        balances[recipient] += value
+        emit Transfer(caller, recipient, value)
+    }
+
+    action set_paused(flag: bool) only owner {
+        paused = flag
+    }
 }
 ```
+
+Note the two renames in that sample. `transfer` is the reserved keyword
+`KwTransfer` and cannot be an action name (`E020 expected action name, got
+KwTransfer`), and `to` is `KwTo` and cannot be a parameter name (`E020 expected
+argument name, got KwTo`). Both are rejected in every construct, so pick other
+identifiers, `send` and `recipient` here.
 
 | Guard | Meaning |
 |-------|---------|
 | `when expr` | Arbitrary boolean expression must be true |
-| `only owner` | `caller` must equal the deployer-set `owner` address |
+| `given expr` | Same thing. `given` and `when` lower to byte-identical output |
+| `only owner` | `caller` must equal the `owner` address. Requires `field owner: address` |
+| `only admin` | `caller` must equal the `admin` address. Requires `field admin: address` |
 | `only deployer` | `caller` must equal the deployment address |
-| `only first_time_caller` | This address has never called this action before |
-| `only registered_account` | (token context) Caller must have a registered account |
-| `only registered_key` | (registry/board context) Caller must have registered a key |
-| `given x in collection` | Value-in-set / value-in-array membership check |
-| `pq_signed(content, sig, key)` | Dilithium-5 signature verification (ERC-8231, Fortress layer) |
-| `verified_by(zk_proof)` | Recursive IVC proof verification (ERC-8229, Prism layer) |
-| `vdf_locked(handle, time)` | Wesolowski VDF time-lock check (Oblivion layer) |
+| `only <address literal>` | `caller` must equal that hard-coded address |
+| `pq_signed(content, sig, key)` | Dilithium-5 signature verification (ERC-8231, Fortress layer). `key` must be a stored `pq_key` **field**, a `pq_key` parameter is refused with `E505` because dynamic-`bytes` ABI decoding would corrupt it |
+| `verified_by(proof)` | Recursive IVC proof verification (ERC-8229, Prism layer) |
 
-Multiple guards are comma-separated, **not** joined with `&&`.
+Multiple guards are comma-separated, **not** joined with `&&`. Inside a single
+`when` expression, disjunction is `||`; there is no `or` keyword.
+
+`only` resolves seven names plus a literal address. Only some of them are
+enforced, and the compiler tells you which:
+
+- enforced: `deployer`, an explicit address such as `only 0x00..01`, and
+  `owner` or `admin` when a same-named `address` field is declared
+- `only owner` or `only admin` with no such field declared compiles but emits
+  `W421 only with unresolved principal cannot be enforced at runtime; the
+  action will revert on every call`, which bricks the action on an immutable
+  contract
+- `guardians`, `parties` and `holders` resolve but emit `W421` too, as
+  collection-typed principals with no codegen
+- `only caller` compiles with `W508`: it lowers to `msg.sender == msg.sender`
+  and restricts nothing
+- an identifier outside those seven is `E106 unknown principal predicate`
+- a principal whose declared type is not `address` is `E436`
+
+Treat `W421` and `W508` as errors: both mean the guard you wrote does not
+guard anything.
+
+### Guards the compiler refuses
+
+These are named in older material but do not compile at v0.9.7. Do not generate
+them.
+
+| Guard | Diagnostic at v0.9.7 | Write instead |
+|-------|----------------------|---------------|
+| `only first_time_caller` | `E518`, no real EVM authorization check, the guard "would silently pass for every caller" | `field called: map<address, bool>` plus `when !called[caller]`, setting `called[caller] = true` in the body |
+| `only registered_key` | `E518`, same reason | `field keys: map<address, amount>` plus `when keys[caller] != 0` |
+| `only registered_account` | `E106 unknown principal predicate`. No such predicate exists, in a token context or anywhere else | `field accounts: map<address, bool>` plus `when accounts[caller]` |
+| `given x in collection` | `E426`, the `in` membership operator has no lowering. It used to compile to equality against the FIRST element only | `given x == a \|\| x == b` |
+| `vdf_locked(handle, time)` | Does not even parse. The parser demands `for` after the keyword and rejects the open paren with `E020`. The real spelling takes one operand and no parentheses, `vdf_locked for <duration>`, and that spelling is then refused with `E517`, no EVM lowering (KSR-CVN-023) | `field unlock_at: time` plus `when now >= unlock_at` |
 
 ---
 
@@ -144,8 +214,9 @@ Multiple guards are comma-separated, **not** joined with `&&`.
 | **ERC-8229**, FHE Computation Verification | `verified_by(zk_proof)` guard on an action | Halo2 SNARK + Nova IVC proof verification at action entry |
 | **ERC-8231**, Post-Quantum Signature Verification | `pq_signed(content, sig, key)` guard on an action | Dilithium-5 signature check at action entry |
 
-Cite the ERC number in a `--` comment near the construct, the `erc-822x` rule
-enforces this. Example:
+Citing the ERC number in a `--` comment near the construct is a convention only.
+Nothing checks it: `lint --deep --severity info` reports the same (nothing) with
+the comment present and with it removed. Example:
 
 ```covenant
 -- ERC-8227: Confidential Token Interface (Styx Protocol)
@@ -161,12 +232,29 @@ confidential token PrivateCoin {
 
 ## g) `vault` and `@non_reentrant`
 
-`vault` includes reentrancy protection **by default**, the compiler inserts the
-equivalent of `@non_reentrant` automatically. Do **not** add it manually; doing so
-produces a compiler warning.
+`vault` does **not** insert reentrancy protection in this release. The construct
+emits `W606` and passes through unchanged: the same body with the keyword changed
+to `module` produces byte-identical `runtime.bin`, `bin`, `abi.json`,
+`metadata.json` and `storage.json`. No lock slot is allocated. Running `lint` on
+the sample below reports `W003 action withdraw makes an external call with no
+reentrancy protection, and this release has none to offer`, exactly as it does
+for the `module` version.
+
+`@non_reentrant` is not writable either. The resolver's annotation allowlist is
+`@precompute`, `@batch_up_to`, `@prove_offchain`, `@gas_budget`, so writing
+`@non_reentrant` on an action is a hard error, `E110 unknown annotation
+@non_reentrant`, and the build fails. Placing it above the construct is worse
+still, `E028` plus `E020`.
+
+So guard the withdraw path yourself, checks-effects-interactions: debit storage
+**before** the `transfer`, as the sample below does. One caveat if you are
+tempted to swap `vault` for `module` wholesale: the two are not interchangeable in
+every case, because the resolver seeds `opens_at` and `closes_at` for `vault` and
+`market` but not for `module`, so a body referencing those gives `E102` once
+converted.
 
 ```covenant
--- correct: vault is already @non_reentrant
+-- vault adds no reentrancy guard: debit storage BEFORE the transfer
 vault Treasury {
     field balances: map<address, amount>
 
@@ -197,14 +285,16 @@ explain it and switch to a supported construct. Trust the error.
 
 | Code | Refused construct | Guidance |
 |------|-------------------|----------|
+| **E106** | an `only <name>` clause whose name is neither a declared field nor a known predicate | Error, unknown principal predicate. `only registered_account` lands here: it does not exist. |
+| **E110** | an unknown annotation, including `@non_reentrant` | Error, not a warning. The whole allowlist is `@precompute`, `@batch_up_to`, `@prove_offchain`, `@gas_budget`. |
 | **E424** | stdlib math builtins `min` / `max` / `abs` / `pow` / `sqrt` | Not implemented → error. Write the arithmetic explicitly instead. |
 | **E425** | map introspection `.length` / `.keys` / `.values` | Unsupported → error. Track size/keys in a separate field. |
 | **E426** | the `in` membership operator (`given x in list`) | Not implemented → error. Use an explicit lookup / `map` membership. |
 | **E427** | map `.argmax` / `.argmin` | Unsupported → error. (List `.argmax` / `.argmin` **do** work.) |
-| **E512** | a non-anonymous `event` with **>3** `indexed` params | Error, max 3 indexed params. Drop `indexed` or make the event `anonymous`. |
+| **E512** | an `event` with **>3** `indexed` params | Error, max 3 indexed params. Mark at most 3 parameters `indexed`. Covenant has no anonymous-event syntax, so that escape hatch is not writable: `anonymous event Ev(…)` is `E020`, `event Ev(…) anonymous` is `E030`, `@anonymous` is `E021`. |
 | **E519** | division / modulo by a **literal** zero | Error. (A non-literal divisor instead gets a runtime guard.) |
 | **E520** | a missing precompile helper method | Error, the referenced precompile helper does not exist. |
-| **E521** | a `text` / string constant longer than **32 bytes** | Error. Keep constant strings ≤ 32 bytes. |
+| **E521** | a `text` constant longer than **32 bytes** in a **return position** | Error, the V0 return encoder emits at most 32 bytes. Keep returned string constants ≤ 32 bytes. This is not a limit on `text` constants generally: a 33-byte constant in `field s: text = "…"` or assigned in a body builds clean. |
 | **E522** | nested maps (`map<_, map<_, _>>`) | Not yet supported → error. Use a struct-valued map or flatten the key. |
 | **E523** | `transfer <amt> from <src> to <dst>` | No faithful lowering → error. A native transfer compiles to a `CALL`, which spends the *contract's own* balance, so `from` was silently dropped. Use `transfer <amt> to <dst>` and debit the source in storage first. |
 | **W508** | `only caller` | Warning, allow-all no-op that guards nothing. Use a real principal (`only owner`, `only deployer`, …). |
@@ -220,19 +310,33 @@ explain it and switch to a supported construct. Trust the error.
 | **E435** | `delete <target>` on a shape with no zeroing lowering | Error. `delete` compiled to nothing, so a revocation action revoked nothing. |
 | **E436** | an `only <principal>` clause whose principal is not an address | Error. It emitted an unsatisfiable comparison with no diagnostic. |
 | **E437** | `match` on an encrypted scrutinee | Error. The statement form lowers to a plaintext comparison, which would leak the value. |
+| **E505** | a `pq_key` (or other dynamic-`bytes`) value in an ABI parameter or return position | Error. The codegen can only move it as one 32-byte word, so a spec-compliant caller's encoding would corrupt it. Hold the key in a field instead. This is also what makes `registry` uncompilable. |
+| **E517** | the `vdf_locked for <duration>` qualifier | Error, no EVM lowering (KSR-CVN-023). A time-locked action would be instant at runtime. Use `when now >= unlock_at`. |
+| **E518** | `only first_time_caller`, `only registered_key` | Error. The predicate has no real EVM check and would pass for every caller. Track the state in a `map` and guard with `when`. |
 | **E530** | a `hex` literal wider than 32 bytes | Error. A single PUSH carries at most 32 bytes, so the excess was emitted as executable bytecode. |
-| **E531** | a bare struct-typed field (`field cfg: Cfg`) | Error. Writes were dropped and reads returned the NEXT declared field. Use a list of structs. |
+| **E531** | **reading** a bare struct-typed field (`field cfg: Cfg`, then `cfg.w` in an expression) | Error, reads returned the NEXT declared field. Use a list of structs (`field cfgs: [Cfg]`), whose element access IS lowered. The error fires on the read only: declaring `field cfg: Cfg` builds clean, and so does a write `cfg.w = v`, which is still silently dropped (byte-identical to an empty body). |
 | **E532** | an `indexed` event parameter of a dynamic type | Error. The topic was a zero placeholder, so two logs with different values had identical topics. |
 | **E640** | `supply: N to <principal>` where the principal is not `deployer` | Error. It minted nothing at all. Use `supply: N to deployer` plus a deployer-guarded action to move the balance. |
 | **E641** | a `total_supply` field default that contradicts the genesis mint | Error. The default silently won over the mint amount. |
 | **E642** | `decimals` outside the EIP-20 uint8 range | Error. |
 | **E643** | a user event or error shadowing a synthesized one with a different shape | Error. It produced a broken ABI. |
-| **W440** | `given <cond>` | Warning. It compiles as a PRECONDITION asserted before the body runs, which the shipped guide described differently. |
+| **W440** | a `given <cond>` guard that reads a field the body writes | Warning. `given` compiles as a PRECONDITION asserted before the body runs, so such a guard sees the OLD value. Narrow trigger: `given n <= 10 { n = n + v }` warns, `given n <= 10 { x = x + v }` and `given v >= a` are silent. |
 | **W530** | a non-indexed event parameter of a dynamic type | Warning. The log data word is a zero placeholder, so a decoder reading offset plus length gets nothing. |
 
-Guard principals that cannot be resolved **fail closed** (E516 / E517 / E518 from
-earlier releases): a guard whose principal is unknown errors rather than silently
-allowing the action.
+Guard principals **fail closed**, but not under the codes older material named for
+them. At v0.9.7:
+
+- an unknown principal name is `E106 unknown principal predicate`
+- a principal whose declared type is not `address` is `E436`
+- a built-in predicate with no real EVM check (`first_time_caller`,
+  `registered_key`) is `E518`
+- a declared field that is not `owner`, `admin` or `deployer` compiles but emits
+  `W421` and reverts on every call
+
+None of these silently allows the action. `E516` is the unlowered-amnesia-opcode
+code and `E517` the unlowered-`vdf_locked` code; neither has anything to do with
+principals, and neither is historical: `E517` fires on v0.9.7 today for
+`vdf_locked for <duration>`.
 
 ---
 

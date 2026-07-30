@@ -1,13 +1,13 @@
 ---
 name: covenant-new
 description: >-
-  Scaffold a minimally-compiling Covenant v0.9.5 .cov file for the given
+  Scaffold a minimally-compiling Covenant v0.9.7 .cov file for the given
   top-level construct. Usage: /covenant-new <construct> [Name]
 ---
 
 # /covenant-new
 
-Scaffold a new Covenant v0.9.5 source file for the specified top-level construct.
+Scaffold a new Covenant v0.9.7 source file for the specified top-level construct.
 
 ## Usage
 
@@ -26,7 +26,7 @@ Scaffold a new Covenant v0.9.5 source file for the specified top-level construct
 
 1. Parse the construct keyword (case-insensitive, handle spaces in two-word keywords).
 2. If no `Name` is given, ask: "What should the contract be named?"
-3. Scaffold using the verified v0.9.5 template below for that construct.
+3. Scaffold using the verified v0.9.7 template below for that construct.
 4. Write to `covenant/<Name>.cov` relative to the project root.
    Create the `covenant/` directory if it does not exist.
 5. Print the path written.

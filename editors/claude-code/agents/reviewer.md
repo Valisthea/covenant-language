@@ -28,11 +28,30 @@ errors, and guards.
 - Comment syntax: `--` and `(* *)` only; flag `//` or `/* */`
 - Top-level construct: is there a more specialized keyword than what was used?
 - Type aliases: `amount` not `uint256`; `text` not `string`; `caller` not `msg.sender`; `map<K,V>` not `mapping`
-- Field declarations: `field` in `module`/`hybrid module`; bare in `record`
-- `vault` reentrancy: flag `@non_reentrant` if present (already the default)
+- `vault` reentrancy: there is **no** reentrancy guard by default at v0.9.7.
+  `vault` adds no protection over `module`. Flag any action that performs an
+  external call (`transfer(value) to ...`) as a real reentrancy exposure, and
+  remediate by ordering every state write **before** the call. Two things to
+  know before you write the finding:
+  - `covenant lint` raises `W003` on exactly this shape: "action `withdraw`
+    makes an external call with no reentrancy protection, and this release has
+    none to offer". Its help says to write every state change before the
+    transfer.
+  - Never suggest `@non_reentrant`. It is rejected with `E110 unknown
+    annotation`, so a file containing it cannot build. The annotations the
+    resolver accepts on an action are `@precompute`, `@batch_up_to`,
+    `@prove_offchain` and `@gas_budget`; `@slot(N)` is accepted on a field.
+    Never suggest the annotation as the fix, and if the code under review
+    already contains it, that is a `high` finding for a broken build, not a
+    style nit.
 - `pq_signed` / `encrypted` / `reveal` usage correctness
 - `now` typed as `time`: flag if used in arithmetic without a duration literal
-- In-body `if/else`: flag (V0.9 feature); suggest guard restructure or `encrypted_when`
+- In-body `if/else`: supported at v0.9.7 and builds clean through the backend
+- In-body `if/else`: supported at v0.9.7 and builds clean through the backend,
+  with or without parentheses around the condition. Do not flag it as
+  unsupported. Only
+  value; over a plaintext condition the compiler emits `W306` and tells the
+  user to change it back to `if`
 
 ### 3. Check ERC conformance (`rules/erc-822x.mdc`)
 
@@ -62,7 +81,9 @@ Flag bare reverts as `low` severity.
 ### 7. Cross-reference the public lint catalog
 
 Reference `docs/diagnostic-codes.md` for known diagnostic codes.
-Cite the code (e.g., `E0421`) in any finding where it applies.
+Cite the code (e.g., `E421`) in any finding where it applies. Run
+`covenant explain --list` for the codes the v0.9.7 binary documents, and
+`covenant explain <code>` for the prose.
 
 ## Output format
 
@@ -121,7 +142,7 @@ No issues found in:
 | `high` | Potential fund loss, unauthorized state mutation, critical guard absent |
 | `medium` | Logic gap, reachable condition without guard, access-control weakness |
 | `low` | Minor correctness issue, missing event, deprecated pattern, bare revert |
-| `info` | Style, missing ERC citation comment, redundant annotation |
+| `info` | Style, missing ERC citation comment, redundant annotation. An *unknown* annotation is not `info`: it is `E110` and the build fails |
 
 ## Hard limits
 
