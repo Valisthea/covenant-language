@@ -1,19 +1,13 @@
 -- {{NAME}}: append-only message board
+--
+-- The post schema is all this release can express. `append post { .. }` is
+-- refused with E430 and reading `posts[i]` or `posts.length` with E431: the
+-- collection has no storage backing yet, so a board cannot actually hold
+-- posts. The shape is here so the schema is ready when it can.
 board {{NAME}} {
     post {
         author:  address
         content: hash
         at:      time
     }
-
-    action submit(content: hash) {
-        append post {
-            author:  caller
-            content: content
-            at:      now
-        }
-    }
-
-    view count returns amount { posts.length }
-    view get(i: amount) returns post when i < posts.length { posts[i] }
 }

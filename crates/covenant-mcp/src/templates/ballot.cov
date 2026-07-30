@@ -1,18 +1,22 @@
 -- {{NAME}}: on-chain vote
+--
+-- Double voting is prevented with a `when` guard over a seen-map rather than
+-- `only first_time_caller`. That predicate parses and resolves, but the
+-- backend refuses it with E518 because it has no real EVM authorization
+-- check and would pass for every caller.
 ballot {{NAME}} {
-    field votes: map<address, text>
-    field tally: map<text, amount>
+    field voted: map<address, amount>
+    field tally: map<amount, amount>
 
-    event Voted(who: address, choice: text)
+    event Voted(who: address, choice: amount)
 
-    action vote(choice: text)
-            only first_time_caller {
-        votes[caller] = choice
+    action vote(choice: amount) when voted[caller] == 0 {
+        voted[caller] = 1
         tally[choice] += 1
         emit Voted(caller, choice)
     }
 
-    view result(choice: text) returns amount {
+    view result(choice: amount) returns amount {
         tally[choice]
     }
 }

@@ -1,11 +1,18 @@
 -- {{NAME}}: post-quantum key registry (Fortress layer)
+--
+-- THIS DOES NOT BUILD AT THIS RELEASE. The ERC-8231 synthesizer injects
+-- `register` and `key_of` over `pq_key`, whose ABI type is dynamic
+-- `bytes`, and the backend refuses that with E505. Even `registry R {
+-- field x: amount }` fails the same way, so no registry body compiles.
+-- The shape below is what the construct is meant to be, kept so it is
+-- ready when the backend can carry dynamic types.
 registry {{NAME}} {
     field keys: map<address, pq_key>
 
     event KeyRegistered(who: address)
 
     action register(key: pq_key)
-            only first_time_caller {
+            only first_time_caller {   -- also E518: no real EVM check
         keys[caller] = key
         emit KeyRegistered(caller)
     }

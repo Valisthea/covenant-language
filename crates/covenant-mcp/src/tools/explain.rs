@@ -76,7 +76,10 @@ fn lookup(topic: &str) -> Option<&'static str> {
         "ballot" => {
             "ballot C { }: on-chain voting construct. Auto-synthesizes tally management and voting \
              actions. Supports public, private, and sealed variants via privacy qualifiers. Fields use \
-             the `field` keyword. Use `only first_time_caller` to prevent double-voting."
+             the `field` keyword. To prevent double voting, use a `when` guard over a seen-map, \
+             for example `action vote(c: amount) when voted[caller] == 0`. Do NOT use \
+             `only first_time_caller`: it parses and resolves, but the backend refuses it with \
+             E518 because it has no real EVM authorization check and would pass for every caller."
         }
         "counter" => {
             "counter C { }: single-value counter construct. Auto-synthesizes increment and decrement \
@@ -103,16 +106,20 @@ fn lookup(topic: &str) -> Option<&'static str> {
              release is promised for them."
         }
         "vault" => {
-            "vault C { }: reentrancy-safe value custody construct. @non_reentrant is the default, \
-             do NOT add it manually (compiler warning). Use `transfer(value) to addr` to send ETH. \
-             Best for DeFi vaults, escrow, and any contract that holds funds:\n\
+            "vault C { }: value custody construct. It adds NO reentrancy protection at this \
+             release: the same body written as `module` compiles to byte-identical bytecode, so \
+             order your state writes before the transfer yourself. `@non_reentrant` is not an \
+             annotation the compiler knows, and writing it is E110 rather than a warning. Send \
+             ETH with `transfer(value) to addr`, the `to` outside the parens:\n\
              \n\
              vault Treasury {\n    field balances: map<address, amount>\n    action deposit() { balances[caller] += 1 }\n    action withdraw(value: amount) when balances[caller] >= value {\n        balances[caller] -= value\n        transfer(value) to caller\n    }\n}"
         }
         "registry" => {
-            "registry C { }: identity / key registration construct with post-quantum randomness \
-             support (Fortress layer). Use `pq_key` type for Dilithium-5 public keys and \
-             `only first_time_caller` to prevent re-registration."
+            "registry C { }: identity and key registration construct (Fortress layer). It does \
+             NOT build at this release. The ERC-8231 synthesizer injects `register` and `key_of` \
+             over `pq_key`, whose ABI type is dynamic `bytes`, and the backend refuses that with \
+             E505. Even `registry R { field x: amount }` fails the same way, so no registry body \
+             compiles yet. Scaffolding one gives the intended shape, not a working contract."
         }
         "bridge" => {
             "bridge C anchored_on [\"chain_a\", \"chain_b\"] { }: cross-chain escrow construct. \
@@ -147,9 +154,11 @@ fn lookup(topic: &str) -> Option<&'static str> {
         }
         "only" | "only owner" | "only deployer" => {
             "`only <principal>` guard: restricts the caller to a specific principal. \
-             Built-in principals: `owner` (deployer-set address), `deployer` (deployment address), \
-             `first_time_caller` (address has never called this action), `registered_account` \
-             (token context), `registered_key` (registry/board context). \
+             Two principals compile at this release: `owner` (deployer-set address) and \
+             `deployer` (deployment address). `first_time_caller` and `registered_key` parse and \
+             resolve, but the backend refuses them with E518 because neither has a real EVM \
+             authorization check and both would pass for every caller. `registered_account` is \
+             not a predicate the compiler knows at all: it is E106. \
              Replaces Solidity `modifier onlyOwner() { _; }`."
         }
         "given" => {

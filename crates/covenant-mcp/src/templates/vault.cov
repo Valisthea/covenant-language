@@ -1,4 +1,9 @@
--- {{NAME}}: value custody vault (@non_reentrant by default)
+-- {{NAME}}: value custody vault
+--
+-- `vault` adds no reentrancy protection at this release. The same body
+-- written as `module` compiles to byte-identical bytecode. `@non_reentrant`
+-- is not an annotation the compiler knows: writing it is E110. Order your
+-- state writes before the transfer yourself.
 vault {{NAME}} {
     field balances: map<address, amount>
 

@@ -62,12 +62,12 @@ pub fn run() -> CallToolResult {
             },
             {
                 "keyword":       "vault",
-                "auto_synth":    "Reentrancy-safe value custody (@non_reentrant by default)",
+                "auto_synth":    "Value custody. No reentrancy guard at this release",
                 "use_when":      "Funds vault, escrow"
             },
             {
                 "keyword":       "registry",
-                "auto_synth":    "Identity / key registration with PQ randomness",
+                "auto_synth":    "Identity / key registration. Does not build at this release (E505)",
                 "use_when":      "Identity registry, key directory (Fortress layer)"
             },
             {
