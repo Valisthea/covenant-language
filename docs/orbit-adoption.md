@@ -83,10 +83,29 @@ registry. Two consequences:
 - Those addresses are deterministic only because they assume the Arachnid CREATE2
   factory at `0x4e59b44847b379578588920cA78FbF26c0B4956C` exists on the chain. On
   an Orbit chain without it, the prediction does not hold.
-- There is **no compile-time or runtime check that code actually exists at those
-  addresses** on your target. A call into an empty address fails at runtime
-  rather than at build time. We consider that a defect against this project's own
-  fail-loud principle, not a design choice, and it is tracked as open.
+- There is **no runtime check that code exists at those addresses**. A call into
+  an empty address fails at execution rather than at deployment, and worse, a
+  `STATICCALL` into an empty address returns success with empty data, so a
+  verification can read as passing when nothing ran.
+
+Since v0.9.7 there is a compile-time check, but only where we know the answer.
+`E533` refuses to build a contract that reaches a helper when the target's
+helper contracts have not been confirmed deployed. Today that means:
+
+| Target | Helpers | Build with a mocked primitive |
+|---|---|---|
+| `sepolia` | Deployed and verified, all four answer `eth_getCode` | Allowed |
+| `mockchain` | Native precompiles, nothing to deploy | Allowed |
+| `aster_testnet` | Never verified. The address manifest still records none | **Refused, E533** |
+| Any other Orbit chain | No target exists | Not expressible |
+
+That last row is the honest state. There is no generic EVM target, so there is
+no way to build for an arbitrary Orbit chain and have the helper addresses be
+right. A contract that touches no mocked primitive is unaffected: its bytecode
+is byte-identical on every target, which is why the Robinhood Chain token
+deployed without any of this mattering. If you operate an Orbit chain and want
+the cryptographic constructs to work on it, the path is to deploy the four
+helpers there and add a target with the verified addresses, not to guess.
 
 ### Custom precompiles
 
