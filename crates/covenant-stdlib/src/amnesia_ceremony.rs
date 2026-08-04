@@ -461,8 +461,12 @@ fn synth_finalize(
 }
 
 /// `destroy() → bool`
-/// KSR-CVN-001: asserts caller == deployer, phase == 2, and that the
-/// DestructionProof precompile returned true before advancing phase to 3.
+/// KSR-CVN-001: asserts caller == deployer and phase == 2 before advancing
+/// phase to 3.
+///
+/// It does NOT assert that the helper succeeded, although the code below
+/// looks as though it does. See the comment on the `Assert` for why, and
+/// what actually protects the transition.
 /// Also asserts `phase != 3`: a redundant guard on the already-destroyed
 /// path that keeps the contract observably idempotent (the fail-closed
 /// `Assert(phase == 2)` already excludes 3, but the extra check pairs with
@@ -487,7 +491,24 @@ fn synth_destroy(
     let session_id = b.emit_instr(Opcode::SLoad(session_id_field), vec![], Some(Ty::Amount));
     let result = b.emit_instr(Opcode::DestructionProof, vec![session_id], Some(Ty::Bool));
 
-    // KSR-CVN-001: phase advances only if DestructionProof succeeded.
+    // This assert is vacuous and the phase advances regardless. It used to
+    // claim that the phase only advances if the helper succeeded.
+    //
+    // `amnesiaDestroy` returns dynamic `bytes`, so the first returndata word
+    // is the ABI offset, `0x20`. The helper-call decoder reads `MLOAD(0)` and
+    // hands that word back as the result, so this asserts on 32, which is
+    // always truthy. The commitment the helper computed is never read.
+    //
+    // What actually protects the transition is the helper reverting on all
+    // three of its failure paths: unknown session, wrong caller, wrong phase.
+    // A revert fails the call, and the call site checks the success flag. So
+    // the behaviour is correct today, for a reason other than the one the
+    // code appears to give.
+    //
+    // Sprint 2 refuses this path outright rather than leaving a check that
+    // reads as a guard and is not one. Sprint 3 gives `amnesiaDestroy` a
+    // strict Boolean return plus a separate `bytes32` view for the
+    // commitment, after which this assert becomes real.
     b.emit_instr(Opcode::Assert, vec![result], None);
 
     let phase_three = b.emit_const(IrConstant::Integer(3), Ty::Amount);

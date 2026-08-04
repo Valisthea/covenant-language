@@ -45,7 +45,7 @@
       "_helpers_note": "V0.9.1 patched CeremonyHelper at 0x627f... adds the amnesiaSetup(uint256) 1-arg overload that the Covenant compiler emits via Opcode::AmnesiaBegin. Original V0.9.0 helper at 0x6cAB...A16e remains deployed for direct cast diagnostics + audit trail. Compiler routes new ceremonies to the V0.9.1 address.",
       "selectors": {
         "amnesiaSetup":         "0xcba445bb",
-        "amnesiaSetupV091":     "0xa1c83bd6",
+        "amnesiaSetupV091":     "0x09dc3eb0",
         "amnesiaSubmitShare":   "0x75ee5722",
         "amnesiaFinalize":      "0x4ef88c73",
         "amnesiaDestroy":       "0x7688304b",
@@ -67,9 +67,17 @@
       },
       "verification": {
         "etherscan_verified": true,
-        "code_hashes": null,
+        "code_hashes": {
+          "ceremony_helper":         "0xd19f09c56ba48c2007127f45f53574801c9312791ee95f2086ae883137940165",
+          "ceremony_helper_v090":    "0x2ad79cf6b1b5160ec713be94ce15483751e9f0cb3d38c9c15b8c8182f281ad9c",
+          "fhe_helper":              "0xa199283c83068f01d1a1f76e141e1f9d9d627742557e48584f2257a1f6dcf174",
+          "pq_helper":               "0x1f2da120a11531c0cdbc2eb933c626567a247e5b9d36d72f78bf507781d2002c",
+          "zk_helper":               "0x9691e95a56b23bd7abd29a2a31759cf78e2596155ce9bdc1132fc770c4bd7019"
+        },
+        "code_hashes_read_at": "sepolia latest, 2026-07-30",
         "etherscan_links": {
-          "ceremony_helper": "https://sepolia.etherscan.io/address/0x6cabdd5acf86d43c30ce560be68780e62f78a16e#code",
+          "ceremony_helper": "https://sepolia.etherscan.io/address/0x627f1ff6dc93aeba050c242fd9e26961e8f6c6f0#code",
+          "ceremony_helper_v090_superseded": "https://sepolia.etherscan.io/address/0x6cabdd5acf86d43c30ce560be68780e62f78a16e#code",
           "fhe_helper":      "https://sepolia.etherscan.io/address/0x8f38e4f079570d77900ff2d6ffd0e6c96c401e44#code",
           "pq_helper":       "https://sepolia.etherscan.io/address/0xd3fca4d62dc2162d9b07dec2acfc0a4bda2a9010#code",
           "zk_helper":       "https://sepolia.etherscan.io/address/0xa9910bce5a3a47d0a92441c63d1e555a6cd7513c#code"
