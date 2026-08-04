@@ -215,43 +215,109 @@ const fn hex_nibble(b: u8) -> u8 {
 ///
 /// Mirror of `config/helper-addresses-v0.9.0.json::targets.sepolia.selectors`.
 /// CI consistency test in `tests/registry_consistency.rs`.
-pub fn helper_selector_for_opcode(opcode_name: &str) -> Option<[u8; 4]> {
-    Some(match opcode_name {
-        // Ceremony (CeremonyHelper.sol V0.9.1)
-        // The Covenant compiler's Opcode::AmnesiaBegin has 1 operand
-        // (seed/nonce), so we route it to the 1-arg overload, not the
-        // 3-arg one. See target.rs CEREMONY_HELPER_V090 doc comment for
-        // the V0.9.0 → V0.9.1 patch context.
-        "AmnesiaBegin" => [0x09, 0xdc, 0x3e, 0xb0], // amnesiaSetup(uint256)
-        "AmnesiaSubmitShare" => [0x75, 0xee, 0x57, 0x22], // amnesiaSubmitShare(uint256,bytes32)
-        "AmnesiaFinalize" => [0x4e, 0xf8, 0x8c, 0x73], // amnesiaFinalize(uint256)
-        "DestructionProof" => [0x76, 0x88, 0x30, 0x4b], // amnesiaDestroy(uint256)
+/// What a helper method puts in returndata, and therefore how the call site
+/// is allowed to read it.
+///
+/// The backend used to apply one rule to all of them: on a helper target,
+/// accept any returndata of at least 32 bytes and read `MLOAD(0)`. That is
+/// correct for a method returning a single word and wrong for anything else.
+/// `amnesiaDestroy` returns Solidity dynamic `bytes`, whose first word is the
+/// ABI offset, so the caller read `0x20` and used it as the result.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReturnShape {
+    /// Exactly one 32-byte word, read as an opaque value. `bytes32`,
+    /// `uint256`, `address`.
+    Word,
+    /// One word that the ABI says is a `bool`, so it must be 0 or 1. Read
+    /// like a word, but a non-canonical value means the callee is not the
+    /// contract we think it is.
+    Bool,
+    /// Solidity dynamic `bytes`: `offset || length || data`. There is no
+    /// decoder for this at the call site, so an opcode declaring it cannot
+    /// be lowered.
+    DynamicBytes,
+}
 
-        // FHE (MockedFHEHelper.sol)
-        "FheEncryptTrivial" => [0x1a, 0xf0, 0x59, 0x00], // encryptTrivial(uint256)
-        "FheEncryptFresh" => [0xc5, 0x8b, 0xa7, 0xdd],   // encryptFresh(uint256,uint256)
-        "FheAdd" => [0xd1, 0xde, 0x59, 0x2a],            // add(bytes32,bytes32)
-        "FheSub" => [0x41, 0xaa, 0x00, 0x80],            // sub(bytes32,bytes32)
-        "FheMul" => [0x96, 0xce, 0x1e, 0xc7],            // mul(bytes32,bytes32)
-        "FheCmpEq" => [0x34, 0x47, 0xc0, 0x30],          // eq(bytes32,bytes32)
-        "FheCmpLt" => [0xd1, 0x02, 0xb4, 0xd3],          // lt(bytes32,bytes32)
-        "FheSelect" => [0x3e, 0xfd, 0x79, 0x83],         // cmux(bytes32,bytes32,bytes32)
-        "RevealDecrypt" => [0x33, 0xa5, 0xfb, 0xf4],     // decrypt(bytes32,address)
+/// Whether the call may modify state, which decides `CALL` against
+/// `STATICCALL`.
+///
+/// Every helper-target call used to be a `CALL`, including the five methods
+/// the helpers declare `view` or `pure`. That handed read-only operations the
+/// authority to write, which nothing in their semantics needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CallMode {
+    /// The method changes helper state.
+    Call,
+    /// The method is `view` or `pure` in the deployed helper.
+    StaticCall,
+}
 
-        // ZK (MockedZKVerifier.sol)
-        "ZkVerify" => [0x5b, 0xf4, 0x8e, 0x3a], // verify(bytes32,bytes,bytes)
-        "ZkNullifier" => [0xd7, 0x2a, 0x0b, 0x67], // nullifier(bytes32)
+/// Everything the call site needs to know about one helper method.
+#[derive(Debug, Clone, Copy)]
+pub struct HelperMethod {
+    /// Canonical Solidity signature. The selector is derived from this, and
+    /// `tests/selector_recomputation.rs` proves the derivation.
+    pub signature: &'static str,
+    pub selector: [u8; 4],
+    pub returns: ReturnShape,
+    pub mode: CallMode,
+}
 
-        // PQ (MockedPQVerifier.sol)
-        "PqVerifyDilithium" => [0x0e, 0xc9, 0x7a, 0xf7], // pqVerify(bytes32,bytes,bytes)
-        "PqRand" => [0x52, 0x61, 0xff, 0x4c],            // pqRandom(uint256)
+/// The single table every helper call goes through.
+///
+/// Adding an opcode without an entry here means it cannot be lowered on a
+/// helper target, which is the intended failure: a new primitive has to
+/// declare its signature, its return shape and whether it writes before it
+/// can reach a chain.
+pub fn helper_method_for_opcode(opcode_name: &str) -> Option<HelperMethod> {
+    use CallMode::{Call, StaticCall};
+    use ReturnShape::{Bool, DynamicBytes, Word};
 
-        // Opcodes without a V0.9 helper equivalent: fall back to namespaced
-        // V0.8 selector (caller handles the None branch). These typically
-        // either (a) are V0.9.x deferred (Sprint 35.c+) or (b) are MockChain-
-        // only diagnostics that don't ship to helper-contract targets.
+    let (signature, returns, mode) = match opcode_name {
+        // CeremonyHelper.sol V0.9.1. All four change session state.
+        "AmnesiaBegin" => ("amnesiaSetup(uint256)", Word, Call),
+        "AmnesiaSubmitShare" => ("amnesiaSubmitShare(uint256,bytes32)", Bool, Call),
+        "AmnesiaFinalize" => ("amnesiaFinalize(uint256)", Bool, Call),
+        // Returns `bytes memory`, so it cannot be read as a word. Declaring
+        // the real shape is what makes the backend refuse it instead of
+        // reading the ABI offset as a result.
+        "DestructionProof" => ("amnesiaDestroy(uint256)", DynamicBytes, Call),
+
+        // MockedFHEHelper.sol. The mocked implementations write to storage,
+        // so these are genuinely state-changing even though real FHE would
+        // not be.
+        "FheEncryptTrivial" => ("encryptTrivial(uint256)", Word, Call),
+        "FheEncryptFresh" => ("encryptFresh(uint256,uint256)", Word, Call),
+        "FheAdd" => ("add(bytes32,bytes32)", Word, Call),
+        "FheSub" => ("sub(bytes32,bytes32)", Word, Call),
+        "FheMul" => ("mul(bytes32,bytes32)", Word, Call),
+        "FheCmpEq" => ("eq(bytes32,bytes32)", Word, Call),
+        "FheCmpLt" => ("lt(bytes32,bytes32)", Word, Call),
+        "FheSelect" => ("cmux(bytes32,bytes32,bytes32)", Word, Call),
+        // `view` in the helper.
+        "RevealDecrypt" => ("decrypt(bytes32,address)", Word, StaticCall),
+
+        // MockedZKVerifier.sol, both read-only.
+        "ZkVerify" => ("verify(bytes32,bytes,bytes)", Bool, StaticCall),
+        "ZkNullifier" => ("nullifier(bytes32)", Word, StaticCall),
+
+        // MockedPQVerifier.sol, both read-only.
+        "PqVerifyDilithium" => ("pqVerify(bytes32,bytes,bytes)", Bool, StaticCall),
+        "PqRand" => ("pqRandom(uint256)", Word, StaticCall),
+
         _ => return None,
+    };
+
+    Some(HelperMethod {
+        signature,
+        selector: crate::abi::selector(signature),
+        returns,
+        mode,
     })
+}
+
+pub fn helper_selector_for_opcode(opcode_name: &str) -> Option<[u8; 4]> {
+    helper_method_for_opcode(opcode_name).map(|m| m.selector)
 }
 
 #[cfg(test)]

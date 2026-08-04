@@ -139,6 +139,29 @@ pub const E533_UNVERIFIED_HELPER_TARGET: DiagCode = DiagCode(533);
 /// is exactly right when running the local harness, which is the common case.
 pub const W534_MOCK_ADDRESSES_IN_ARTIFACT: DiagCode = DiagCode(534);
 
+/// A helper method whose returndata the call site cannot decode.
+///
+/// Every helper call used to share one reader: accept any returndata of at
+/// least 32 bytes on a helper target, then `MLOAD(0)` and use that word as the
+/// result. That is right for a method returning a single word and wrong for
+/// anything else.
+///
+/// `amnesiaDestroy` returns Solidity dynamic `bytes`, so its returndata is
+/// `offset || length || data` and the first word is `0x20`. The caller read
+/// 32 and used it as the result. The synthesized `destroy()` then asserted on
+/// it under a comment claiming the phase only advances if the helper
+/// succeeded, an assert that could never fail, and returned 32 from a function
+/// the ABI declares as `bool`.
+///
+/// Nothing was exploitable, because the helper reverts on all three of its
+/// failure paths and the call site checks the success flag. But the guard was
+/// fictional and the commitment the helper computed was discarded unread.
+///
+/// The fix is a decoder, not a cast, and it is scheduled with the helper
+/// redeployment: a strict Boolean return plus a separately typed `bytes32`
+/// view for the commitment. Until then the path is refused.
+pub const E535_HELPER_RETURN_UNDECODABLE: DiagCode = DiagCode(535);
+
 pub const W501_LARGE_MEMORY: DiagCode = DiagCode(501);
 pub const W502_LARGE_STORAGE: DiagCode = DiagCode(502);
 pub const W503_SELECTOR_NEAR_COLLISION: DiagCode = DiagCode(503);
@@ -446,6 +469,24 @@ pub fn transfer_from_unsupported(span: Span) -> Diagnostic {
          <dst>` to send the contract's own balance, or model the debit explicitly in \
          storage (for example a balances map) before transferring."
             .to_string(),
+        span,
+    )
+}
+
+/// A helper method returning a shape the call site cannot read.
+/// See [`E535_HELPER_RETURN_UNDECODABLE`].
+pub fn helper_return_shape_undecodable(span: Span, opcode: &str, signature: &str) -> Diagnostic {
+    Diagnostic::error(
+        E535_HELPER_RETURN_UNDECODABLE,
+        format!(
+            "`{opcode}` calls `{signature}`, which returns Solidity dynamic `bytes`, \
+             and this release has no decoder for that at a helper call site. The \
+             reader takes the first returndata word, which for a dynamic return is \
+             the ABI offset rather than a value, so the result would be 32 whatever \
+             the helper computed. Refusing to compile beats emitting a call whose \
+             result is a memory offset. A ceremony that does not call `destroy` \
+             builds normally."
+        ),
         span,
     )
 }

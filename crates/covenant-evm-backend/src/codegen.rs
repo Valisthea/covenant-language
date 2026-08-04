@@ -2285,8 +2285,21 @@ impl<'a> Codegen<'a> {
                     self.config.target.as_str(),
                 ));
             }
-            match crate::target::helper_selector_for_opcode(instr.opcode.stable_name()) {
-                Some(s) => s,
+            match crate::target::helper_method_for_opcode(instr.opcode.stable_name()) {
+                Some(m) => {
+                    // A method whose returndata this call site cannot decode
+                    // must not be called at all. The single-word reader below
+                    // would hand back the first word, which for Solidity
+                    // dynamic `bytes` is the ABI offset, not a result.
+                    if m.returns == crate::target::ReturnShape::DynamicBytes {
+                        self.diagnostics.push(d::helper_return_shape_undecodable(
+                            instr.span,
+                            instr.opcode.stable_name(),
+                            m.signature,
+                        ));
+                    }
+                    m.selector
+                }
                 None => {
                     self.diagnostics.push(d::helper_method_missing(
                         instr.span,
@@ -2324,10 +2337,19 @@ impl<'a> Codegen<'a> {
         // doesn't require them).
         //
         // V1.0 may add per-opcode read/write classification so that
-        // helper-contract pure-view ops (e.g. ZK verify, FHE decrypt)
-        // still use STATICCALL. For V0.9.0, conservative single-mode
-        // dispatch is the safe default.
-        let use_call = self.config.target.uses_helper_contracts();
+        // The mode comes from the method, not from the target. Until now
+        // every helper-target call was a CALL, including the five methods the
+        // deployed helpers declare `view` or `pure`: decrypt, zk verify, zk
+        // nullifier, pq verify and pq random. Handing a read-only operation
+        // the authority to write is not something its semantics need, and
+        // STATICCALL makes the EVM enforce what the Solidity already says.
+        //
+        // MockChain is unchanged: its native precompiles are read-only, so
+        // this stays STATICCALL there whatever the method declares.
+        let use_call = self.config.target.uses_helper_contracts()
+            && crate::target::helper_method_for_opcode(instr.opcode.stable_name())
+                .map(|m| m.mode == crate::target::CallMode::Call)
+                .unwrap_or(true);
 
         asm.push_u32(32); // retSize
         asm.emit(AsmOp::Push0); // retOffset = 0
@@ -2352,24 +2374,21 @@ impl<'a> Codegen<'a> {
 
         // Step 6: revert if returndata size is wrong.
         //
-        // V0.8 native precompiles (MockChain) always return exactly 32 bytes,
-        // so V0.8 codegen used `== 32`. V0.9 helper-contract methods may
-        // return variable-length data (bytes/string) which Solidity ABI-
-        // encodes as `offset(32) || length(32) || data(...)`, so total
-        // returndata is >= 32. For helper-contract targets we relax the
-        // check to `>= 32`. For MockChain we keep the strict check.
-        if self.config.target.uses_helper_contracts() {
-            // RETURNDATASIZE; PUSH 32; GT → (32 > returndatasize) = (returndatasize < 32)
-            asm.op(asm::OP_RETURNDATASIZE);
-            asm.push_u32(32);
-            asm.op(asm::OP_GT); // pushes 1 if size < 32, 0 otherwise
-        } else {
-            // RETURNDATASIZE; PUSH 32; EQ; ISZERO → 1 if size != 32
-            asm.op(asm::OP_RETURNDATASIZE);
-            asm.push_u32(32);
-            asm.op(asm::OP_EQ);
-            asm.op(asm::OP_ISZERO);
-        }
+        // The size check is per method, not per target.
+        //
+        // It used to be relaxed to `>= 32` for every helper target, on the
+        // reasoning that a method might return variable-length data. Exactly
+        // one does, `amnesiaDestroy`, and that one is now refused at the
+        // selector lookup because there is no decoder for it. Every method
+        // that survives to here returns a single word, so the strict check
+        // applies everywhere and a helper returning the wrong shape reverts
+        // instead of having its first word read as a result.
+        //
+        // RETURNDATASIZE; PUSH 32; EQ; ISZERO → 1 if size != 32
+        asm.op(asm::OP_RETURNDATASIZE);
+        asm.push_u32(32);
+        asm.op(asm::OP_EQ);
+        asm.op(asm::OP_ISZERO);
         asm.push_label("__revert__");
         asm.op(asm::OP_JUMPI);
 
