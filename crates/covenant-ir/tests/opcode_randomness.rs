@@ -26,7 +26,7 @@ fn stateful_opcodes_are_marked() {
         Opcode::AmnesiaFinalize,
         Opcode::VdfLock,
         Opcode::VdfUnlock,
-        Opcode::DestructionProof,
+        Opcode::DestructionCommitment,
     ];
     for op in stateful {
         assert!(

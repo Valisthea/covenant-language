@@ -83,7 +83,7 @@ pub fn detect_mocked_crypto_usage(module: &IrModule) -> Vec<MockedCryptoUsage> {
                     | Opcode::ShamirReconstruct
                     | Opcode::VdfLock
                     | Opcode::VdfUnlock
-                    | Opcode::DestructionProof => amnesia = true,
+                    | Opcode::DestructionCommitment => amnesia = true,
                     _ => {}
                 }
             }

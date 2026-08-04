@@ -3223,8 +3223,8 @@ fn stdlib_fn_opcode(f: StdlibFn) -> Opcode {
         StdlibFn::Decode => Opcode::AbiDecode,
         StdlibFn::Encrypted => Opcode::FheEncryptTrivial,
         StdlibFn::CiphertextHashOf => Opcode::FheCiphertextHash,
-        StdlibFn::Destroy => Opcode::DestructionProof,
-        StdlibFn::Freeze => Opcode::DestructionProof,
+        StdlibFn::Destroy => Opcode::DestructionCommitment,
+        StdlibFn::Freeze => Opcode::DestructionCommitment,
         StdlibFn::RandPq => Opcode::PqRand,
         // Min/Max/Abs/Pow/Sqrt are intentionally absent: they are rejected in
         // `lower_call` via `unimplemented_math_name` before reaching here.

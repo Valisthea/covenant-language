@@ -29,8 +29,14 @@ fn opcode_family(op: &covenant_ir::Opcode) -> &'static str {
         | FheBootstrap | FheCiphertextHash => "fhe",
         ZkVerify | ZkNullifier | ZkProofPayload | VdfEval | VdfVerify => "zk",
         PqVerifyDilithium | PqHybridVerify | PqRand | KyberEncrypt | KyberDecrypt => "pq",
-        AmnesiaBegin | AmnesiaSubmitShare | AmnesiaFinalize | ShamirSplit | ShamirReconstruct
-        | VdfLock | VdfUnlock | DestructionProof => "amnesia",
+        AmnesiaBegin
+        | AmnesiaSubmitShare
+        | AmnesiaFinalize
+        | ShamirSplit
+        | ShamirReconstruct
+        | VdfLock
+        | VdfUnlock
+        | DestructionCommitment => "amnesia",
         Emit(_) | Transfer => "emit",
         IsCallerSender | CallerMatchesPrincipal | BuiltinPredicateCall(_) => "auth",
         LoadCaller | LoadNow | LoadBlockNumber | LoadBlockTimestamp | LoadMsgValue

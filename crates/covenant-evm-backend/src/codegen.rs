@@ -428,7 +428,7 @@ impl<'a> Codegen<'a> {
             Opcode::AmnesiaBegin => p.amnesia.begin,
             Opcode::AmnesiaSubmitShare => p.amnesia.submit_share,
             Opcode::AmnesiaFinalize => p.amnesia.finalize,
-            Opcode::DestructionProof => p.amnesia.destruction_proof,
+            Opcode::DestructionCommitment => p.amnesia.destruction_proof,
             _ => return None,
         })
     }
@@ -1281,7 +1281,7 @@ impl<'a> Codegen<'a> {
                 instr,
                 self.config.precompile_addresses.amnesia.finalize,
             ),
-            Opcode::DestructionProof => self.emit_precompile_call(
+            Opcode::DestructionCommitment => self.emit_precompile_call(
                 asm,
                 f,
                 instr,

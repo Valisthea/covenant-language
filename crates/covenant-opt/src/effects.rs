@@ -159,7 +159,7 @@ pub fn effect_of(opcode: &Opcode) -> Effect {
         PqRand | KyberEncrypt | KyberDecrypt => Pure,
 
         // --- Amnesia ---
-        AmnesiaBegin | AmnesiaSubmitShare | AmnesiaFinalize | DestructionProof => State,
+        AmnesiaBegin | AmnesiaSubmitShare | AmnesiaFinalize | DestructionCommitment => State,
         VdfLock | VdfUnlock => State,
         // Same unlowered-opcode revert stub as the PQ read side above.
         ShamirSplit | ShamirReconstruct => Trap,

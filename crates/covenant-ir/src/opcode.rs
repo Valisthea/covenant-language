@@ -159,7 +159,7 @@ pub enum Opcode {
     ShamirReconstruct,
     VdfLock,
     VdfUnlock,
-    DestructionProof,
+    DestructionCommitment,
 
     // --- Events and transfers ---
     Emit(Box<Ident>),
@@ -283,7 +283,7 @@ impl Opcode {
             ShamirReconstruct => exact(1),
             VdfLock => exact(2),
             VdfUnlock => exact(2),
-            DestructionProof => exact(1),
+            DestructionCommitment => exact(1),
 
             Emit(_) => range(0, None),
             Transfer => range(2, Some(3)),
@@ -416,7 +416,21 @@ impl Opcode {
             ShamirReconstruct => "ShamirReconstruct",
             VdfLock => "VdfLock",
             VdfUnlock => "VdfUnlock",
-            DestructionProof => "DestructionProof",
+            // The name and the wire string deliberately disagree.
+            //
+            // The Rust identifier was renamed because "proof" overstates what
+            // the helper returns: a deterministic commitment over the
+            // submitted shares, which is evidence, not a demonstration that
+            // anything was erased.
+            //
+            // The wire string cannot follow yet. `stable_name` feeds
+            // `abi::precompile_selector`, which hashes
+            // `covenant.precompile.<name>:v<PRECOMPILE_ABI_VERSION>`, so
+            // changing it changes the calldata prefix of every emitted
+            // precompile call, and that prefix is part of already-published
+            // artifacts. It moves when PRECOMPILE_ABI_VERSION moves, which is
+            // scheduled with the helper redeployment, not before.
+            DestructionCommitment => "DestructionProof",
             Emit(_) => "Emit",
             Transfer => "Transfer",
             IsCallerSender => "IsCallerSender",
@@ -450,7 +464,7 @@ impl Opcode {
     ///     to a distinct execution point (or whose result depends on
     ///     hidden global state): `VdfEval`, `FheBootstrap`,
     ///     `AmnesiaBegin`, `AmnesiaSubmitShare`, `AmnesiaFinalize`,
-    ///     `VdfLock`, `VdfUnlock`, `DestructionProof`.
+    ///     `VdfLock`, `VdfUnlock`, `DestructionCommitment`.
     ///
     /// Optimizer passes (CSE in particular: see KSR-CVN-016/017) MUST
     /// consult this method before merging two values produced by the same
@@ -469,7 +483,7 @@ impl Opcode {
                 | AmnesiaFinalize
                 | VdfLock
                 | VdfUnlock
-                | DestructionProof
+                | DestructionCommitment
         )
     }
 

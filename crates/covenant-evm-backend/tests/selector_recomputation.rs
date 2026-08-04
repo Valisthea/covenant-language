@@ -157,6 +157,35 @@ fn the_dispatch_table_and_the_manifest_agree() {
     );
 }
 
+/// The wire name is not the Rust name, and completing the rename would
+/// silently change emitted bytecode.
+///
+/// `Opcode::DestructionCommitment` reports `stable_name() == "DestructionProof"`
+/// on purpose. That string is hashed into
+/// `covenant.precompile.<name>:v<PRECOMPILE_ABI_VERSION>` to build the
+/// calldata prefix of every emitted precompile call, so renaming it changes
+/// the bytecode of already-published artifacts. It moves when the ABI version
+/// moves, with the helper redeployment.
+///
+/// Someone will eventually notice the mismatch and tidy it up. This makes
+/// that a test failure rather than a silent protocol break.
+#[test]
+fn the_wire_name_of_the_destruction_opcode_has_not_moved() {
+    use covenant_ir::Opcode;
+    assert_eq!(
+        Opcode::DestructionCommitment.stable_name(),
+        "DestructionProof",
+        "the wire name changed. If that is deliberate, bump \
+         PRECOMPILE_ABI_VERSION in the same commit and republish the helper \
+         suite, because every emitted precompile call prefix just moved."
+    );
+    assert!(
+        helper_selector_for_opcode("DestructionProof").is_some(),
+        "the dispatch table no longer answers to the wire name, so helper \
+         calls for this opcode would fall through to E520"
+    );
+}
+
 /// A negative control. If `abi::selector` returned a constant, or if the
 /// comparison were vacuous, the three tests above would pass on anything.
 #[test]

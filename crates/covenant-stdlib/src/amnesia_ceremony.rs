@@ -4,7 +4,7 @@
 //!   - `setup()` → uint256            : calls AmnesiaBegin, stores session_id, sets phase=1
 //!   - `submit_share(bytes32)` → bool  : calls AmnesiaSubmitShare(session_id, share)
 //!   - `finalize()` → bool             : calls AmnesiaFinalize(session_id), sets phase=2
-//!   - `destroy()` → bool              : calls DestructionProof(session_id), sets phase=3, emits event
+//!   - `destroy()` → bool              : calls DestructionCommitment(session_id), sets phase=3, emits event
 //!   - `phase()` → uint256             : returns current ceremony phase
 //!   - `session_id()` → uint256        : returns stored session ID
 //!   - `is_destroyed()` → bool         : returns phase == 3
@@ -489,7 +489,11 @@ fn synth_destroy(
     emit_assert_phase_eq(&mut b, phase_id, 2);
 
     let session_id = b.emit_instr(Opcode::SLoad(session_id_field), vec![], Some(Ty::Amount));
-    let result = b.emit_instr(Opcode::DestructionProof, vec![session_id], Some(Ty::Bool));
+    let result = b.emit_instr(
+        Opcode::DestructionCommitment,
+        vec![session_id],
+        Some(Ty::Bool),
+    );
 
     // This assert is vacuous and the phase advances regardless. It used to
     // claim that the phase only advances if the helper succeeded.
