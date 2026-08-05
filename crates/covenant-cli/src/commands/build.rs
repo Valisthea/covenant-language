@@ -15,6 +15,39 @@ use covenant_stdlib::StdlibConfig;
 
 use crate::{diagnostics::emit_diagnostics, error::CliError, output::OutputFormat};
 
+/// Warning codes that `--profile deploy` promotes to build failures.
+///
+/// Each names a way an artifact can compile clean while being wrong to deploy:
+/// a dynamic value the ABI encoder cannot represent, a guard that guards
+/// nothing, mock addresses baked into the bytecode, or a construct that
+/// synthesizes none of what it claims. In `dev` they stay warnings so
+/// exploratory code builds; deploying past them is what this list forbids.
+///
+/// Codes not here are not deploy-blocking: size hints, unused-field notes and
+/// the like remain warnings in both profiles.
+const DEPLOY_BLOCKING: &[(u32, &str)] = &[
+    (
+        507,
+        "a dynamic return value the ABI encoder does not encode",
+    ),
+    (
+        530,
+        "a non-indexed dynamic event value the ABI encoder does not encode",
+    ),
+    (
+        508,
+        "an `only caller` guard that lowers to a no-op and restricts nothing",
+    ),
+    (
+        534,
+        "mock precompile addresses baked in, which exist on no public chain",
+    ),
+    (
+        606,
+        "a construct that synthesizes none of the interface it names",
+    ),
+];
+
 #[derive(Args, Debug, Clone)]
 pub struct BuildArgs {
     /// Source file (.cov) for single-file mode, or omit for project mode.
@@ -63,6 +96,17 @@ pub struct BuildArgs {
     /// Release mode: run security linter before build; block on Critical findings.
     #[arg(long)]
     pub release: bool,
+
+    /// Build profile: `dev` (default) or `deploy`.
+    ///
+    /// `dev` keeps a set of known incompleteness diagnostics as warnings, so
+    /// exploratory programs still build. `deploy` promotes exactly those to
+    /// errors, because an artifact meant for a chain must not carry a known
+    /// wrong ABI or a construct that synthesizes nothing it claims. The
+    /// promoted set is listed in DEPLOY_BLOCKING below; everything else stays
+    /// a warning in both profiles.
+    #[arg(long, default_value = "dev")]
+    pub profile: String,
 }
 
 pub fn run(
@@ -132,6 +176,17 @@ pub fn build_single_file(
     format: OutputFormat,
     use_color: bool,
 ) -> Result<(), CliError> {
+    // Reject an unknown profile rather than treat it as `dev`. Otherwise
+    // `--profile Deploy` or a typo silently produces a dev artifact when the
+    // user asked for deploy strictness.
+    if args.profile != "dev" && args.profile != "deploy" {
+        eprintln!(
+            "error: unknown build profile `{}` (valid: dev, deploy)",
+            args.profile
+        );
+        return Err(CliError::CompileError);
+    }
+
     let source = std::fs::read_to_string(source_path).map_err(|e| {
         CliError::Io(std::io::Error::new(
             e.kind(),
@@ -195,7 +250,40 @@ pub fn build_single_file(
         .iter()
         .filter(|d| d.level == DiagnosticLevel::Error)
         .count();
+
+    // Deploy profile: a known-incompleteness warning is a build failure.
+    let deploy = args.profile == "deploy";
+    let deploy_blockers: Vec<(u32, &str)> = if deploy {
+        diags
+            .iter()
+            .filter(|d| d.level == DiagnosticLevel::Warning)
+            .filter_map(|d| {
+                DEPLOY_BLOCKING
+                    .iter()
+                    .find(|(code, _)| *code == d.code.0)
+                    .map(|(code, reason)| (*code, *reason))
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     emit_diagnostics(&diags, &path_str, &source, format, use_color);
+
+    if !deploy_blockers.is_empty() {
+        eprintln!(
+            "error: `--profile deploy` refuses `{}`: {} known-incompleteness \
+             warning(s) that are acceptable while exploring but not in a \
+             deployable artifact:",
+            path_str,
+            deploy_blockers.len()
+        );
+        for (code, reason) in &deploy_blockers {
+            eprintln!("  W{code}: {reason}");
+        }
+        eprintln!("  Build without --profile deploy to produce it anyway as a dev artifact.");
+        return Err(CliError::CompileError);
+    }
 
     if error_count > 0 || artifact_opt.is_none() {
         if format == OutputFormat::Json {
