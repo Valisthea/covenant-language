@@ -141,10 +141,13 @@ or auth logic is a credibility killer. All verified against source.
   encrypted balance check through it, so every confidential token compiled for
   Sepolia would have deployed a contract reverting on the first
   `transferEncrypted`. Tests: `crates/covenant-evm-backend/tests/helper_method_missing.rs`.
-  **Still open in this area** (same defect class, not covered by E520): the
-  `AssertEncrypted` path calls `abi::precompile_selector("AssertEncrypted")`
-  unconditionally for *every* target, and `emit_genesis_mint` hardcodes
-  `abi::precompile_selector("FheEncryptTrivial")`. Neither is gated.
+  **RESOLVED (Sprint 2.4):** both paths now go through
+  `Codegen::resolve_precompile_selector`, the single gated resolver every
+  helper call uses. On a helper target the genesis mint emits the ABI selector
+  of `encryptTrivial(uint256)` instead of the V0.8 namespaced form, and
+  `AssertEncrypted`, which has no deployed helper method, is refused with E520
+  rather than calling a nonexistent function. Both were previously ungated.
+  Tests: `crates/covenant-driver/tests/helper_dispatch_is_central.rs`.
 - **Aster mainnet-gate hole**: helper `notMainnet` modifier fires only on
   `block.chainid == 1` (`MockedFHEHelper.sol:36`, `MockedPQVerifier.sol:38`,
   `MockedZKVerifier.sol:28`), but Aster L1 is chainid **1996** which

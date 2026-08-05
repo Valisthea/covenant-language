@@ -437,7 +437,7 @@ impl<'a> Codegen<'a> {
     /// deployer` declaration. No-op when the metadata is absent or when the
     /// recipient is not `deployer` (other principals are V0.2+). Assumes a
     /// field named `balances` exists and is a map; if not, silently skips.
-    fn emit_genesis_mint(&self, asm: &mut Assembler) {
+    fn emit_genesis_mint(&mut self, asm: &mut Assembler) {
         // Pull the supply metadata.
         let (amount, is_deployer) = match self.module.metadata.get("supply") {
             Some(IrMetadataValue::GenesisMint { amount, to }) => {
@@ -496,7 +496,13 @@ impl<'a> Codegen<'a> {
             //   mem[0x60..0x80]: plaintext amount (operand 0)
             //   mem[0x80..0xA0]: return handle
             // argsOffset = 0x5C, argsSize = 4 + 32 = 36
-            let sel = abi::precompile_selector("FheEncryptTrivial");
+            // Routed through the central gate: on a helper target this is the
+            // ABI selector of `encryptTrivial(uint256)`, not the V0.8
+            // namespaced form, and the unverified-target refusal fires here
+            // too. This path used to call `precompile_selector` directly, so a
+            // confidential token's genesis mint on Sepolia called a selector
+            // that matches no deployed method and reverted on deploy.
+            let sel = self.resolve_precompile_selector("FheEncryptTrivial", self.module.name.span);
             asm.push_bytes(sel.to_vec()); // [slot, selector_u32]
             asm.push_u32(0x40); // [slot, selector, 0x40]
             asm.op(asm::OP_MSTORE); // mem[0x40..0x5C]=0, mem[0x5C..0x60]=selector; stack: [slot]
@@ -1356,8 +1362,15 @@ impl<'a> Codegen<'a> {
                 // Acceptable for balance-sufficient checks; caller already knows.
                 // Conditional revert without decryption deferred to V0.3.
 
-                // Selector word at mem[0x00] (low 4 bytes).
-                let sel = abi::precompile_selector("AssertEncrypted");
+                // Selector word at mem[0x00] (low 4 bytes). Routed through the
+                // central gate: AssertEncrypted has no deployed helper method,
+                // so on a helper target this pushes E520 and the contract does
+                // not ship. It used to call `precompile_selector` directly and
+                // emit a call to a nonexistent function on the FHE helper,
+                // which reverted on chain. MockChain implements it as the
+                // native precompile at 0x110, so the namespaced selector is
+                // correct there and this returns it unchanged.
+                let sel = self.resolve_precompile_selector("AssertEncrypted", instr.span);
                 asm.push_bytes(sel.to_vec());
                 asm.emit(AsmOp::Push0);
                 asm.op(asm::OP_MSTORE); // mem[0x00..0x20] = selector word
@@ -2225,6 +2238,69 @@ impl<'a> Codegen<'a> {
         None
     }
 
+    /// The one place a precompile or helper selector is chosen, and the one
+    /// place the fail-loud gates fire.
+    ///
+    /// Every path that emits a helper call goes through here: the main
+    /// `emit_precompile_call`, the confidential-token genesis mint, and the
+    /// `AssertEncrypted` balance check. Before this existed, the latter two
+    /// called `abi::precompile_selector` directly, which on a helper target
+    /// emits the V0.8 namespaced selector rather than the deployed method's
+    /// ABI selector, and skips every gate. So a confidential token built for
+    /// Sepolia called the wrong genesis-mint selector, and `AssertEncrypted`,
+    /// which has no helper method at all, called a nonexistent function. Both
+    /// compiled clean and reverted on chain, the exact E520 class this gate
+    /// was built to refuse.
+    ///
+    /// On a native-precompile target the namespaced selector is correct and
+    /// this returns it unchanged.
+    fn resolve_precompile_selector(
+        &mut self,
+        opcode_name: &str,
+        span: covenant_diag::Span,
+    ) -> [u8; 4] {
+        if !self.config.target.uses_helper_contracts() {
+            return abi::precompile_selector(opcode_name);
+        }
+
+        // The helper may have the method at an address nobody has confirmed
+        // holds code. Refuse rather than emit a call into a likely-empty
+        // address whose STATICCALL returns success with no data.
+        if !self.config.target.helpers_verified_deployed() {
+            self.diagnostics.push(d::unverified_helper_target(
+                span,
+                opcode_name,
+                self.config.target.as_str(),
+            ));
+        }
+
+        match crate::target::helper_method_for_opcode(opcode_name) {
+            Some(m) => {
+                // A method whose returndata a single-word reader cannot decode
+                // must not be called: the first word of a Solidity dynamic
+                // return is the ABI offset, not a value.
+                if m.returns == crate::target::ReturnShape::DynamicBytes {
+                    self.diagnostics.push(d::helper_return_shape_undecodable(
+                        span,
+                        opcode_name,
+                        m.signature,
+                    ));
+                }
+                m.selector
+            }
+            None => {
+                self.diagnostics.push(d::helper_method_missing(
+                    span,
+                    opcode_name,
+                    self.config.target.as_str(),
+                ));
+                // Emit something so codegen stays total; the diagnostic is an
+                // error, so no artifact ships.
+                abi::precompile_selector(opcode_name)
+            }
+        }
+    }
+
     fn emit_precompile_call(
         &mut self,
         asm: &mut Assembler,
@@ -2272,48 +2348,7 @@ impl<'a> Codegen<'a> {
         //
         // Native-precompile targets (mockchain) are unaffected: their runtime
         // implements these opcodes, so the namespaced selector is correct there.
-        let sel = if self.config.target.uses_helper_contracts() {
-            // The helper may well have the method, at an address nobody has
-            // confirmed holds code. Same doctrine as E520 one step earlier:
-            // refuse rather than emit a call into an address that is very
-            // likely empty, where a STATICCALL returns success with no data
-            // and the primitive reads as a pass.
-            if !self.config.target.helpers_verified_deployed() {
-                self.diagnostics.push(d::unverified_helper_target(
-                    instr.span,
-                    instr.opcode.stable_name(),
-                    self.config.target.as_str(),
-                ));
-            }
-            match crate::target::helper_method_for_opcode(instr.opcode.stable_name()) {
-                Some(m) => {
-                    // A method whose returndata this call site cannot decode
-                    // must not be called at all. The single-word reader below
-                    // would hand back the first word, which for Solidity
-                    // dynamic `bytes` is the ABI offset, not a result.
-                    if m.returns == crate::target::ReturnShape::DynamicBytes {
-                        self.diagnostics.push(d::helper_return_shape_undecodable(
-                            instr.span,
-                            instr.opcode.stable_name(),
-                            m.signature,
-                        ));
-                    }
-                    m.selector
-                }
-                None => {
-                    self.diagnostics.push(d::helper_method_missing(
-                        instr.span,
-                        instr.opcode.stable_name(),
-                        self.config.target.as_str(),
-                    ));
-                    // Still emit *something* so codegen stays total; the
-                    // diagnostic is an error, so no artifact ships.
-                    abi::precompile_selector(instr.opcode.stable_name())
-                }
-            }
-        } else {
-            abi::precompile_selector(instr.opcode.stable_name())
-        };
+        let sel = self.resolve_precompile_selector(instr.opcode.stable_name(), instr.span);
         asm.push_bytes(sel.to_vec()); // PUSH4 selector → stack u32 low-4-bytes
         asm.push_u32(0x20);
         asm.op(asm::OP_MSTORE);
