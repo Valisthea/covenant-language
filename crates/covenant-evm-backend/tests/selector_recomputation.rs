@@ -48,9 +48,17 @@ const DISPATCH: &[(&str, &str)] = &[
     ("PqRand", "pqRandom(uint256)"),
 ];
 
-/// Keys in the manifest's `selectors` block, paired with the signature each
-/// one claims to be. `amnesiaSetupV091` is the one-argument overload; the
-/// unsuffixed `amnesiaSetup` is the three-argument one.
+/// EVERY key in the manifest's `selectors` block, paired with the signature
+/// each one claims to be. This list is deliberately exhaustive: an earlier
+/// version checked six of the twenty entries, which proved a subset correct
+/// and said nothing about the rest. `manifest_is_fully_covered` below asserts
+/// the count matches, so a new manifest entry cannot slip in unchecked.
+///
+/// `amnesiaSetupV091` is the one-argument overload; the unsuffixed
+/// `amnesiaSetup` is the three-argument one. `proofAggregate` and
+/// `pqKeygenFromSeed` exist in the deployed helpers and the manifest but have
+/// no Covenant opcode, so they are checked here for selector correctness but
+/// are absent from the dispatch table by design.
 const MANIFEST: &[(&str, &str)] = &[
     ("amnesiaSetup", "amnesiaSetup(uint256,uint256,uint256)"),
     ("amnesiaSetupV091", "amnesiaSetup(uint256)"),
@@ -58,7 +66,26 @@ const MANIFEST: &[(&str, &str)] = &[
     ("amnesiaFinalize", "amnesiaFinalize(uint256)"),
     ("amnesiaDestroy", "amnesiaDestroy(uint256)"),
     ("encryptTrivial", "encryptTrivial(uint256)"),
+    ("encryptFresh", "encryptFresh(uint256,uint256)"),
+    ("add", "add(bytes32,bytes32)"),
+    ("sub", "sub(bytes32,bytes32)"),
+    ("mul", "mul(bytes32,bytes32)"),
+    ("eq", "eq(bytes32,bytes32)"),
+    ("lt", "lt(bytes32,bytes32)"),
+    ("cmux", "cmux(bytes32,bytes32,bytes32)"),
+    ("decrypt", "decrypt(bytes32,address)"),
+    ("verify", "verify(bytes32,bytes,bytes)"),
+    ("nullifier", "nullifier(bytes32)"),
+    ("proofAggregate", "proofAggregate(bytes)"),
+    ("pqVerify", "pqVerify(bytes32,bytes,bytes)"),
+    ("pqKeygenFromSeed", "pqKeygenFromSeed(uint256)"),
+    ("pqRandom", "pqRandom(uint256)"),
 ];
+
+/// Manifest keys that intentionally have no Covenant opcode. Present in the
+/// deployed helpers and worth verifying, but no compiler dispatch reaches
+/// them, so they are excluded from the dispatch cross-check.
+const MANIFEST_WITHOUT_OPCODE: &[&str] = &["proofAggregate", "pqKeygenFromSeed"];
 
 fn hex4(sel: [u8; 4]) -> String {
     format!("0x{:02x}{:02x}{:02x}{:02x}", sel[0], sel[1], sel[2], sel[3])
@@ -153,6 +180,122 @@ fn the_dispatch_table_and_the_manifest_agree() {
     assert!(
         wrong.is_empty(),
         "the compiler and the published manifest name different functions:\n  {}",
+        wrong.join("\n  ")
+    );
+}
+
+/// The MANIFEST list must name every selector the manifest publishes.
+///
+/// The point of the checks above is only as strong as their coverage. If the
+/// manifest gains a selector this list does not, the new one goes unverified,
+/// which is exactly the state the six-of-twenty version was in. Counting both
+/// ways closes that: no manifest entry unlisted, no listed entry absent from
+/// the manifest.
+#[test]
+fn manifest_is_fully_covered() {
+    // Count the entries in the manifest's `selectors` block by finding the
+    // block and counting `"key": "0x...."` pairs inside it.
+    let block_start = REGISTRY_JSON
+        .find("\"selectors\"")
+        .expect("manifest has no selectors block");
+    let after = &REGISTRY_JSON[block_start..];
+    let open = after
+        .find('{')
+        .expect("selectors block has no opening brace");
+    let close = after[open..]
+        .find('}')
+        .expect("selectors block has no closing brace")
+        + open;
+    let block = &after[open..close];
+    let published: std::collections::BTreeSet<&str> = block
+        .lines()
+        .filter_map(|l| {
+            let l = l.trim();
+            let key = l.strip_prefix('"')?;
+            let end = key.find('"')?;
+            // Only lines that actually assign a 0x selector.
+            if l.contains("0x") {
+                Some(&key[..end])
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let listed: std::collections::BTreeSet<&str> = MANIFEST.iter().map(|(k, _)| *k).collect();
+
+    let unlisted: Vec<_> = published.difference(&listed).collect();
+    let missing: Vec<_> = listed.difference(&published).collect();
+
+    assert!(
+        unlisted.is_empty(),
+        "the manifest publishes selectors this test never checks: {unlisted:?}. \
+         Add them to MANIFEST so they are recomputed."
+    );
+    assert!(
+        missing.is_empty(),
+        "MANIFEST names selectors that are no longer in the manifest: {missing:?}"
+    );
+    assert_eq!(
+        published.len(),
+        MANIFEST.len(),
+        "manifest has {} selectors, MANIFEST checks {}",
+        published.len(),
+        MANIFEST.len()
+    );
+}
+
+/// Every opcode the dispatch table knows must be represented in the manifest,
+/// except the two the manifest carries that have no opcode. This is the other
+/// direction: a compiler dispatch entry absent from the published manifest
+/// would mean the compiler calls a method an operator cannot verify.
+#[test]
+fn every_dispatched_opcode_appears_in_the_manifest() {
+    // The opcode-to-manifest-key pairing, for the entries that have both.
+    let opcode_to_key = [
+        ("AmnesiaBegin", "amnesiaSetupV091"),
+        ("AmnesiaSubmitShare", "amnesiaSubmitShare"),
+        ("AmnesiaFinalize", "amnesiaFinalize"),
+        ("DestructionProof", "amnesiaDestroy"),
+        ("FheEncryptTrivial", "encryptTrivial"),
+        ("FheEncryptFresh", "encryptFresh"),
+        ("FheAdd", "add"),
+        ("FheSub", "sub"),
+        ("FheMul", "mul"),
+        ("FheCmpEq", "eq"),
+        ("FheCmpLt", "lt"),
+        ("FheSelect", "cmux"),
+        ("RevealDecrypt", "decrypt"),
+        ("ZkVerify", "verify"),
+        ("ZkNullifier", "nullifier"),
+        ("PqVerifyDilithium", "pqVerify"),
+        ("PqRand", "pqRandom"),
+    ];
+    let mut wrong = Vec::new();
+    for (opcode, key) in opcode_to_key {
+        let table = hex4(
+            helper_selector_for_opcode(opcode)
+                .unwrap_or_else(|| panic!("`{opcode}` is not in the dispatch table")),
+        );
+        match manifest_selector(key) {
+            None => wrong.push(format!("{opcode}: manifest has no `{key}`")),
+            Some(m) if m != table => {
+                wrong.push(format!("{opcode} / {key}: table {table}, manifest {m}"))
+            }
+            Some(_) => {}
+        }
+    }
+    // The manifest-only entries are documented, not accidental.
+    for key in MANIFEST_WITHOUT_OPCODE {
+        assert!(
+            manifest_selector(key).is_some(),
+            "`{key}` was declared opcode-less but is not in the manifest either"
+        );
+    }
+    assert!(
+        wrong.is_empty(),
+        "the compiler dispatches to methods the manifest does not correctly \
+         publish:\n  {}",
         wrong.join("\n  ")
     );
 }

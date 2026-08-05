@@ -87,7 +87,7 @@
         "first_call_gas_used": 157444,
         "first_call_phase_after": 1
       },
-      "_status": "DEPLOYED + VERIFIED on Sepolia (block 10737692, 2026-04-26). All 4 CREATE2 addresses match Sprint 30 Arachnid-factory predictions exactly. End-to-end smoke test successful: cast send to amnesiaSetup → status=1, AmnesiaSetup event emitted, phase()=1 (Active), sessionCount()=1. KSR-CVN-005 (V0.8 audit) status flips to 'Fix verified'."
+      "_status": "DEPLOYED + VERIFIED on Sepolia (block 10737692, 2026-04-26). NOT all four are CREATE2: the FHE, PQ and ZK helpers match the Sprint 30 Arachnid-factory predictions, but the active V0.9.1 CeremonyHelper at 0x627f1Ff6Dc93AEba050c242FD9E26961E8F6c6F0 was deployed by a plain contract-creation transaction (deploy tx to==null, address in the receipt), not through the factory, so its address is not the CREATE2 prediction 0x6cAB. The single deployed_at_block figure therefore does not describe all four uniformly; a per-helper deployment receipt is scheduled with the helper redeploy. The smoke test cited (cast send to amnesiaSetup, status=1, phase()=1) was a direct call to the helper, not a compiler-generated Covenant contract exercising it end to end; that end-to-end gate is a separate item. KSR-CVN-005 (V0.8 audit) status flips to 'Fix verified'."
     },
 
     "aster_testnet": {
