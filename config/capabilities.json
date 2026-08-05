@@ -1,6 +1,6 @@
 {
   "$comment": "What each top-level construct actually emits, classified from compiler behaviour rather than from the parser accepting the keyword. Verified by crates/covenant-driver/tests/capability_registry.rs, which compiles a fixture per construct and asserts the observed behaviour matches the state below. Do not edit by hand without re-running that test: it is the source of truth, this file is the published view.",
-  "schema_version": "1",
+  "schema_version": "2",
   "compiler_version": "0.9.7",
   "states": {
     "PORTABLE": "Builds on every EVM target with byte-identical bytecode. Emits no chain-specific address and no mocked primitive. Deployable on any EVM chain.",
@@ -9,21 +9,82 @@
     "NO_SYNTHESIS": "Parses and passes through unchanged, synthesizing none of the interface the keyword names. Byte-identical to `module`. Emits W606.",
     "REFUSED": "Does not compile in any form at this release."
   },
+  "$synthesizes": "The exact function names the compiler injects, measured by compiling a body that declares no action and no view, so every name listed is synthesized rather than user-written. An empty list means the construct adds nothing to your ABI. `null` means it does not compile. Asserted against the emitted ABI by the same test, which is what stops a note from claiming a surface that is not there.",
   "constructs": {
-    "record": { "state": "PORTABLE", "note": "Per-field getters." },
-    "token": { "state": "PORTABLE", "note": "Full ERC-20 surface synthesized." },
-    "nft": { "state": "PORTABLE", "note": "ERC-721 surface synthesized." },
-    "counter": { "state": "PORTABLE", "note": "Increment and decrement." },
-    "module": { "state": "PORTABLE", "note": "Generic escape hatch, no synthesis by design." },
-    "board": { "state": "INCOMPLETE", "note": "The post schema compiles, but `append post { .. }` is E430 and any read of `posts` is E431, so a board cannot store or read posts." },
-    "market": { "state": "INCOMPLETE", "note": "The priority_queue is read-only: .top_key, .top_value, .length exist, .push is E207, so a market cannot accept orders." },
-    "vault": { "state": "NO_SYNTHESIS", "note": "No reentrancy protection and no value-custody surface. Same body as `module` compiles to identical bytecode. Emits W606." },
-    "ballot": { "state": "NO_SYNTHESIS", "note": "No voting surface synthesized. Emits W606." },
-    "bridge": { "state": "NO_SYNTHESIS", "note": "No cross-chain surface synthesized. Emits W606." },
-    "confidential token": { "state": "MOCKED_TESTNET_ONLY", "note": "ERC-8227 over mocked FHE. Refused on a helper target (E520) because the encrypted balance check reaches FheCmpGe, which has no deployed helper method." },
-    "encrypted counter": { "state": "MOCKED_TESTNET_ONLY", "note": "Mocked FHE counter. Builds on sepolia against the deployed FHE helper." },
-    "hybrid module": { "state": "MOCKED_TESTNET_ONLY", "note": "Mixed plaintext and mocked-FHE fields. Builds on sepolia against the deployed FHE helper." },
-    "ceremony": { "state": "MOCKED_TESTNET_ONLY", "note": "ERC-8228 amnesia over a mocked helper. The destroy path is refused on a helper target (E535) until amnesiaDestroy returns a decodable shape." },
-    "registry": { "state": "REFUSED", "note": "The ERC-8231 synthesizer injects register/key_of over pq_key, a dynamic ABI type the backend refuses (E505), and the template's own key_of collides (E601). No registry body compiles." }
+    "record": {
+      "state": "PORTABLE",
+      "synthesizes": [],
+      "note": "No synthesis. Declares storage; you write the actions and views. A field-only record emits an empty ABI over a 12-byte runtime."
+    },
+    "token": {
+      "state": "PORTABLE",
+      "synthesizes": ["allowance", "approve", "balanceOf", "decimals", "name", "symbol", "totalSupply", "transfer", "transferFrom"],
+      "note": "Full ERC-20 surface synthesized, with the Transfer and Approval events."
+    },
+    "nft": {
+      "state": "PORTABLE",
+      "synthesizes": ["approve", "balanceOf", "burn", "getApproved", "isApprovedForAll", "mint", "name", "ownerOf", "setApprovalForAll", "symbol", "tokenURI", "transferFrom"],
+      "note": "ERC-721 surface synthesized, with the Transfer, Approval and ApprovalForAll events. `safeTransferFrom` is not emitted."
+    },
+    "counter": {
+      "state": "PORTABLE",
+      "synthesizes": [],
+      "note": "No synthesis. No increment or decrement is emitted; write the actions yourself, as with `module`."
+    },
+    "module": {
+      "state": "PORTABLE",
+      "synthesizes": [],
+      "note": "Generic escape hatch, no synthesis by design."
+    },
+    "board": {
+      "state": "INCOMPLETE",
+      "synthesizes": [],
+      "note": "The post schema compiles, but `append post { .. }` is E430 and any read of `posts` is E431, so a board cannot store or read posts."
+    },
+    "market": {
+      "state": "INCOMPLETE",
+      "synthesizes": [],
+      "note": "The priority_queue is read-only: .top_key, .top_value, .length exist, .push is E207, so a market cannot accept orders."
+    },
+    "vault": {
+      "state": "NO_SYNTHESIS",
+      "synthesizes": [],
+      "note": "No reentrancy protection and no value-custody surface. Same body as `module` compiles to identical bytecode. Emits W606."
+    },
+    "ballot": {
+      "state": "NO_SYNTHESIS",
+      "synthesizes": [],
+      "note": "No voting surface synthesized. Emits W606."
+    },
+    "bridge": {
+      "state": "NO_SYNTHESIS",
+      "synthesizes": [],
+      "note": "No cross-chain surface synthesized. Emits W606."
+    },
+    "confidential token": {
+      "state": "MOCKED_TESTNET_ONLY",
+      "synthesizes": ["allowanceEncrypted", "approveEncrypted", "balanceOfEncrypted", "decimals", "name", "symbol", "totalSupply", "transferEncrypted", "transferFromEncrypted"],
+      "note": "ERC-8227 over mocked FHE. Refused on a helper target (E520) because the encrypted balance check reaches FheCmpGe, which has no deployed helper method."
+    },
+    "encrypted counter": {
+      "state": "MOCKED_TESTNET_ONLY",
+      "synthesizes": ["total"],
+      "note": "Mocked FHE counter. Only the revealed field gets an accessor; the increment is yours to write. Builds on sepolia against the deployed FHE helper."
+    },
+    "hybrid module": {
+      "state": "MOCKED_TESTNET_ONLY",
+      "synthesizes": [],
+      "note": "Mixed plaintext and mocked-FHE fields. Adds no function of its own; it exists to allow per-field privacy qualifiers. Builds on sepolia against the deployed FHE helper."
+    },
+    "ceremony": {
+      "state": "MOCKED_TESTNET_ONLY",
+      "synthesizes": ["destroy", "finalize", "is_destroyed", "owner", "phase", "session_id", "setup", "submit_share"],
+      "note": "ERC-8228 amnesia over a mocked helper. The destroy path is refused on a helper target (E535) until amnesiaDestroy returns a decodable shape."
+    },
+    "registry": {
+      "state": "REFUSED",
+      "synthesizes": null,
+      "note": "The ERC-8231 synthesizer injects register/key_of over pq_key, a dynamic ABI type the backend refuses (E505), and the template's own key_of collides (E601). No registry body compiles."
+    }
   }
 }

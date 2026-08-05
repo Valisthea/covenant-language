@@ -34,7 +34,7 @@ Prefer the most specialized construct over generic `module`:
 | Cross-chain escrow | `bridge` |
 | Single-value counter (plaintext) | `counter` |
 | Single-value counter (FHE-encrypted) | `encrypted counter` |
-| Key-value storage with auto-getters | `record` |
+| Key-value storage, no synthesized getters | `record` |
 | Mixed plaintext + encrypted fields | `hybrid module` |
 | Generic logic (last resort) | `module` |
 

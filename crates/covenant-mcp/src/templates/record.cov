@@ -1,4 +1,4 @@
--- {{NAME}}: key-value storage with auto-getters
+-- {{NAME}}: key-value storage. No getters are synthesized; write the views yourself.
 record {{NAME}} {
     owner:   address
     count:   amount

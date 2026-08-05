@@ -123,7 +123,7 @@ vault <Name> {
 ### record
 
 ```covenant
--- <Name>: key-value storage with auto-getters
+-- <Name>: key-value storage. No getters are synthesized; write the views yourself.
 record <Name> {
     owner:   address
     count:   amount

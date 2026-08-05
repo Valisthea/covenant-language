@@ -8,3 +8,8 @@ third_party/**        linguist-vendored
 # Generated / non-source artifacts should not count as source either.
 **/*.bin              linguist-generated
 **/*.runtime.bin      linguist-generated
+
+# Shell scripts must keep LF in the working tree, not just in the object.
+# This repo is maintained on Windows, where a fresh clone would otherwise
+# check out CRLF and `bash scripts/e2e-anvil.sh` would die on `$'\r'`.
+*.sh                  text eol=lf

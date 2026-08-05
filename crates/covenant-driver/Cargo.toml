@@ -26,3 +26,6 @@ covenant-stdlib = { path = "../covenant-stdlib", version = "0.9.2" }
 covenant-manifest = { path = "../covenant-manifest", version = "0.9.2" }
 covenant-diag = { path = "../covenant-diag", version = "0.9.2" }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

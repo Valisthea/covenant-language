@@ -332,6 +332,7 @@ dependencies = [
  "covenant-stdlib",
  "covenant-types",
  "covenant-wasm-backend",
+ "serde_json",
  "thiserror 1.0.69",
 ]
 
