@@ -58,3 +58,19 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace
+
+  # Proves compiler output runs on a real EVM, not just that the test harness
+  # compiles it. Compiles a token, deploys the emitted bytecode to a local
+  # anvil, and exercises the ERC-20 surface with on-chain assertions. This is
+  # the compiler-to-chain gate the internal review found missing: every other
+  # on-chain check was a direct call to a deployed helper.
+  e2e-anvil:
+    name: end-to-end on anvil
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: cargo build --release --bin covenant
+      - run: bash scripts/e2e-anvil.sh
