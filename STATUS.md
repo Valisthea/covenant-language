@@ -18,7 +18,7 @@ privacy / key-identity type system**, and that part is real.
 
 ## What is REAL (production-quality, tested)
 
-- **The compiler**: 21-crate Rust workspace: lexer → parser → resolver → type-checker →
+- **The compiler**: 22-crate Rust workspace: lexer → parser → resolver → type-checker →
   privacy analyzer → IR → EVM bytecode. 1000+ tests passing, clippy-clean.
 - **The compile-time privacy / key-identity type system**: the novel core; true without any crypto.
 - **Auto-synthesis** of ERC-20, ERC-721 and PQ-registry surfaces from ~5-line declarations,

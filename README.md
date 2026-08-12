@@ -10,9 +10,9 @@ Write `token`, `nft`, `registry`, `ceremony`, the compiler synthesizes the audit
 
 <br>
 
-[![version](https://img.shields.io/badge/version-0.9.6-7C3AED?style=flat-square)](CHANGELOG.md)
+[![version](https://img.shields.io/badge/version-0.9.7-7C3AED?style=flat-square)](CHANGELOG.md)
 [![CI](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml/badge.svg)](https://github.com/Valisthea/covenant-language/actions/workflows/ci.yml)
-[![tests](https://img.shields.io/badge/tests-1%2C105%20passing-3FB950?style=flat-square)](#testing)
+[![tests](https://img.shields.io/badge/tests-1%2C319%20passing-3FB950?style=flat-square)](#testing)
 [![license](https://img.shields.io/badge/license-Apache--2.0-3B82F6?style=flat-square)](LICENSE)
 <br>
 [![status](https://img.shields.io/badge/status-testnet--only-F59E0B?style=flat-square)](STATUS.md)
@@ -21,7 +21,7 @@ Write `token`, `nft`, `registry`, `ceremony`, the compiler synthesizes the audit
 [![built by](https://img.shields.io/badge/built%20by-Kairos%20Lab-111827?style=flat-square)](https://kairos-lab.org)
 [![X](https://img.shields.io/badge/%40Valisthea-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/Valistheaeth)
 
-[**Website**](https://covenant-lang.org) · [**Playground**](https://playground.covenant-lang.org) · [**Milestones**](MILESTONES.md) · [**Changelog**](CHANGELOG.md) · [**Honest status**](STATUS.md)
+[**Website**](https://covenant-lang.org) · [**Tutorial**](https://covenant-lang.org/docs/examples/01-hello-contract) · [**Playground**](https://playground.covenant-lang.org) · [**Milestones**](MILESTONES.md) · [**Changelog**](CHANGELOG.md) · [**Honest status**](STATUS.md)
 
 [**Security and audit roadmap**](docs/security-and-audit-roadmap.md) · [**Deploying to an Orbit chain**](docs/orbit-adoption.md) · [**Review archive**](https://github.com/Valisthea/covenant-security-reviews)
 
@@ -69,7 +69,7 @@ flowchart LR
     PRIV -. enforces .-> P1{{no secret<br/>reaches plaintext}}
 ```
 
-Twenty-one Rust crates, one deterministic pipeline. Same source, same bytes, verified: two independent builds and the on-chain runtime of the milestone token all hash to the same SHA-256.
+Twenty-two Rust crates, one deterministic pipeline. Same source, same bytes, verified: two independent builds and the on-chain runtime of the milestone token all hash to the same SHA-256.
 
 ## What's real vs what's mocked
 

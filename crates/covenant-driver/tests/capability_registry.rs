@@ -349,6 +349,30 @@ fn the_synthesis_probe_can_tell_the_two_apart() {
     );
 }
 
+/// The version the registry states must be the version that produced it.
+///
+/// `compiler_version` is hand-maintained, and `list_constructs` serves it to
+/// agents verbatim, so a release that bumps the manifests and forgets this
+/// field makes the tool report a stale version as fact. That is the same shape
+/// as the claims this file already fixed: a value nothing recomputes, sitting
+/// next to values that are checked, and therefore trusted by association.
+#[test]
+fn the_registry_version_matches_the_compiler() {
+    let registry: serde_json::Value =
+        serde_json::from_str(REGISTRY_JSON).expect("capabilities.json must be valid JSON");
+    let declared = registry
+        .get("compiler_version")
+        .and_then(serde_json::Value::as_str)
+        .expect("capabilities.json must state a compiler_version");
+    assert_eq!(
+        declared,
+        env!("CARGO_PKG_VERSION"),
+        "config/capabilities.json says the compiler is {declared}, the workspace says {}. \
+         Bump the field, or the MCP tool reports a version that is not the one running.",
+        env!("CARGO_PKG_VERSION")
+    );
+}
+
 /// Every construct the parser accepts must be in the registry. A new construct
 /// that parses but is absent here would "look deployable" by omission, which
 /// is the exact failure the registry exists to prevent.
