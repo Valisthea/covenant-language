@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.9.8]: 2026-08-12
+
+This entry also covers 0.9.5 through 0.9.7, which shipped in the compiler but
+were never published here. The marketplace copy sat at 0.9.6 and the Open VSX
+copy at 0.9.5 while the repository built 0.9.7, so the language server users ran
+was up to two releases behind the compiler it was meant to match. Nothing
+detected that; `scripts/publish-vsix.js --check` now reports it.
+
+### Added
+
+- Diagnostics from the whole fail-loud line surface live in the editor:
+  `E426` (`in` lowered to a scalar comparison), `E427` (map argmax),
+  `E512` (over-indexed events), `E518` (an `only` predicate with no real EVM
+  check), `E519` (division by zero), `E521` (oversized text constant),
+  `E522` (nested map), `E523` (a three-operand `transfer` that would have paid
+  out of the contract's own balance), `W508` (an `only caller` guard that
+  restricts nothing), and the helper-target family `E533`, `W534`, `E535`.
+- `nft` is highlighted as a construct keyword. It was missing from the grammar
+  while being one of the few constructs that synthesizes a full standard surface.
+
+### Fixed
+
+- The bundled language server is built from the same commit as the release
+  binaries, so the editor and the command line no longer disagree about what
+  compiles.
+
+### Changed
+
+- Version realigned with the compiler. Historical entries below stop at 0.9.4
+  because no extension release was cut between it and this one.
+
 ## [0.9.4]: 2026-07-23
 
 ### Changed

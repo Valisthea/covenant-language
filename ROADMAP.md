@@ -10,7 +10,7 @@ The roadmap has **three deliberately decoupled axes**. Read [STATUS.md](STATUS.m
 the cryptography is **mocked and testnet-only** today, and real cryptography is a separate,
 much later track.
 
-> **Current: v0.9.4**, the *fail-loud pass*. Seven classes of silent miscompile now error or
+> **Current: v0.9.8**, the *gates pass*. Seven classes of silent miscompile now error or
 > work correctly; the LSP surfaces those diagnostics live; CI is green on `stable`. 1082 tests.
 
 ---

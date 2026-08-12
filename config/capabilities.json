@@ -1,7 +1,7 @@
 {
   "$comment": "What each top-level construct actually emits, classified from compiler behaviour rather than from the parser accepting the keyword. Verified by crates/covenant-driver/tests/capability_registry.rs, which compiles a fixture per construct and asserts the observed behaviour matches the state below. Do not edit by hand without re-running that test: it is the source of truth, this file is the published view.",
   "schema_version": "2",
-  "compiler_version": "0.9.7",
+  "compiler_version": "0.9.8",
   "states": {
     "PORTABLE": "Builds on every EVM target with byte-identical bytecode. Emits no chain-specific address and no mocked primitive. Deployable on any EVM chain.",
     "INCOMPLETE": "The construct compiles but does not provide its full declared behaviour: a documented operation is refused. Usable only for the part that works.",

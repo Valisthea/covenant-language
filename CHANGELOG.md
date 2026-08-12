@@ -22,7 +22,80 @@ etc.), see [`MILESTONES.md`](./MILESTONES.md).
 
 ## [Unreleased]
 
-(empty, V0.9.7 just shipped.)
+(empty, V0.9.8 just shipped.)
+
+---
+
+## [0.9.8], 2026-08-12 (the gates pass)
+
+Nothing in this project compiled its own documentation, recomputed its own
+published claims, or checked that a contract the compiler emits actually runs.
+Every serious defect of the last month came from that one gap: something copied
+out of the compiler, living somewhere else, with nothing forcing it to stay
+true. This release closes the gap with gates rather than with another sweep.
+
+### Verification that did not exist
+
+- **End-to-end on a real EVM.** `scripts/e2e-anvil.sh` compiles a contract,
+  deploys the emitted bytecode to a local anvil and exercises it on chain: every
+  portable construct deploys, the ERC-20 and ERC-721 surfaces are read back, a
+  transfer moves value and logs a correctly indexed `Transfer`, the
+  approve/allowance/transferFrom path is checked, and refusals are asserted on a
+  receipt status of `0x0` with balances unchanged. Twenty-six assertions, run in
+  CI on every push. Until now the only on-chain check called a deployed helper
+  directly, which proves the helper works, not the compiler.
+- **Documentation must compile.** `docs_must_compile.rs` builds every `.cov`
+  under `examples/` and every fenced `covenant` block in the repository's
+  markdown. Programs that cannot build are pinned to the exact diagnostic they
+  produce, so an exemption expires by itself when the limitation is lifted.
+- **Published claims must match behaviour.** `config/capabilities.json` gained a
+  `synthesizes` list, the exact functions each construct injects, asserted
+  against the emitted ABI; and its `compiler_version` is now pinned to the
+  workspace version.
+
+### Corrections these gates found
+
+- `record` was published as emitting per-field getters and `counter` as emitting
+  increment and decrement. Neither synthesizes anything: a field-only body
+  compiles to an empty ABI over a 12-byte runtime. The same claim had spread to
+  five other surfaces, including `list_constructs`, the tool an agent calls to
+  learn what a construct does. That tool now derives its answer from the
+  registry, which also restored `nft`, omitted from the hand-written table while
+  ballot, board, market and vault were overclaimed.
+- The e2e negative control was vacuous: any failure of the send command, a dead
+  RPC included, read as a successful refusal.
+- The 15 tutorial pages under `docs/examples` were written in a V0.7-era dialect
+  in which 22 of 22 contracts failed and none recovered from mechanical fixes.
+  They are removed, with zero measured inbound references, in favour of the
+  tutorial that is kept current.
+- Counts that were simply wrong: twenty-two crates, not twenty-one.
+
+### Release and packaging
+
+- The release workflow no longer ships silently incomplete: a missing platform
+  fails the run, uploads retry and are idempotent, notes are seeded from this
+  file, and a manual rebuild can target an existing tag.
+- The MCP server joined the workspace it compiles against, so its templates are
+  built by a test rather than trusted, and its version banner is interpolated
+  instead of hard-coded. It had said V0.8 for three minor releases.
+- The linter no longer suggests remedies the compiler refuses.
+- `*.sh` is pinned to LF so a fresh clone on Windows can run the harness.
+
+### Compiler
+
+- `E533` refuses a helper call for a target whose helper addresses were never
+  confirmed deployed, rather than emitting a contract that deploys clean and
+  reverts on first use.
+- `W534` warns when an artifact bakes in mock precompile addresses, which exist
+  on no public network. The default target used to do this in silence.
+- `E535` refuses a helper call whose return shape the ABI decoder cannot read,
+  instead of returning a memory offset as if it were a value.
+- Helper dispatch runs through one table and one gate, so the call mode follows
+  the method rather than the target, and no call site can bypass the checks.
+- `covenant build --profile deploy` promotes deploy-blocking warnings to
+  failures; an unknown profile is rejected rather than treated as `dev`.
+
+1319 tests, clippy and fmt clean, end-to-end green.
 
 ---
 
