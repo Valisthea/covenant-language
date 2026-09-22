@@ -320,14 +320,12 @@ impl<'a> Parser<'a> {
         self.expect(&TokenKind::KwRevertWith, "`revert_with`")?;
         let error = self.expect_ident("error name after `revert_with`")?;
         let mut args = Vec::new();
-        let span_end;
-        if self.eat(&TokenKind::LParen) {
+        let span_end = if self.eat(&TokenKind::LParen) {
             args = self.parse_expr_list_until(&TokenKind::RParen)?;
-            let rp = self.expect(&TokenKind::RParen, "`)`")?;
-            span_end = rp.span;
+            self.expect(&TokenKind::RParen, "`)`")?.span
         } else {
-            span_end = error.span;
-        }
+            error.span
+        };
         self.expect_stmt_terminator("after `revert_with`")?;
         Ok(Stmt::RevertWith {
             error,
