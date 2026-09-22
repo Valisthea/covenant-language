@@ -74,3 +74,23 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - run: cargo build --release --bin covenant
       - run: bash scripts/e2e-anvil.sh
+
+  # The Claude Code plugin shipped uninstallable from the public launch until
+  # 2026-09-22. `agents` was declared as a directory, which the schema refuses:
+  # `skills` and `commands` take a directory, `agents` takes a list of files.
+  # Three neighbouring keys, two conventions, and nothing ran the validator, so
+  # anyone following the documented install got a hard failure for two months.
+  plugin:
+    name: plugin manifests validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install -g @anthropic-ai/claude-code
+      # Local schema checks: no account, no network beyond the install above.
+      - name: Marketplace manifest
+        run: claude plugin validate .
+      - name: Claude Code plugin
+        run: claude plugin validate editors/claude-code

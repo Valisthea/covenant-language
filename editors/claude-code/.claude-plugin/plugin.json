@@ -7,13 +7,8 @@
     "url": "https://github.com/Valisthea/covenant-language"
   },
   "license": "Apache-2.0",
-  "icon": "icon.png",
   "homepage": "https://covenant-lang.org",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Valisthea/covenant-language",
-    "directory": "editors/claude-code"
-  },
+  "repository": "https://github.com/Valisthea/covenant-language",
   "keywords": [
     "covenant",
     "smart-contract",
@@ -30,5 +25,5 @@
   ],
   "skills": "./skills/",
   "commands": "./commands/",
-  "agents": "./agents/"
+  "agents": ["./agents/reviewer.md"]
 }
