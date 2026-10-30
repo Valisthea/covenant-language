@@ -175,6 +175,10 @@ Three axes, deliberately decoupled, see [STATUS.md](STATUS.md).
 
 The Styx Protocol ERC specs are **Draft standards authored by Kairos Lab**: **ERC-8227** (Encrypted Token), **ERC-8228** (Cryptographic Amnesia), **ERC-8229** (FHE Computation Verification), and **ERC-8231** (Post-Quantum Key Registry). The amnesia ceremony maps to **ERC-8228** (Cryptographic Amnesia), exactly as the confidential token maps to ERC-8227.
 
+## Maintainer
+
+Covenant is developed and maintained by **Kairos Lab Security Research**. Security contact: admin@kairos-lab.org (see [SECURITY.md](SECURITY.md)). Adversarial review archive: [covenant-security-reviews](https://github.com/Valisthea/covenant-security-reviews).
+
 ## License
 
 | What | License |
