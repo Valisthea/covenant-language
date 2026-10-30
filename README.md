@@ -18,10 +18,10 @@ Write `token`, `nft`, `registry`, `ceremony`, the compiler synthesizes the audit
 [![status](https://img.shields.io/badge/status-testnet--only-F59E0B?style=flat-square)](STATUS.md)
 [![cryptography](https://img.shields.io/badge/cryptography-MOCKED-EF4444?style=flat-square)](STATUS.md)
 [![audit](https://img.shields.io/badge/audit-self--audited%20(not%20third--party)-F59E0B?style=flat-square)](#security--audits)
-[![built by](https://img.shields.io/badge/built%20by-Kairos%20Lab-111827?style=flat-square)](https://kairos-lab.org)
+![built by](https://img.shields.io/badge/built%20by-Kairos%20Lab-111827?style=flat-square)
 [![X](https://img.shields.io/badge/%40Valisthea-000000?style=flat-square&logo=x&logoColor=white)](https://x.com/Valistheaeth)
 
-[**Website**](https://covenant-lang.org) · [**Tutorial**](https://covenant-lang.org/docs/examples/01-hello-contract) · [**Playground**](https://playground.covenant-lang.org) · [**Milestones**](MILESTONES.md) · [**Changelog**](CHANGELOG.md) · [**Honest status**](STATUS.md)
+[**Milestones**](MILESTONES.md) · [**Changelog**](CHANGELOG.md) · [**Honest status**](STATUS.md)
 
 [**Security and audit roadmap**](docs/security-and-audit-roadmap.md) · [**Deploying to an Orbit chain**](docs/orbit-adoption.md) · [**Review archive**](https://github.com/Valisthea/covenant-security-reviews)
 
@@ -101,7 +101,7 @@ Not a proof of concept. Real contracts, real transactions, on two independent pu
 | M5 | First PQ key registry | Sepolia | [`0xb9c5a5d8…`](https://sepolia.etherscan.io/address/0xb9c5a5d874fa1797d8cfbbe7292051d9227eb1d3) |
 | M6 | First contract beyond Sepolia (`token` + burn + fee) | Robinhood Chain | [`0x3E80F8c7…`](https://explorer.testnet.chain.robinhood.com/address/0x3E80F8c7911240e6092D523af79B13c046bd2FdE) |
 
-No public explorer can verify Covenant source (Blockscout offers 8 methods, all Solidity/Vyper), so we built our own: **[playground.covenant-lang.org/verify](https://playground.covenant-lang.org/verify)** recompiles your `.cov` in the browser and compares it byte-for-byte to the deployed code.
+No public explorer can verify Covenant source (Blockscout offers 8 methods, all Solidity/Vyper), so we built our own: **playground.covenant-lang.org/verify** recompiles your `.cov` in the browser and compares it byte-for-byte to the deployed code.
 
 ## Quick start
 
@@ -123,7 +123,7 @@ covenant lint  <file>     # 21-detector security linter
 covenant doctor           # environment probes
 ```
 
-Prefer the browser? The **[playground](https://playground.covenant-lang.org)** runs the compiler as WASM, edit, compile, simulate on an in-tab EVM, or deploy to a testnet with MetaMask.
+Prefer the browser? The **playground** runs the compiler as WASM, edit, compile, simulate on an in-tab EVM, or deploy to a testnet with MetaMask.
 
 ## Architecture
 
@@ -194,7 +194,7 @@ Full component split, SPDX identifiers, and trademark terms in **[LICENSING.md](
 
 <div align="center">
 
-**Developed by [Kairos Lab](https://kairos-lab.org)** · [@Valisthea](https://x.com/Valistheaeth) · [covenant-lang.org](https://covenant-lang.org)
+**Developed by Kairos Lab** · [@Valisthea](https://x.com/Valistheaeth)
 
 *Testnet-only · cryptography mocked · internally self-audited · not for production or real value.*
 
